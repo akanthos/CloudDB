@@ -1,30 +1,28 @@
 package engine;
 
-import org.apache.logging.log4j.core.appender.FileAppender;
-import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.apache.logging.log4j.spi.LoggerContextFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
+import helpers.CannotConnectException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import helpers.CannotConnectException;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
 public class echoClientEngine {
 	private String host;
 	private String hostPort;
 	private boolean connected;
+	private final Logger logger =  LogManager.getLogger(echoClientEngine.class);
 	InputStream in;
 	OutputStream out;
 	InetAddress address;
@@ -36,12 +34,12 @@ public class echoClientEngine {
 		host = "";
 		hostPort = "";
 		connected = false;
-//		log =   //Logger.getLogger(echoClientEngine.class);
-//		TODO: Figure out logging 
-//		String logDir = "logs/client.log";
-//		String pattern = "%d{ISO8601} %-5p [%t] %c: %m%n";
-//
-//		PatternLayout pLayout = new PatternLayout(pattern);
+
+		//		TODO: Figure out logging 
+		logger.log(arg0, arg1);
+		String logDir = "logs/client.log";
+		String pattern = "%d{ISO8601} %-5p [%t] %c: %m%n";
+		PatternLayout pLayout = new PatternLayout(pattern);
 //		FileAppender fa = new FileAppender(pLayout, logDir, true );
 //		log.addAppender(fa);
 	}
@@ -75,13 +73,9 @@ public class echoClientEngine {
 	public boolean isConnected() {
 		return this.connected;
 	}
-	public void send(String[] message) throws CannotConnectException {
+	public void send(String msg) throws CannotConnectException {
 		// TODO: Send message and print response
-		StringBuilder msg = new StringBuilder();
-		for (int i=1; i < message.length; i++) {
-			msg.append(message[i]);
-		}
-		byte[] bytes = msg.append("\r").toString().getBytes(StandardCharsets.US_ASCII);
+		byte[] bytes = new StringBuilder(msg).append(Character.toString((char) 13)).toString().getBytes(StandardCharsets.US_ASCII);
 		send(bytes);
 		byte[] answer = receive();
         try {
@@ -154,6 +148,8 @@ public class echoClientEngine {
 			}
 		}
 		connected = false;
+		host = "";
+		hostPort = "";
 	}
 	
 }

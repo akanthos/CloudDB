@@ -53,7 +53,7 @@ public class Application {
 						if (tokens[0].equals("help")) {
 							printHelp(tokens[1]);
 						} else if (tokens[0].equals("send")) {
-							sendStuff(tokens);
+							sendStuff(tokens[1]);
 						} else if (tokens[0].equals("logLevel")) {
 							engine.logLevel(tokens[1]);
 						} else {
@@ -63,7 +63,8 @@ public class Application {
 						break;
 					case 3:
 						if (tokens[0].equals("send")) {
-							sendStuff(tokens);
+							String msg = input.substring(5, input.length());
+							sendStuff(msg);
 						}
 						else if (tokens[0].equals("connect")) {
 							if (!engine.isConnected()) {
@@ -89,7 +90,13 @@ public class Application {
 						}
 						break;
 					default:
-						printHelp();
+						if (tokens[0].equals("send")) {
+							String msg = input.substring(5, input.length());
+							sendStuff(msg);
+						}
+						else {
+							printHelp();							
+						}
 						break;
 					}
 
@@ -103,10 +110,10 @@ public class Application {
 		System.out.println("Application exit!");
 	}
 
-	private static void sendStuff(String[] tokens) {
+	private static void sendStuff(String msg) {
 		if (engine.isConnected()) {
 			try {
-				engine.send(tokens);
+				engine.send(msg);
 			} catch (CannotConnectException e) {
 				System.out.println("Error: " + e.getErrorMessage());
 			}

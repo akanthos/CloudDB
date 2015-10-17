@@ -56,17 +56,11 @@ public class echoClientEngine {
 				in = client.getInputStream();
 				BufferedReader inReader = new BufferedReader(new InputStreamReader(in));
 				out = client.getOutputStream();
-				PrintWriter outWriter = new PrintWriter(out, true);
-				BufferedReader stdIn =
-				        new BufferedReader(
-				            new InputStreamReader(System.in));
 				String initMessage;
 				if ((initMessage = inReader.readLine()) != null) {
 					System.out.println("EchoClient> " + initMessage);
 				}
 				connected = true;
-//				TODO: Get initial message
-//				byte recvByte = in.read();
 			} catch (NumberFormatException e) {
 				throw new CannotConnectException(e.getMessage());
 			} catch (IOException e) {
@@ -76,8 +70,6 @@ public class echoClientEngine {
 		} catch (UnknownHostException e) {
 			throw new CannotConnectException(e.getMessage());
 		}
-		
-//		Connection to MSRG Echo server established: /127.0.0.1 / 50000
 	}
 	
 	public boolean isConnected() {
@@ -89,12 +81,11 @@ public class echoClientEngine {
 		for (int i=1; i < message.length; i++) {
 			msg.append(message[i]);
 		}
-		System.out.println("here: " + msg.toString());
-		byte[] bytes = msg.append("\r").append("\n").toString().getBytes(StandardCharsets.US_ASCII);
+		byte[] bytes = msg.append("\r").toString().getBytes(StandardCharsets.US_ASCII);
 		send(bytes);
 		byte[] answer = receive();
         try {
-			System.out.println("EchoClient> " + (new String(answer, "US-ASCII")));
+			System.out.println("EchoClient> " + (new String(answer, "US-ASCII").trim()));
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -102,9 +93,7 @@ public class echoClientEngine {
 	}
 	private void send(byte[] bytes) throws CannotConnectException {
 		try {
-			System.out.println("here: " + (new String(bytes, "US-ASCII")));
 			Integer messageLength = bytes.length;
-			System.out.println("Message length: " + bytes.length);
 			out.write(bytes, 0, messageLength);
 			out.flush();
 		} catch (UnsupportedEncodingException e) {
@@ -115,25 +104,12 @@ public class echoClientEngine {
 	}
 	private byte[] receive() throws CannotConnectException {
 		try {
-//			BufferedReader inReader = new BufferedReader(new InputStreamReader(in));
-//			String initMessage;
-//			if ((initMessage = inReader.readLine()) != null) {
-////				System.out.println("EchoClient> " + initMessage);
-//				return initMessage.getBytes(StandardCharsets.US_ASCII);
-//			}
-//			return new byte[0];
 			byte[] answer = new byte[128*1024];
 			byte[] buffer = new byte[128*1024]; 
-	        Integer count, pivot=0;
-	        System.out.println("READ");
+	        Integer count;
 	        count = in.read(buffer);
-//	        while ((count = in.read(buffer)) > 0) {
-//	        	System.out.println("READ2");	
-//	        	System.arraycopy(buffer, 0, answer, pivot, count);
-//	        	pivot += count;
-//	        }
-	        byte[] finalAnswer = new byte[pivot];
-	        System.arraycopy(answer, 0, finalAnswer, 0, pivot);
+	        byte[] finalAnswer = new byte[count];
+	        System.arraycopy(answer, 0, finalAnswer, 0, count);
 	        return buffer;
 
 		} catch (UnsupportedEncodingException e) {

@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 
 import engine.echoClientEngine;
 import helpers.CannotConnectException;
-import sun.awt.SunGraphicsCallback.PrintHeavyweightComponentsCallback;
+
 
 /**
  * @author akanthos
@@ -125,8 +125,6 @@ public class Application {
 			return false;
 		}
 		final String IPADDRESS_PATTERN = "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
-		// final String DOMAIN_START_END_PATTERN_STRING =
-		// "^((http|ftp|https)://)?([a-zA-Z0-9]+\\.)+[a-zA-Z][a-zA-Z]";
 		final String DOMAIN_START_END_PATTERN_STRING = "^([a-zA-Z0-9]+\\.)+[a-zA-Z][a-zA-Z]";
 		final String PATTERN = IPADDRESS_PATTERN + "|" + DOMAIN_START_END_PATTERN_STRING;
 		Pattern pattern = Pattern.compile(PATTERN);

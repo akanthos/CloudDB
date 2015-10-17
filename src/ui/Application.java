@@ -52,33 +52,31 @@ public class Application {
 					case 2:
 						if (tokens[0].equals("help")) {
 							printHelp(tokens[1]);
-						}
-						else if (tokens[0].equals("send")) {
-							if (engine.isConnected()) {
-								engine.send(tokens);
-							}
-							else {
-								System.out.println("No connection to server yet :-(\n"
-										+ "Try the <connect> command first");
-							}
-						}
-						else if (tokens[0].equals("logLevel")) {
+						} else if (tokens[0].equals("send")) {
+							sendStuff(tokens);
+						} else if (tokens[0].equals("logLevel")) {
 							engine.logLevel(tokens[1]);
-						}
-						else {
+						} else {
 							System.out.println("Unknown command");
 							printHelp();
 						}
 						break;
 					case 3:
-						if (tokens[0].equals("connect")) {
+						if (tokens[0].equals("send")) {
+							sendStuff(tokens);
+						}
+						else if (tokens[0].equals("connect")) {
 							if (!engine.isConnected()) {
 								if (isHostValid(tokens[1], tokens[2])) {
 									try {
 										engine.connect(tokens[1], tokens[2]);
-										System.out.println(engine.getMessage());
 									} catch (CannotConnectException e) {
-										System.out.println("Connection failed: " // + "\nError Code: " + e.getErrorCode()
+										System.out.println("Connection failed: " // +
+																					// "\nError
+																					// Code:
+																					// "
+																					// +
+																					// e.getErrorCode()
 												+ "\nError Message: " + e.getErrorMessage());
 									}
 								} else {
@@ -105,14 +103,27 @@ public class Application {
 		System.out.println("Application exit!");
 	}
 
+	private static void sendStuff(String[] tokens) {
+		if (engine.isConnected()) {
+			try {
+				engine.send(tokens);
+			} catch (CannotConnectException e) {
+				System.out.println("Error: " + e.getErrorMessage());
+			}
+		} else {
+			System.out.println(
+					"No connection to server yet :-(\n" + "Try the <connect> command first");
+		}
+	}
+
 	private static boolean isHostValid(String host, String hostPort) {
-		try { 
-	        Integer.parseInt(hostPort); 
-	    } catch(NumberFormatException e) { 
-	        return false; 
-	    } catch(NullPointerException e) {
-	        return false;
-	    }
+		try {
+			Integer.parseInt(hostPort);
+		} catch (NumberFormatException e) {
+			return false;
+		} catch (NullPointerException e) {
+			return false;
+		}
 		final String IPADDRESS_PATTERN = "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
 		// final String DOMAIN_START_END_PATTERN_STRING =
 		// "^((http|ftp|https)://)?([a-zA-Z0-9]+\\.)+[a-zA-Z][a-zA-Z]";
@@ -151,28 +162,23 @@ public class Application {
 					+ "Tries to create a TCP connection with the echo server");
 			break;
 		case "disconnect":
-			System.out.println("Syntax: disconnect\n "
-					+ "Tries to disconnect from the connected server");
+			System.out.println("Syntax: disconnect\n " + "Tries to disconnect from the connected server");
 			break;
 		case "send":
 			System.out.println("Syntax: send <text message>\n " + "Will send the given text message to the"
 					+ " currently connected echo server");
 			break;
 		case "logLevel":
-			System.out.println("Syntax: logLevel <level>\n "
-					+ "Sets the logger to the specified log level");
+			System.out.println("Syntax: logLevel <level>\n " + "Sets the logger to the specified log level");
 			break;
 		case "help":
-			System.out.println("Syntax: help [<command name>]\n "
-					+ "Prints help message");
+			System.out.println("Syntax: help [<command name>]\n " + "Prints help message");
 			break;
 		case "quit":
-			System.out.println("Syntax: quit\n "
-					+ "Quits the client");
+			System.out.println("Syntax: quit\n " + "Quits the client");
 			break;
 		default:
-			System.out.println("No such command: \"" + command + "\"\n"
-					+ "Run \"help\" for more");
+			System.out.println("No such command: \"" + command + "\"\n" + "Run \"help\" for more");
 			break;
 		}
 		return;

@@ -106,7 +106,9 @@ public class Application {
 			}
 		}
 		
-		engine.closeConnection();
+		if (engine.isConnected()) {
+			engine.closeConnection();
+		}
 		System.out.println("Application exit!");
 	}
 

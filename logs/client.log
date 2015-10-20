@@ -326,3 +326,7 @@ java.io.IOException: Bad file descriptor
 	at java.io.BufferedReader.readLine(BufferedReader.java:324)
 	at java.io.BufferedReader.readLine(BufferedReader.java:389)
 	at ui.Application.main(Application.java:39)
+2015-10-20 23:56:54,022 INFO  [main] engine.EchoClientEngine: Connection to MSRG Echo server established: /131.159.52.2 / 50000
+2015-10-20 23:57:07,739 INFO  [main] engine.EchoClientEngine: Message sent from user: sfsdkfj slfksk f 
+2015-10-20 23:57:07,772 INFO  [main] engine.EchoClientEngine: Message received from server: sfsdkfj slfksk f
+2015-10-20 23:57:11,792 INFO  [main] engine.EchoClientEngine: Connection with server: 131.159.52.2 terminated

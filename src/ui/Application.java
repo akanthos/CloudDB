@@ -9,8 +9,10 @@ import java.io.InputStreamReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import engine.echoClientEngine;
+import engine.EchoClientEngine;
+import engine.ErrorMessages;
 import helpers.CannotConnectException;
+import org.apache.log4j.Logger;
 
 
 /**
@@ -20,14 +22,14 @@ import helpers.CannotConnectException;
 public class Application {
 
 	private static boolean quit = false;
-	private static echoClientEngine engine;
+	private static EchoClientEngine engine;
+	private static Logger logger = Logger.getLogger(Application.class);
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		engine = new echoClientEngine();
+		engine = new EchoClientEngine();
 		BufferedReader cons;
 		cons = new BufferedReader(new InputStreamReader(System.in));
 
@@ -56,6 +58,7 @@ public class Application {
 							sendStuff(tokens[1]);
 						} else if (tokens[0].equals("logLevel")) {
 							engine.logLevel(tokens[1]);
+							logger.setLevel(engine.getLogLevel());
 						} else {
 							System.out.println("Unknown command");
 							printHelp();
@@ -65,19 +68,13 @@ public class Application {
 						if (tokens[0].equals("send")) {
 							String msg = input.substring(5, input.length());
 							sendStuff(msg);
-						}
-						else if (tokens[0].equals("connect")) {
+						} else if (tokens[0].equals("connect")) {
 							if (!engine.isConnected()) {
 								if (isHostValid(tokens[1], tokens[2])) {
 									try {
 										engine.connect(tokens[1], tokens[2]);
 									} catch (CannotConnectException e) {
-										System.out.println("Connection failed: " // +
-																					// "\nError
-																					// Code:
-																					// "
-																					// +
-																					// e.getErrorCode()
+										System.out.println("Connection failed: "
 												+ "\nError Message: " + e.getErrorMessage());
 									}
 								} else {
@@ -99,11 +96,10 @@ public class Application {
 						}
 						break;
 					}
-
 				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("IOException occurred", e);
+				System.out.println(ErrorMessages.ERROR_INTERNAL);
 			}
 		}
 		engine.closeConnection();
@@ -118,8 +114,7 @@ public class Application {
 				System.out.println("Error: " + e.getErrorMessage());
 			}
 		} else {
-			System.out.println(
-					"No connection to server yet :-(\n" + "Try the <connect> command first");
+			System.out.println("No connection to server yet :-(\n" + "Try the <connect> command first");
 		}
 	}
 

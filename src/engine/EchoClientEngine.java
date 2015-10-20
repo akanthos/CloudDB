@@ -1,6 +1,5 @@
 package engine;
 
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,35 +12,24 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 import helpers.CannotConnectException;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.layout.PatternLayout;
-
-public class echoClientEngine {
-	private String host;
-	private String hostPort;
+public class EchoClientEngine {
+	private String host = "";
+	private String hostPort = "";
 	private boolean connected;
-	private final Logger logger =  LogManager.getLogger(echoClientEngine.class);
 	InputStream in;
 	OutputStream out;
 	InetAddress address;
 	Socket client;
-	
-//	private final static Logger log = Logger.getLogger(echoClientEngine.class);
 
-	public echoClientEngine() {
-		host = "";
-		hostPort = "";
+	private static Logger logger = Logger.getLogger(EchoClientEngine.class);
+
+	public EchoClientEngine() {
 		connected = false;
-
-		//		TODO: Figure out logging 
-		logger.log(arg0, arg1);
-		String logDir = "logs/client.log";
-		String pattern = "%d{ISO8601} %-5p [%t] %c: %m%n";
-		PatternLayout pLayout = new PatternLayout(pattern);
-//		FileAppender fa = new FileAppender(pLayout, logDir, true );
-//		log.addAppender(fa);
+		PropertyConfigurator.configure("conf/log.config");
 	}
 	
 	public void connect(String host, String hostPort) throws CannotConnectException {
@@ -56,33 +44,39 @@ public class echoClientEngine {
 				out = client.getOutputStream();
 				String initMessage;
 				if ((initMessage = inReader.readLine()) != null) {
+					logger.info(initMessage);
 					System.out.println("EchoClient> " + initMessage);
 				}
 				connected = true;
 			} catch (NumberFormatException e) {
-				throw new CannotConnectException(e.getMessage());
+				logger.error("Number Format Exception", e);
+				throw new CannotConnectException(ErrorMessages.ERROR_INTERNAL);
 			} catch (IOException e) {
+				logger.error("Error while connecting to the server.", e);
 				throw new CannotConnectException(e.getMessage());
 			}
-			
 		} catch (UnknownHostException e) {
-			throw new CannotConnectException(e.getMessage());
+			logger.error("Server hostname cannot be resolved", e);
+			throw new CannotConnectException(ErrorMessages.ERROR_CANNOT_RESOLVE_HOSTNAME);
 		}
 	}
 	
 	public boolean isConnected() {
 		return this.connected;
 	}
+
 	public void send(String msg) throws CannotConnectException {
-		// TODO: Send message and print response
 		byte[] bytes = new StringBuilder(msg).append(Character.toString((char) 13)).toString().getBytes(StandardCharsets.US_ASCII);
 		send(bytes);
+		logger.info("Message sent from user: " + msg);
 		byte[] answer = receive();
         try {
-			System.out.println("EchoClient> " + (new String(answer, "US-ASCII").trim()));
+			String msgFromServer = new String(answer, "US-ASCII").trim();
+			logger.info("Message received from server: " + msgFromServer);
+			System.out.println("EchoClient> " + msgFromServer);
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Unsupported Encoding in message from server", e);
+			throw new CannotConnectException(ErrorMessages.ERROR_INVALID_MESSAGE_FROM_SERVER);
 		}
 	}
 	private void send(byte[] bytes) throws CannotConnectException {
@@ -91,9 +85,11 @@ public class echoClientEngine {
 			out.write(bytes, 0, messageLength);
 			out.flush();
 		} catch (UnsupportedEncodingException e) {
-			throw new CannotConnectException(e.getMessage());
+			logger.error(e);
+			throw new CannotConnectException("Unsupported Encoding in message to be send");
 		} catch (IOException e) {
-			throw new CannotConnectException(e.getMessage());
+			logger.error(e);
+			throw new CannotConnectException("Error while sending the message: " + e.getMessage());
 		}
 	}
 	private byte[] receive() throws CannotConnectException {
@@ -107,33 +103,41 @@ public class echoClientEngine {
 	        return buffer;
 
 		} catch (UnsupportedEncodingException e) {
-			throw new CannotConnectException(e.getMessage());
+			logger.error(e);
+			throw new CannotConnectException(ErrorMessages.ERROR_INVALID_MESSAGE_FROM_SERVER);
 		} catch (IOException e) {
-			throw new CannotConnectException(e.getMessage());
+			logger.error(e);
+			throw new CannotConnectException("Error while receiving the message: " + e.getMessage());
 		}
 	}
 
 	public void logLevel(String level) {
-		// TODO: Do it
 		switch (level) {
 		case "ALL":
+			logger.setLevel(Level.ALL);
 			break;
 		case "DEBUG":
+			logger.setLevel(Level.DEBUG);
 			break;
 		case "INFO":
+			logger.setLevel(Level.INFO);
 			break;
 		case "WARN":
+			logger.setLevel(Level.WARN);
 			break;
 		case "ERROR":
+			logger.setLevel(Level.ERROR);
 			break;
 		case "FATAL":
+			logger.setLevel(Level.FATAL);
 			break;
 		case "OFF":
+			logger.setLevel(Level.OFF);
 			break;
 		default:
 			break;
 		}
-		System.out.println("Log status: ...");
+		System.out.println("Log status: " + level);
 	}
 	
 	public void closeConnection() {
@@ -144,12 +148,17 @@ public class echoClientEngine {
 				out.close();
 				client.close();
 			} catch (IOException e) {
+				logger.error(e);
 				System.out.println("Error: " + e.getMessage());
 			}
 		}
 		connected = false;
 		host = "";
 		hostPort = "";
+	}
+
+	public Level getLogLevel() {
+		return logger.getLevel();
 	}
 	
 }

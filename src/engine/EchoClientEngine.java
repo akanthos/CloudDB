@@ -44,6 +44,7 @@ public class EchoClientEngine {
 				out = client.getOutputStream();
 				String initMessage;
 				if ((initMessage = inReader.readLine()) != null) {
+					logger.info(initMessage);
 					System.out.println("EchoClient> " + initMessage);
 				}
 				connected = true;

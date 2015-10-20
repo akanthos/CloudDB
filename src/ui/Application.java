@@ -15,10 +15,6 @@ import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
 
 
-/**
- * @author akanthos
- *
- */
 public class Application {
 
 	private static boolean quit = false;
@@ -29,16 +25,20 @@ public class Application {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		
 		engine = new EchoClientEngine();
 		BufferedReader cons;
+		//Reader for input from stdIn
 		cons = new BufferedReader(new InputStreamReader(System.in));
 
 		while (!quit) {
 			try {
+				
 				System.out.print("EchoClient> ");
 				String input = cons.readLine();
 				String[] tokens = input.trim().split("\\s+");
 				if (tokens != null) {
+					
 					switch (tokens.length) {
 					case 1:
 						if (tokens[0].equals("help")) {
@@ -68,7 +68,8 @@ public class Application {
 						if (tokens[0].equals("send")) {
 							String msg = input.substring(5, input.length());
 							sendStuff(msg);
-						} else if (tokens[0].equals("connect")) {
+						} 
+						else if (tokens[0].equals("connect")) {
 							if (!engine.isConnected()) {
 								if (isHostValid(tokens[1], tokens[2])) {
 									try {
@@ -81,7 +82,8 @@ public class Application {
 									System.out.println("Please insert valid IP or Port");
 									printHelp("connect");
 								}
-							} else {
+							} 
+							else {
 								System.out.println("There is already a connection open, please run disconnect first");
 							}
 						}
@@ -97,11 +99,13 @@ public class Application {
 						break;
 					}
 				}
-			} catch (IOException e) {
+			} 
+			catch (IOException e) {
 				logger.error("IOException occurred", e);
 				System.out.println(ErrorMessages.ERROR_INTERNAL);
 			}
 		}
+		
 		engine.closeConnection();
 		System.out.println("Application exit!");
 	}
@@ -119,18 +123,23 @@ public class Application {
 	}
 
 	private static boolean isHostValid(String host, String hostPort) {
+		
 		try {
 			Integer.parseInt(hostPort);
-		} catch (NumberFormatException e) {
+		} 
+		catch (NumberFormatException e) {
 			return false;
-		} catch (NullPointerException e) {
+		} 
+		catch (NullPointerException e) {
 			return false;
 		}
 		final String IPADDRESS_PATTERN = "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
 		final String DOMAIN_START_END_PATTERN_STRING = "^([a-zA-Z0-9]+\\.)+[a-zA-Z][a-zA-Z]";
 		final String PATTERN = IPADDRESS_PATTERN + "|" + DOMAIN_START_END_PATTERN_STRING;
+		
 		Pattern pattern = Pattern.compile(PATTERN);
 		Matcher matcher = pattern.matcher(host);
+		
 		if (!matcher.matches()) {
 			return false;
 		}
@@ -138,6 +147,7 @@ public class Application {
 	}
 
 	private static void printHelp() {
+		
 		System.out.println("This program is a simple client that is able to establish a TCP connection\n"
 				+ " to a given echo server and exchange text messages with it.");
 		System.out.println("\nconnect:");
@@ -152,36 +162,34 @@ public class Application {
 		printHelp("help");
 		System.out.println("\nquit:");
 		printHelp("quit");
-		return;
 	}
 
 	private static void printHelp(String command) {
+		
 		switch (command) {
-		case "connect":
-			System.out.println("Syntax: connect <hostname or IP address> <port>\n "
-					+ "Tries to create a TCP connection with the echo server");
-			break;
-		case "disconnect":
-			System.out.println("Syntax: disconnect\n " + "Tries to disconnect from the connected server");
-			break;
-		case "send":
-			System.out.println("Syntax: send <text message>\n " + "Will send the given text message to the"
-					+ " currently connected echo server");
-			break;
-		case "logLevel":
-			System.out.println("Syntax: logLevel <level>\n " + "Sets the logger to the specified log level");
-			break;
-		case "help":
-			System.out.println("Syntax: help [<command name>]\n " + "Prints help message");
-			break;
-		case "quit":
-			System.out.println("Syntax: quit\n " + "Quits the client");
-			break;
-		default:
-			System.out.println("No such command: \"" + command + "\"\n" + "Run \"help\" for more");
-			break;
+			case "connect":
+				System.out.println("Syntax: connect <hostname or IP address> <port>\n "
+						+ "Tries to create a TCP connection with the echo server");
+				break;
+			case "disconnect":
+				System.out.println("Syntax: disconnect\n " + "Tries to disconnect from the connected server");
+				break;
+			case "send":
+				System.out.println("Syntax: send <text message>\n " + "Will send the given text message to the"
+						+ " currently connected echo server");
+				break;
+			case "logLevel":
+				System.out.println("Syntax: logLevel <level>\n " + "Sets the logger to the specified log level");
+				break;
+			case "help":
+				System.out.println("Syntax: help [<command name>]\n " + "Prints help message");
+				break;
+			case "quit":
+				System.out.println("Syntax: quit\n " + "Quits the client");
+				break;
+			default:
+				System.out.println("No such command: \"" + command + "\"\n" + "Run \"help\" for more");
+				break;
 		}
-		return;
 	}
-
 }

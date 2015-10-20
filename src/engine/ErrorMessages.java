@@ -1,8 +1,6 @@
 package engine;
 
-/**
- * Created by sreenath on 20/10/15.
- */
+
 public class ErrorMessages {
 
     public static final String ERROR_INTERNAL = "An Internal Server Error occurred. Please try again.";

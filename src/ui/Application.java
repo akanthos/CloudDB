@@ -1,6 +1,3 @@
-/**
- * 
- */
 package ui;
 
 import java.io.BufferedReader;
@@ -10,12 +7,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import engine.EchoClientEngine;
-import engine.ErrorMessages;
+import helpers.ErrorMessages;
 import helpers.CannotConnectException;
 import helpers.Commands;
 
 import org.apache.log4j.Logger;
 
+/**
+ * Main class
+ */
 public class Application {
 
 	private static boolean quit = false;
@@ -28,18 +28,17 @@ public class Application {
 	public static void main(String[] args) {
 
 		engine = new EchoClientEngine();
-		BufferedReader cons;
+		BufferedReader consoleReader;
 		// Reader for input from stdIn
-		cons = new BufferedReader(new InputStreamReader(System.in));
+		consoleReader = new BufferedReader(new InputStreamReader(System.in));
 
 		while (!quit) {
 			try {
-
+				// Take and parse the user input
 				System.out.print("EchoClient> ");
-				String input = cons.readLine();
+				String input = consoleReader.readLine();
 				String[] tokens = input.trim().split("\\s+");
 				if (tokens != null) {
-
 					if (tokens[0].equals("help")) {
 						switch (tokens.length) {
 						case 1:
@@ -52,7 +51,6 @@ public class Application {
 							printHelp("help");
 							break;
 						}
-
 					} else if (tokens[0].equals("quit")) {
 						switch (tokens.length) {
 						case 1:
@@ -62,29 +60,29 @@ public class Application {
 							printHelp("quit");
 							break;
 						}
-
 					} else if (tokens[0].equals("disconnect")) {
 						switch (tokens.length) {
 						case 1:
 							engine.closeConnection();
+							System.out.println("Connection to the server has been terminated. Please connect again.");
 							break;
 						default:
 							printHelp("disconnect");
 							break;
 						}
-
 					} else if (tokens[0].equals("connect")) {
 						switch (tokens.length) {
 						case 3:
+							// Perform the connection
 							if (!engine.isConnected()) {
 								if (isHostValid(tokens[1], tokens[2])) {
 									try {
 										engine.connect(tokens[1], tokens[2]);
 									} catch (CannotConnectException e) {
-										System.out.println(
-												"Connection failed: " + "\nError Message: " + e.getErrorMessage());
+										System.out.println("Connection failed: " + "\nError Message: " + e.getErrorMessage());
 									}
 								} else {
+									logger.debug(String.format("Invalid host and port entry. Host: %s, Port: %s", tokens[1], tokens[2]));
 									System.out.println("Please insert valid IP or Port");
 									printHelp("connect");
 								}
@@ -97,15 +95,16 @@ public class Application {
 							break;
 						}
 					} else if (tokens[0].equals("send")) {
+						// Send the message
 						if (tokens.length > 1) {
 							String arr[] = input.split(" ", 2);
 							String msg = arr[1];
-							// String msg = input.substring(5, input.length());
 							sendStuff(msg);
 						} else {
 							printHelp("send");
 						}
 					} else if (tokens[0].equals("logLevel")) {
+						// Change the loglevel
 						switch (tokens.length) {
 						case 2:
 							engine.logLevel(tokens[1]);
@@ -115,7 +114,6 @@ public class Application {
 							printHelp("logLevel");
 							break;
 						}
-
 					} else {
 						System.out.println("Command <<" + tokens[0] + ">> not recognized!");
 						printHelp();
@@ -127,12 +125,18 @@ public class Application {
 			}
 		}
 
+		// Got the quit command. Close connections and gracefully exit
 		if (engine.isConnected()) {
 			engine.closeConnection();
 		}
 		System.out.println("Application exit!");
 	}
 
+	/**
+	 * This function calls the engine's send function while handling any exceptions.
+	 *
+	 * @param msg: message to be send
+	 */
 	private static void sendStuff(String msg) {
 		if (engine.isConnected()) {
 			try {
@@ -145,10 +149,19 @@ public class Application {
 		}
 	}
 
+	/**
+	 * Helper function for the checking the validity of the host. It does this by performing a pattern match.
+	 *
+	 * @param host
+	 * @param hostPort
+	 * @return
+	 */
 	private static boolean isHostValid(String host, String hostPort) {
-
 		try {
-			Integer.parseInt(hostPort);
+			int port = Integer.parseInt(hostPort);
+			if ((port < 0) || (port > 65535)) {
+				return false;
+			}
 		} catch (NumberFormatException e) {
 			return false;
 		} catch (NullPointerException e) {
@@ -167,8 +180,10 @@ public class Application {
 		return true;
 	}
 
+	/**
+	 * Helper function for printing the general help to the user.
+	 */
 	private static void printHelp() {
-
 		System.out.println("This program is a simple client that is able to establish a TCP connection\n"
 				+ " to a given echo server and exchange text messages with it.");
 		System.out.println("\nconnect:");
@@ -185,6 +200,11 @@ public class Application {
 		printHelp("quit");
 	}
 
+	/**
+	 * Helper function for printing the help of a command.
+	 *
+	 * @param command
+	 */
 	private static void printHelp(String command) {
 		try {
 			Commands currentCommand = Commands.valueOf(command.toUpperCase());
@@ -217,6 +237,5 @@ public class Application {
 			System.out.println("Unknown command");
 			printHelp("help");
 		}
-
 	}
 }

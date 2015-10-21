@@ -1,6 +1,8 @@
-package engine;
+package helpers;
 
-
+/**
+ * Utility class for housing the error messages.
+ */
 public class ErrorMessages {
 
     public static final String ERROR_INTERNAL = "An Internal Server Error occurred. Please try again.";

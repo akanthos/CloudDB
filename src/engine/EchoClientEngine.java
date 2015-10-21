@@ -11,6 +11,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import helpers.CannotConnectException;
+import helpers.LogLevels;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -150,34 +152,39 @@ public class EchoClientEngine implements ClientConnection{
     * @param level Logging Level defined by the client using the CLI
     */
 	public void logLevel(String level) {
-		
-		switch (level) {
-			case "ALL":
-				logger.setLevel(Level.ALL);
-				break;
-			case "DEBUG":
-				logger.setLevel(Level.DEBUG);
-				break;
-			case "INFO":
-				logger.setLevel(Level.INFO);
-				break;
-			case "WARN":
-				logger.setLevel(Level.WARN);
-				break;
-			case "ERROR":
-				logger.setLevel(Level.ERROR);
-				break;
-			case "FATAL":
-				logger.setLevel(Level.FATAL);
-				break;
-			case "OFF":
-				logger.setLevel(Level.OFF);
-				break;
-			default:
-				break;
+		try {
+			LogLevels currentLevel = LogLevels.valueOf(level.toUpperCase());
+			switch (currentLevel) {
+				case ALL:
+					logger.setLevel(Level.ALL);
+					break;
+				case DEBUG:
+					logger.setLevel(Level.DEBUG);
+					break;
+				case INFO:
+					logger.setLevel(Level.INFO);
+					break;
+				case WARN:
+					logger.setLevel(Level.WARN);
+					break;
+				case ERROR:
+					logger.setLevel(Level.ERROR);
+					break;
+				case FATAL:
+					logger.setLevel(Level.FATAL);
+					break;
+				case OFF:
+					logger.setLevel(Level.OFF);
+					break;
+				default:
+					break;
+			}
+			System.out.println("Log status: " + level);
+		} catch (IllegalArgumentException e) {
+			System.out.println("Please give a valid log level. Options:\n"
+					+ "ALL, DEBUG, INFO, WARN, ERROR, FATAL, OFF");
 		}
 		
-		System.out.println("Log status: " + level);
 	}
 	
 	/**

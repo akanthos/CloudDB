@@ -330,3 +330,36 @@ java.io.IOException: Bad file descriptor
 2015-10-20 23:57:07,739 INFO  [main] engine.EchoClientEngine: Message sent from user: sfsdkfj slfksk f 
 2015-10-20 23:57:07,772 INFO  [main] engine.EchoClientEngine: Message received from server: sfsdkfj slfksk f
 2015-10-20 23:57:11,792 INFO  [main] engine.EchoClientEngine: Connection with server: 131.159.52.2 terminated
+2015-10-21 11:05:33,424 INFO  [main] engine.EchoClientEngine: Connection to MSRG Echo server established: /131.159.52.2 / 50000
+2015-10-21 11:05:37,576 INFO  [main] engine.EchoClientEngine: Message sent from user: lkj sdfk  skjfks df
+2015-10-21 11:05:37,604 INFO  [main] engine.EchoClientEngine: Message received from server: lkj sdfk  skjfks df
+2015-10-21 11:05:40,412 INFO  [main] engine.EchoClientEngine: Connection with server: 131.159.52.2 terminated
+2015-10-21 11:17:11,187 INFO  [main] engine.EchoClientEngine: Connection to MSRG Echo server established: /131.159.52.2 / 50000
+2015-10-21 11:17:16,553 INFO  [main] engine.EchoClientEngine: Message sent from user: sdfkljs kasjdfk skfj kls jflk sjalkfjlks djflk sjafkjaslkfj asdjkf 
+2015-10-21 11:17:16,584 INFO  [main] engine.EchoClientEngine: Message received from server: sdfkljs kasjdfk skfj kls jflk sjalkfjlks djflk sjafkjaslkfj asdjkf
+2015-10-21 11:17:24,718 INFO  [main] engine.EchoClientEngine: Message sent from user: salamaki kai tiraki
+2015-10-21 11:17:24,746 INFO  [main] engine.EchoClientEngine: Message received from server: salamaki kai tiraki
+2015-10-21 11:17:59,118 INFO  [main] engine.EchoClientEngine: Connection with server: 131.159.52.2 terminated
+2015-10-21 11:38:14,216 INFO  [main] engine.EchoClientEngine: Connection to MSRG Echo server established: /131.159.52.2 / 50000
+2015-10-21 11:38:21,188 INFO  [main] engine.EchoClientEngine: Message sent from user: klsafkasj flkasj dflkajs dflkjasfj 
+2015-10-21 11:38:21,221 INFO  [main] engine.EchoClientEngine: Message received from server: klsafkasj flkasj dflkajs dflkjasfj
+2015-10-21 11:38:24,216 INFO  [main] engine.EchoClientEngine: Message sent from user: ksjdflkjsdf sdf sd fdsf 
+2015-10-21 11:38:24,241 INFO  [main] engine.EchoClientEngine: Message received from server: ksjdflkjsdf sdf sd fdsf
+2015-10-21 11:38:43,311 INFO  [main] engine.EchoClientEngine: Connection with server: 131.159.52.2 terminated
+2015-10-21 11:45:21,115 INFO  [main] engine.EchoClientEngine: Connection to MSRG Echo server established: /131.159.52.2 / 50000
+2015-10-21 11:45:22,240 INFO  [main] engine.EchoClientEngine: Message sent from user: sdfds
+2015-10-21 11:45:22,273 INFO  [main] engine.EchoClientEngine: Message received from server: sdfds
+2015-10-21 11:45:23,824 INFO  [main] engine.EchoClientEngine: Connection with server: 131.159.52.2 terminated
+2015-10-21 11:47:42,463 ERROR [main] engine.EchoClientEngine: Error while connecting to the server.
+java.net.ConnectException: Connection timed out
+	at java.net.PlainSocketImpl.socketConnect(Native Method)
+	at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350)
+	at java.net.AbstractPlainSocketImpl.connectToAddress(AbstractPlainSocketImpl.java:206)
+	at java.net.AbstractPlainSocketImpl.connect(AbstractPlainSocketImpl.java:188)
+	at java.net.SocksSocketImpl.connect(SocksSocketImpl.java:392)
+	at java.net.Socket.connect(Socket.java:589)
+	at java.net.Socket.connect(Socket.java:538)
+	at java.net.Socket.<init>(Socket.java:434)
+	at java.net.Socket.<init>(Socket.java:244)
+	at engine.EchoClientEngine.connect(EchoClientEngine.java:56)
+	at ui.Application.main(Application.java:82)

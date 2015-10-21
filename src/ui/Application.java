@@ -12,8 +12,9 @@ import java.util.regex.Pattern;
 import engine.EchoClientEngine;
 import engine.ErrorMessages;
 import helpers.CannotConnectException;
-import org.apache.log4j.Logger;
+import helpers.Commands;
 
+import org.apache.log4j.Logger;
 
 public class Application {
 
@@ -25,87 +26,107 @@ public class Application {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		
+
 		engine = new EchoClientEngine();
 		BufferedReader cons;
-		//Reader for input from stdIn
+		// Reader for input from stdIn
 		cons = new BufferedReader(new InputStreamReader(System.in));
 
 		while (!quit) {
 			try {
-				
+
 				System.out.print("EchoClient> ");
 				String input = cons.readLine();
 				String[] tokens = input.trim().split("\\s+");
 				if (tokens != null) {
-					
-					switch (tokens.length) {
-					case 1:
-						if (tokens[0].equals("help")) {
+
+					if (tokens[0].equals("help")) {
+						switch (tokens.length) {
+						case 1:
 							printHelp();
-						} else if (tokens[0].equals("disconnect")) {
-							engine.closeConnection();
-						} else if (tokens[0].equals("quit")) {
-							quit = true;
-						} else {
-							printHelp();
-						}
-						break;
-					case 2:
-						if (tokens[0].equals("help")) {
+							break;
+						case 2:
 							printHelp(tokens[1]);
-						} else if (tokens[0].equals("send")) {
-							sendStuff(tokens[1]);
-						} else if (tokens[0].equals("logLevel")) {
-							engine.logLevel(tokens[1]);
-							logger.setLevel(engine.getLogLevel());
-						} else {
-							System.out.println("Unknown command");
-							printHelp();
+							break;
+						default:
+							printHelp("help");
+							break;
 						}
-						break;
-					case 3:
-						if (tokens[0].equals("send")) {
-							String msg = input.substring(5, input.length());
-							sendStuff(msg);
-						} 
-						else if (tokens[0].equals("connect")) {
+
+					} else if (tokens[0].equals("quit")) {
+						switch (tokens.length) {
+						case 1:
+							quit = true;
+							break;
+						default:
+							printHelp("quit");
+							break;
+						}
+
+					} else if (tokens[0].equals("disconnect")) {
+						switch (tokens.length) {
+						case 1:
+							engine.closeConnection();
+							break;
+						default:
+							printHelp("disconnect");
+							break;
+						}
+
+					} else if (tokens[0].equals("connect")) {
+						switch (tokens.length) {
+						case 3:
 							if (!engine.isConnected()) {
 								if (isHostValid(tokens[1], tokens[2])) {
 									try {
 										engine.connect(tokens[1], tokens[2]);
 									} catch (CannotConnectException e) {
-										System.out.println("Connection failed: "
-												+ "\nError Message: " + e.getErrorMessage());
+										System.out.println(
+												"Connection failed: " + "\nError Message: " + e.getErrorMessage());
 									}
 								} else {
 									System.out.println("Please insert valid IP or Port");
 									printHelp("connect");
 								}
-							} 
-							else {
+							} else {
 								System.out.println("There is already a connection open, please run disconnect first");
 							}
+							break;
+						default:
+							printHelp("connect");
+							break;
 						}
-						break;
-					default:
-						if (tokens[0].equals("send")) {
-							String msg = input.substring(5, input.length());
+					} else if (tokens[0].equals("send")) {
+						if (tokens.length > 1) {
+							String arr[] = input.split(" ", 2);
+							String msg = arr[1];
+							// String msg = input.substring(5, input.length());
 							sendStuff(msg);
+						} else {
+							printHelp("send");
 						}
-						else {
-							printHelp();							
+					} else if (tokens[0].equals("logLevel")) {
+						switch (tokens.length) {
+						case 2:
+							engine.logLevel(tokens[1]);
+							logger.setLevel(engine.getLogLevel());
+							break;
+						default:
+							printHelp("logLevel");
+							break;
 						}
-						break;
+
+					} else {
+						System.out.println("Command <<" + tokens[0] + ">> not recognized!");
+						printHelp();
 					}
 				}
-			} 
-			catch (IOException e) {
+			} catch (IOException e) {
 				logger.error("IOException occurred", e);
 				System.out.println(ErrorMessages.ERROR_INTERNAL);
 			}
 		}
-		
+
 		if (engine.isConnected()) {
 			engine.closeConnection();
 		}
@@ -125,23 +146,21 @@ public class Application {
 	}
 
 	private static boolean isHostValid(String host, String hostPort) {
-		
+
 		try {
 			Integer.parseInt(hostPort);
-		} 
-		catch (NumberFormatException e) {
+		} catch (NumberFormatException e) {
 			return false;
-		} 
-		catch (NullPointerException e) {
+		} catch (NullPointerException e) {
 			return false;
 		}
 		final String IPADDRESS_PATTERN = "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
 		final String DOMAIN_START_END_PATTERN_STRING = "^([a-zA-Z0-9]+\\.)+[a-zA-Z][a-zA-Z]";
 		final String PATTERN = IPADDRESS_PATTERN + "|" + DOMAIN_START_END_PATTERN_STRING;
-		
+
 		Pattern pattern = Pattern.compile(PATTERN);
 		Matcher matcher = pattern.matcher(host);
-		
+
 		if (!matcher.matches()) {
 			return false;
 		}
@@ -149,7 +168,7 @@ public class Application {
 	}
 
 	private static void printHelp() {
-		
+
 		System.out.println("This program is a simple client that is able to establish a TCP connection\n"
 				+ " to a given echo server and exchange text messages with it.");
 		System.out.println("\nconnect:");
@@ -167,31 +186,37 @@ public class Application {
 	}
 
 	private static void printHelp(String command) {
-		
-		switch (command) {
-			case "connect":
+		try {
+			Commands currentCommand = Commands.valueOf(command.toUpperCase());
+			switch (currentCommand) {
+			case CONNECT:
 				System.out.println("Syntax: connect <hostname or IP address> <port>\n "
 						+ "Tries to create a TCP connection with the echo server");
 				break;
-			case "disconnect":
+			case DISCONNECT:
 				System.out.println("Syntax: disconnect\n " + "Tries to disconnect from the connected server");
 				break;
-			case "send":
+			case SEND:
 				System.out.println("Syntax: send <text message>\n " + "Will send the given text message to the"
 						+ " currently connected echo server");
 				break;
-			case "logLevel":
+			case LOGLEVEL:
 				System.out.println("Syntax: logLevel <level>\n " + "Sets the logger to the specified log level");
 				break;
-			case "help":
+			case HELP:
 				System.out.println("Syntax: help [<command name>]\n " + "Prints help message");
 				break;
-			case "quit":
+			case QUIT:
 				System.out.println("Syntax: quit\n " + "Quits the client");
 				break;
 			default:
 				System.out.println("No such command: \"" + command + "\"\n" + "Run \"help\" for more");
 				break;
+			}
+		} catch (IllegalArgumentException e) {
+			System.out.println("Unknown command");
+			printHelp("help");
 		}
+
 	}
 }

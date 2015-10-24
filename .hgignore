@@ -5,3 +5,6 @@
 
 # Eclipse Core
 .project
+
+# IntelliJ
+.idea/

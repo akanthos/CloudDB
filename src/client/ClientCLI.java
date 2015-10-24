@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import app_kvClient.KVClient;
 import helpers.ErrorMessages;
 import helpers.CannotConnectException;
 import helpers.Commands;
@@ -19,15 +18,14 @@ import org.apache.log4j.Logger;
 public class ClientCLI {
 
 	private static boolean quit = false;
-	private static KVClient engine;
+	private static KVStore engine;
 	private static Logger logger = Logger.getLogger(ClientCLI.class);
 
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
-
-		engine = new KVClient();
+		engine = new KVStore("", 0); // Initializing with default values
 		BufferedReader consoleReader;
 		// Reader for input from stdIn
 		consoleReader = new BufferedReader(new InputStreamReader(System.in));
@@ -63,7 +61,7 @@ public class ClientCLI {
 					} else if (tokens[0].equals("disconnect")) {
 						switch (tokens.length) {
 						case 1:
-							engine.closeConnection();
+							engine.disconnect();
 							System.out.println("Connection to the server has been terminated. Please connect again.");
 							break;
 						default:
@@ -77,11 +75,16 @@ public class ClientCLI {
 							if (!engine.isConnected()) {
 								if (isHostValid(tokens[1], tokens[2])) {
 									try {
-										engine.connect(tokens[1], tokens[2]);
+                                        engine.setHost(tokens[1]);
+                                        engine.setPort(Integer.parseInt(tokens[2]));
+										engine.connect();
 									} catch (CannotConnectException e) {
 										System.out.println("Connection failed: " + "\nError Message: " + e.getErrorMessage());
-									}
-								} else {
+									} catch (Exception e) {
+                                        logger.error("Could not establish connection to the server", e);
+                                        System.out.println("Connection failed: " + "\nError Message: " + e.getMessage());
+                                    }
+                                } else {
 									logger.debug(String.format("Invalid host and port entry. Host: %s, Port: %s", tokens[1], tokens[2]));
 									System.out.println("Please insert valid IP or Port");
 									printHelp("connect");
@@ -127,7 +130,7 @@ public class ClientCLI {
 
 		// Got the quit command. Close connections and gracefully exit
 		if (engine.isConnected()) {
-			engine.closeConnection();
+			engine.disconnect();
 		}
 		System.out.println("ClientCLI exit!");
 	}

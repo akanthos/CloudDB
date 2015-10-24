@@ -1,10 +1,13 @@
+/*
 package engine;
 
 import helpers.CannotConnectException;
 
+*/
 /**
  * Interface class for connection libs
- */
+ *//*
+
 public interface ClientConnection {
 
     public void connect(String host, String hostPort) throws CannotConnectException;
@@ -18,3 +21,4 @@ public interface ClientConnection {
     public void closeConnection();
 
 }
+*/

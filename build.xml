@@ -14,7 +14,7 @@
 
   <!-- The main class of your application should be named according to the 
      following -->
-  <property name="main.class" value="ui.Application"/>
+  <property name="main.class" value="app_kvClient.ClientApplication"/>
 
   <path id="external.jars">
     <fileset dir="${lib.dir}" includes="**/*.jar"/>

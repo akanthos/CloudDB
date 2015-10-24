@@ -1,3 +1,4 @@
+/*
 package engine;
 
 import java.io.BufferedReader;
@@ -18,9 +19,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+*/
 /**
  * This class houses the main connection logic.
- */
+ *//*
+
 public class EchoClientEngine implements ClientConnection{
 	
 	private String host = "";
@@ -32,9 +35,11 @@ public class EchoClientEngine implements ClientConnection{
 	Socket clientSocket;
 	private static Logger logger = Logger.getLogger(EchoClientEngine.class);
 
-	/**
+	*/
+/**
      * Constructor Takes no arguments
-     */
+     *//*
+
 	public EchoClientEngine() {
 		isConnected = false;
 		PropertyConfigurator.configure("conf/log.config");
@@ -54,13 +59,15 @@ public class EchoClientEngine implements ClientConnection{
 		this.host = host;
 	}
 	
-	/**
+	*/
+/**
 	 * The connect function. Connects to a given host and port and initialises the input and output streams.
 	 *
     * @param host The server/host the client connects to
     * @param hostPort The port of the host
     * @throws CannotConnectException In case of connection Failures
-    */
+    *//*
+
 	public void connect(String host, String hostPort) throws CannotConnectException {
 		this.setHost(host);
 		this.setHostPort(hostPort);
@@ -93,19 +100,23 @@ public class EchoClientEngine implements ClientConnection{
 		}
 	}
 	
-	/**
+	*/
+/**
     * @return true if client connected else false
-    */
+    *//*
+
 	public boolean isConnected() {
 		return this.isConnected;
 	}
 
-	/**
+	*/
+/**
 	 * This function sends a message to the server using the established connection.
 	 *
 	 * @param msg
 	 * @throws CannotConnectException
-	 */
+	 *//*
+
 	public void send(String msg) throws CannotConnectException {
 		byte[] bytes = new StringBuilder(msg).append(Character.toString((char) 13)).toString().getBytes(StandardCharsets.US_ASCII);
 		send(bytes);
@@ -123,12 +134,14 @@ public class EchoClientEngine implements ClientConnection{
 		}
 	}
 
-	/**
+	*/
+/**
 	 * Helper function to send the bytes over the connection.
 	 *
 	 * @param bytes: the message bytes to be send.
 	 * @throws CannotConnectException
-	 */
+	 *//*
+
 	public void send(byte[] bytes) throws CannotConnectException {
 		try {
 			Integer messageLength = bytes.length;
@@ -143,12 +156,14 @@ public class EchoClientEngine implements ClientConnection{
 		}
 	}
 
-	/**
+	*/
+/**
 	 * Receives an array bytes over the connection.
 	 *
 	 * @return
 	 * @throws CannotConnectException
-	 */
+	 *//*
+
 	public byte[] receive() throws CannotConnectException {
 		try {
 			byte[] answer = new byte[128*1024];
@@ -167,11 +182,13 @@ public class EchoClientEngine implements ClientConnection{
 		}
 	}
 
-	/**
+	*/
+/**
 	 * This function sets the loglevel for the logger object bassed on the argument passed to it.
 	 *
 	 * @param level Logging Level defined by the client using the CLI
-	 */
+	 *//*
+
 	public void logLevel(String level) {
 		try {
 			LogLevels currentLevel = LogLevels.valueOf(level.toUpperCase());
@@ -214,9 +231,11 @@ public class EchoClientEngine implements ClientConnection{
 		}
 	}
 	
-	/**
+	*/
+/**
      * close connection with the server
-     */
+     *//*
+
     public void closeConnection() {
     	if (!isConnected) {
             System.out.println("You can't disconnect. You are not connected");
@@ -238,3 +257,4 @@ public class EchoClientEngine implements ClientConnection{
     }
 }
 
+*/

@@ -10,3 +10,6 @@
 .idea/
 syntax: glob
 clouddb.iml
+
+# Class files
+out/

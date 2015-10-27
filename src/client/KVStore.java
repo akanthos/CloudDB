@@ -2,11 +2,9 @@ package client;
 
 
 import common.messages.KVMessage;
+import common.messages.KVMessageImpl;
 import common.utils.Utilities;
-import helpers.CannotConnectException;
-import helpers.Constants;
-import helpers.ErrorMessages;
-import helpers.LogLevels;
+import helpers.*;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -84,16 +82,52 @@ public class KVStore implements KVCommInterface {
         port = 0;
 	}
 
+    /**
+     * Puts an entry into the server.
+     *
+     * @param key
+     *            the key that identifies the given value.
+     * @param value
+     *            the value that is indexed by the given key.
+     * @return
+     * @throws Exception
+     */
 	@Override
 	public KVMessage put(String key, String value) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+        KVMessageImpl kvMessage;
+        kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);
+        try {
+            String response = send(kvMessage.toString());
+            KVMessageImpl kvMessageFromServer = new KVMessageImpl(response);
+            return kvMessageFromServer;
+        } catch (CannotConnectException e) {
+            kvMessage.setStatus(KVMessage.StatusType.PUT_ERROR);
+            logger.error(e);
+        }
+        return kvMessage;
 	}
 
+    /**
+     * Gets an entry from the server.
+     *
+     * @param key
+     *            the key that identifies the value.
+     * @return
+     * @throws Exception
+     */
 	@Override
 	public KVMessage get(String key) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+        KVMessageImpl kvMessage;
+        kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.GET);
+        try {
+            String response = send(kvMessage.toString());
+            KVMessageImpl kvMessageFromServer = new KVMessageImpl(response);
+            return kvMessageFromServer;
+        } catch (CannotConnectException e) {
+            kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
+            logger.error(e);
+        }
+        return kvMessage;
 	}
 
     /**
@@ -102,13 +136,14 @@ public class KVStore implements KVCommInterface {
      * @param msg
      * @throws CannotConnectException
      */
-    public void send(String msg) throws CannotConnectException {
+    public String send(String msg) throws CannotConnectException {
         Utilities.send(msg, outStream);
         byte[] answer = Utilities.receive(inStream);
         try {
             String msgFromServer = new String(answer, "US-ASCII").trim();
             logger.info("Message received from server: " + msgFromServer);
             System.out.println("EchoClient> " + msgFromServer);
+            return msgFromServer;
         } catch (UnsupportedEncodingException e) {
             logger.error("Unsupported Encoding in message from server", e);
             throw new CannotConnectException(ErrorMessages.ERROR_INVALID_MESSAGE_FROM_SERVER);

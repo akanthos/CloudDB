@@ -136,9 +136,10 @@ public class KVStore implements KVCommInterface {
      * @param msg
      * @throws CannotConnectException
      */
-    public String send(String msg) throws CannotConnectException {
+    public String send(String msg) throws CannotConnectException, IOException {
         Utilities.send(msg, outStream);
         byte[] answer = Utilities.receive(inStream);
+        System.out.println("I am the client and received message SIZE: " + answer.length);
         try {
             String msgFromServer = new String(answer, "US-ASCII").trim();
             logger.info("Message received from server: " + msgFromServer);

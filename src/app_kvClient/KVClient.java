@@ -41,6 +41,7 @@ public class KVClient implements Runnable {
                 message = new String(recvBytes, Constants.DEFAULT_ENCODING).trim();
                 System.out.println(String.format("Client %d: %s", clientNumber, message));
                 // TODO: parse and persist the message
+
                 Utilities.send(recvBytes, outputStream);
             } catch (CannotConnectException e) {
                 e.printStackTrace();
@@ -48,6 +49,8 @@ public class KVClient implements Runnable {
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
                 logger.error("Unsupported encoding in messages", e);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
         try {

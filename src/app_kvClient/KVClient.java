@@ -50,6 +50,12 @@ public class KVClient implements Runnable {
                 logger.error("Unsupported encoding in messages", e);
             }
         }
+        try {
+            inputStream.close();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         logger.info(String.format("Client %d left", clientNumber));
     }
 }

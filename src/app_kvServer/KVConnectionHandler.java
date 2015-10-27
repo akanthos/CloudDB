@@ -1,5 +1,7 @@
 package app_kvServer;
 
+import app_kvClient.KVClient;
+
 import java.io.IOException;
 import java.net.Socket;
 
@@ -10,47 +12,25 @@ import java.net.Socket;
  */
 public class KVConnectionHandler implements ConnectionHandler {
 
-    private KVServerNew kv_Server = null;
+    private KVCache kv_cache = null;
     private ThreadPool threadpool = null;
 
 
-    public KVConnectionHandler(KVServerNew kvServerNew, int connections) {
-        this.kv_Server = kvServerNew;
+    public KVConnectionHandler(KVCache kv_cache, int connections) {
+        this.kv_cache = kv_cache;
         threadpool = new ThreadPool(connections);
-    }
-
-
-    /**
-     * Handling the client request (GET/SEND socket message using KVMessage send/)
-     */
-    //==================================================================
-    //******************************************************************
-    private class ClientHandler implements Runnable {
-
-        private KVServerNew kvServerNew = null;
-        private Socket client = null;
-
-        @Override
-        public void run() {
-            System.out.println("Handling");
-
-        }
-
-        public ClientHandler(KVServerNew kvServerNew, Socket client) {
-            this.kvServerNew = kvServerNew;
-            this.client = client;
-        }
     }
 
     /**
      *
      */
     @Override
-    public void handle(Socket client) throws IOException {
+    public void handle(Socket client, int numOfClients) throws IOException {
 
-        Runnable r = new ClientHandler(kv_Server, client);
+        //Runnable r = new ClientHandler(kv_cache, client);
+        Runnable rr = new KVClient(client, numOfClients);
         try {
-            threadpool.addToQueue(r);
+            threadpool.addToQueue(rr);
         } catch (InterruptedException e) {
             // Ignore this error
             return;

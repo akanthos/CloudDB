@@ -71,9 +71,11 @@ public class Utilities {
         } catch (UnsupportedEncodingException e) {
             logger.error(e);
             throw new CannotConnectException(ErrorMessages.ERROR_INVALID_MESSAGE_FROM_SERVER);
-        } catch (IOException e) {
-            logger.error(e);
-            throw new CannotConnectException("Error while receiving the message: " + e.getMessage());
         }
+        catch(Exception e){
+            System.out.println("An Unknown Error has Occured");
+            e.printStackTrace();
+        }
+        return null;
     }
 }

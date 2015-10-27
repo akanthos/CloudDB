@@ -15,6 +15,7 @@ public class SocketServer {
     ConnectionHandler handler;
     ServerSocket server;
     boolean open;
+    int numOfClients;
 
     public SocketServer(String hostname, int port) {
         this.hostname = hostname;
@@ -38,7 +39,8 @@ public class SocketServer {
             throw new IOException();
         }
         while (open) {
-            handler.handle(server.accept());
+            numOfClients++;
+            handler.handle(server.accept(), numOfClients);
         }
     }
 

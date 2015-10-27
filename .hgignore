@@ -5,3 +5,11 @@
 
 # Eclipse Core
 .project
+
+# IntelliJ
+.idea/
+syntax: glob
+clouddb.iml
+
+# Class files
+out/

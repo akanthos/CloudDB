@@ -75,11 +75,12 @@ public class KVStore implements KVCommInterface {
             } catch (IOException e) {
                 logger.error(e);
                 System.out.println("Error: " + e.getMessage());
+            } finally {
+                isConnected = false;
+                host = "";
+                port = 0;
             }
         }
-        isConnected = false;
-        host = "";
-        port = 0;
 	}
 
     /**

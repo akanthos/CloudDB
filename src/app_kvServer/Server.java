@@ -15,6 +15,7 @@ public class Server {
     public static void main(String[] args) throws IOException {
 
         //Primary
+        // TODO: Read command line parameters for 1) port number, 2) cache size, and 3) displacement strategy
         System.out.println("Binding Server:");
         keyValue_server = new KVCache(3, "fifo");
         server = new SocketServer("localhost", 5673);

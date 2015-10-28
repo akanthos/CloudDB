@@ -26,7 +26,7 @@ public class KVConnectionHandler implements ConnectionHandler {
      */
     @Override
     public void handle(Socket client, int numOfClients) throws IOException {
-        Runnable rr = new KVClient(client, numOfClients);
+        Runnable rr = new KVClient(client, numOfClients, kv_cache);
         try {
             threadpool.addToQueue(rr);
         } catch (InterruptedException e) {

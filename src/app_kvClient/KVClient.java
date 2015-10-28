@@ -58,13 +58,19 @@ public class KVClient implements Runnable {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
+                    // TODO: Do we really need this step for connection teardown ???
                     stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
-                    kvMessage = extractMessage(stringMessage);
-                    // Process the message and do the required backend actions
-                    // If it fails, it returns a GENERAL_ERROR KVMessage
-                    KVMessageImpl kvResponse = processMessage(kvMessage);
-                    // Send appropriate response according to the above backend actions
-                    Utilities.send(kvResponse.getMsgBytes(), outputStream);
+                    if (message==null || stringMessage.equalsIgnoreCase(Constants.CLIENT_QUIT_MESSAGE)) {
+                        isOpen = false;
+                    }
+                    else {
+                        kvMessage = extractMessage(stringMessage);
+                        // Process the message and do the required backend actions
+                        // If it fails, it returns a GENERAL_ERROR KVMessage
+                        KVMessageImpl kvResponse = processMessage(kvMessage);
+                        // Send appropriate response according to the above backend actions
+                        Utilities.send(kvResponse.getMsgBytes(), outputStream);
+                    }
                 } catch (IOException ioe) {
                     /* connection either terminated by the client or lost due to
                      * network problems*/

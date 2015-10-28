@@ -43,6 +43,7 @@ public class KVClient implements Runnable {
     public void run() {
         String message = "";
         String msgForClient = "";
+        // TODO: Infinite Loop? Seriously?
         while (true) {
             try {
                 byte[] recvBytes = Utilities.receive(inputStream);

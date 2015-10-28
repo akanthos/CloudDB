@@ -1,5 +1,8 @@
 package app_kvServer;
 
+import common.messages.KVMessage;
+import common.messages.KVMessageImpl;
+
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,12 +38,14 @@ public class LFUCache {
 
     private static int initialCapacity = 10;
     private static LinkedHashMap<String, CacheEntry> cacheMap = new LinkedHashMap<String, CacheEntry>();
+    private KVPersistenceEngine persistene;
 
-    public LFUCache(int initialCapacity) {
+    public LFUCache(int initialCapacity, KVPersistenceEngine persistence) {
         this.initialCapacity = initialCapacity;
+        this.persistene = persistence;
     }
 
-    public void addCacheEntry(String key, String data) {
+    public KVMessageImpl addCacheEntry(String key, String data) {
         if (!isFull()) {
             CacheEntry temp = new CacheEntry();
             temp.setData(data);
@@ -73,15 +78,50 @@ public class LFUCache {
         return key;
     }
 
-    public String getCacheEntry(String key) {
-        if (cacheMap.containsKey(key))  // cache hit
+    public KVMessageImpl getCacheEntry(String key) {
+        // "This" does the job
+        if (cacheMap.containsKey(key)) {
+            // Cache has the key
+            return new KVMessageImpl(key, cacheMap.get(key), KVMessage.StatusType.GET_SUCCESS);
+        }
+        else {
+            // Cache miss.... Forward request to KVPersistenceEngine.
+            KVMessageImpl result = persistene.get(key);
+            if (result.getStatus().equals(KVMessage.StatusType.GET_SUCCESS)) {
+                // Key found in persistence file. Put it in cache too.
+                if (map.size() < cacheSize) {
+                    map.put(key, result.getValue());
+                }
+                else {
+                    String victimKey = "";
+                    // Find victim, write it to persistence and
+                    // TODO: Write victim to persistence
+                    // Then delete it from cache and add new (k,v)
+                    if (key != null) {
+                        map.remove(victimKey);
+                        map.put(key, result.getValue());
+                    }
+                    else {
+                        logger.error("Couldn't find cache victim");
+                        return new KVMessageImpl("", "", KVMessage.StatusType.GET_ERROR);
+                    }
+                }
+            }
+            else {
+                result = new KVMessageImpl(key, "", KVMessage.StatusType.GET_ERROR );
+            }
+
+            return result;
+
+        }
+        /*if (cacheMap.containsKey(key))  // cache hit
         {
             CacheEntry temp = cacheMap.get(key);
             temp.frequency++;
             cacheMap.put(key, temp);
             return temp.data;
         }
-        return null; // cache miss
+        return null; // cache miss*/
     }
 
     public static boolean isFull() {

@@ -23,7 +23,7 @@ public class KVConnectionHandler implements ConnectionHandler {
     public KVConnectionHandler(KVCache kv_cache, int connections) {
         this.kv_cache = kv_cache;
         //threadpool = new ThreadPool(connections);
-        threadpool = Executors.newFixedThreadPool(4);
+        threadpool = Executors.newFixedThreadPool(connections);
     }
 
     /**

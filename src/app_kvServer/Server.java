@@ -1,6 +1,9 @@
 package app_kvServer;
 
 
+import helpers.StorageException;
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 
 public class Server {
@@ -8,8 +11,9 @@ public class Server {
     private static Integer port, cacheSize;
     private static String displacementStrategy;
     private static final Integer numberOfThreads = 10;
-    static KVCache keyValue_server = null;
+    static KVCache kvCache = null;
     static SocketServer server = null;
+    private static Logger logger = Logger.getLogger(Server.class);
 
     /**
      * @param args
@@ -27,10 +31,10 @@ public class Server {
                     displacementStrategy = args[2];
 
                     System.out.println("Binding Server:");
-                    keyValue_server = new KVCache(cacheSize, displacementStrategy);
+                    kvCache = new KVCache(cacheSize, displacementStrategy);
                     server = new SocketServer("localhost", port);
 
-                    ConnectionHandler handler = new KVConnectionHandler(keyValue_server, numberOfThreads);
+                    ConnectionHandler handler = new KVConnectionHandler(kvCache, numberOfThreads);
                     server.addHandler(handler);
 
                     server.connect();
@@ -42,10 +46,13 @@ public class Server {
                     printHelp();
                 }
             } catch (NumberFormatException e) {
-                System.out.println("Cannot parse port number or cache size");
+                logger.error("Cannot parse port number or cache size", e);
                 printHelp();
             } catch (IOException e) {
-                System.out.println("Cannot open socket... Terminating");
+                logger.error("Cannot open socket... Terminating", e);
+            } catch (StorageException e) {
+                logger.error(e.getErrorMessage(), e);
+                e.printStackTrace();
             }
         }
         else {

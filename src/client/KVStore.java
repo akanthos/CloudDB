@@ -44,8 +44,12 @@ public class KVStore implements KVCommInterface {
                 clientSocket = new Socket(address, port);
                 inStream = clientSocket.getInputStream();
                 outStream = clientSocket.getOutputStream();
-                System.out.println("Server connection established");
+                logger.info("Server connection established");
                 isConnected = true;
+                // Sending messages.
+                put("key1", "value1");
+                get("key1");
+                put("key2", "value2");
             } catch (NumberFormatException e) {
                 logger.error("Number Format Exception", e);
                 throw new CannotConnectException(ErrorMessages.ERROR_INTERNAL);
@@ -68,6 +72,7 @@ public class KVStore implements KVCommInterface {
             System.out.println("Try the <connect> command first");
         } else {
             try {
+                Utilities.send(Constants.CLIENT_QUIT_MESSAGE, outStream);
                 inStream.close();
                 outStream.close();
                 clientSocket.close();
@@ -75,6 +80,8 @@ public class KVStore implements KVCommInterface {
             } catch (IOException e) {
                 logger.error(e);
                 System.out.println("Error: " + e.getMessage());
+            } catch (CannotConnectException e) {
+                logger.error(e);
             } finally {
                 isConnected = false;
                 host = "";
@@ -98,6 +105,7 @@ public class KVStore implements KVCommInterface {
         KVMessageImpl kvMessage;
         kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);
         try {
+            logger.debug(String.format("Sending message: %s", kvMessage.toString()));
             String response = send(kvMessage.toString());
             KVMessageImpl kvMessageFromServer = new KVMessageImpl(response);
             return kvMessageFromServer;
@@ -121,6 +129,7 @@ public class KVStore implements KVCommInterface {
         KVMessageImpl kvMessage;
         kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.GET);
         try {
+            logger.debug(String.format("Sending message: %s", kvMessage.toString()));
             String response = send(kvMessage.toString());
             KVMessageImpl kvMessageFromServer = new KVMessageImpl(response);
             return kvMessageFromServer;

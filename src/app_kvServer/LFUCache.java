@@ -7,18 +7,18 @@ import java.util.Set;
 
 public class LFUCache {
 
-    class CacheEntry
-    {
+    class CacheEntry {
         private String data;
         private int frequency;
 
         // default constructor
-        private CacheEntry()
-        {}
+        private CacheEntry() {
+        }
 
         public String getData() {
             return data;
         }
+
         public void setData(String data) {
             this.data = data;
         }
@@ -26,6 +26,7 @@ public class LFUCache {
         public int getFrequency() {
             return frequency;
         }
+
         public void setFrequency(int frequency) {
             this.frequency = frequency;
         }
@@ -35,23 +36,18 @@ public class LFUCache {
     private static int initialCapacity = 10;
     private static LinkedHashMap<String, CacheEntry> cacheMap = new LinkedHashMap<String, CacheEntry>();
 
-    public LFUCache(int initialCapacity)
-    {
+    public LFUCache(int initialCapacity) {
         this.initialCapacity = initialCapacity;
     }
 
-    public void addCacheEntry(String key, String data)
-    {
-        if(!isFull())
-        {
+    public void addCacheEntry(String key, String data) {
+        if (!isFull()) {
             CacheEntry temp = new CacheEntry();
             temp.setData(data);
             temp.setFrequency(0);
 
             cacheMap.put(key, temp);
-        }
-        else
-        {
+        } else {
             String entryKeyToBeRemoved = getLFUKey();
             cacheMap.remove(entryKeyToBeRemoved);
 
@@ -63,15 +59,12 @@ public class LFUCache {
         }
     }
 
-    public String getLFUKey()
-    {
+    public String getLFUKey() {
         String key = "";
         int minFreq = Integer.MAX_VALUE;
 
-        for(Map.Entry<String, CacheEntry> entry : cacheMap.entrySet())
-        {
-            if(minFreq > entry.getValue().frequency)
-            {
+        for (Map.Entry<String, CacheEntry> entry : cacheMap.entrySet()) {
+            if (minFreq > entry.getValue().frequency) {
                 key = entry.getKey();
                 minFreq = entry.getValue().frequency;
             }
@@ -80,9 +73,8 @@ public class LFUCache {
         return key;
     }
 
-    public String getCacheEntry(String key)
-    {
-        if(cacheMap.containsKey(key))  // cache hit
+    public String getCacheEntry(String key) {
+        if (cacheMap.containsKey(key))  // cache hit
         {
             CacheEntry temp = cacheMap.get(key);
             temp.frequency++;
@@ -92,9 +84,8 @@ public class LFUCache {
         return null; // cache miss
     }
 
-    public static boolean isFull()
-    {
-        if(cacheMap.size() == initialCapacity)
+    public static boolean isFull() {
+        if (cacheMap.size() == initialCapacity)
             return true;
 
         return false;
@@ -106,8 +97,8 @@ public class LFUCache {
         Iterator i = set.iterator();
 
         // Display elements
-        while(i.hasNext()) {
-            Map.Entry me = (Map.Entry)i.next();
+        while (i.hasNext()) {
+            Map.Entry me = (Map.Entry) i.next();
             System.out.print(me.getKey() + ": ");
             CacheEntry x = (CacheEntry) me.getValue();
             System.out.println(x.getData());

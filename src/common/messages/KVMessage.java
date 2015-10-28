@@ -11,7 +11,8 @@ public interface KVMessage {
 		PUT_UPDATE, 	/* Put - request successful, i.e. value updated */
 		PUT_ERROR, 		/* Put - request not successful */
 		DELETE_SUCCESS, /* Delete - request successful */
-		DELETE_ERROR 	/* Delete - request successful */
+		DELETE_ERROR, 	/* Delete - request successful */
+		GENERAL_ERROR 	/* If an unexpected situation is encountered */
 	}
 
 	/**
@@ -31,6 +32,8 @@ public interface KVMessage {
 	 * response types and error types associated to the message.
 	 */
 	public StatusType getStatus();
+
+	public void setStatus(StatusType statusType);
 	
 }
 

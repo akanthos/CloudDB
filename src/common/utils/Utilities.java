@@ -15,6 +15,8 @@ import java.nio.charset.StandardCharsets;
 public class Utilities {
 
     private static Logger logger = Logger.getLogger(Utilities.class);
+    private static final int BUFFER_SIZE = 1024;
+    private static final int DROP_SIZE = 128 * BUFFER_SIZE;
 
     static {
         PropertyConfigurator.configure("conf/log.config");
@@ -60,7 +62,6 @@ public class Utilities {
     public static byte[] receive(InputStream input) throws CannotConnectException, IOException {
 
         int index = 0;
-        int BUFFER_SIZE = 1024;
         byte[] msgBytes = null, tmp = null;
         byte[] bufferBytes = new byte[BUFFER_SIZE];
 
@@ -92,7 +93,7 @@ public class Utilities {
             index++;
 
 			/* stop reading is DROP_SIZE is reached */
-            if(msgBytes != null && msgBytes.length + index >= 128*1024) {
+            if(msgBytes != null && msgBytes.length + index >= DROP_SIZE) {
                 reading = false;
             }
 

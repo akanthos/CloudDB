@@ -3,7 +3,6 @@ package app_kvClient;
 import app_kvServer.KVCache;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
-import common.messages.TextMessage;
 import common.utils.Utilities;
 import helpers.CannotConnectException;
 import helpers.Constants;
@@ -46,21 +45,24 @@ public class KVClient implements Runnable {
     @Override
     public void run() {
         try {
-            TextMessage message = new TextMessage(
-                    "Connection to MSRG Echo server established: "
-                            + clientSocket.getLocalAddress() + " / "
-                            + clientSocket.getLocalPort());
-            Utilities.send(message.getMsgBytes(), outputStream);
+            String initialMessage = "Connection to MSRG Echo server established: "
+                    + clientSocket.getLocalAddress() + " / "
+                    + clientSocket.getLocalPort();
+            Utilities.send(initialMessage, outputStream);
+            /* There is also the TextMessage way to send the initial message.
+               Kept it in case it will be needed */
+            // TextMessage message = new TextMessage(initialMessage);
+            // Utilities.send(message.getMsgBytes(), outputStream);
             KVMessage kvMessage;
             byte[] byteMessage;
             String stringMessage;
-            while (isOpen /* TODO: termination condition */) {
+            while (isOpen /* TODO: is termination condition enough? */) {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
                     // TODO: Do we really need this step for connection teardown ???
                     stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
-                    if (message==null || stringMessage.equalsIgnoreCase(Constants.CLIENT_QUIT_MESSAGE)) {
+                    if (stringMessage==null || stringMessage.equalsIgnoreCase(Constants.CLIENT_QUIT_MESSAGE)) {
                         isOpen = false;
                     }
                     else {

@@ -29,9 +29,14 @@ public class KVMessageImpl implements KVMessage {
         try {
             String[] msgParts = messageString.split(":");
             this.status = StatusType.valueOf(msgParts[0]);
-            String[] keyAndValue = messageString.split(",");
+            String[] keyAndValue = msgParts[1].split(",");
             this.key = keyAndValue[0];
-            this.value = keyAndValue[1];
+            // For GET requests, value would be null
+            if (keyAndValue.length > 1) {
+                this.value = keyAndValue[1];
+            } else {
+                this.value = "";
+            }
         } catch (Exception e) {
             logger.error(String.format("Cannot parse message string: %s", messageString), e);
             throw new Exception("Unable to parse message string");
@@ -61,6 +66,7 @@ public class KVMessageImpl implements KVMessage {
         this.value = value;
     }
 
+    @Override
     public void setStatus(StatusType status) {
         this.status = status;
     }

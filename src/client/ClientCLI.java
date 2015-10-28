@@ -146,6 +146,8 @@ public class ClientCLI {
 				engine.send(msg);
 			} catch (CannotConnectException e) {
 				System.out.println("Error: " + e.getErrorMessage());
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		} else {
 			System.out.println("No connection to server yet :-(\n" + "Try the <connect> command first");

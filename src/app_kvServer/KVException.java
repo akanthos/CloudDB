@@ -1,16 +1,18 @@
 package app_kvServer;
 
 
+import common.messages.KVMessage;
+
 public class KVException extends Exception {
 
     private static final long serialVersionUID = 1L;
-    private KVConnectionMessage msg = null;
+    private KVMessage msg = null;
 
-    public final KVConnectionMessage getMsg() {
+    public final KVMessage getMsg() {
         return msg;
     }
 
-    public KVException(KVConnectionMessage msg) {
+    public KVException(KVMessage msg) {
         this.msg = msg;
     }
 

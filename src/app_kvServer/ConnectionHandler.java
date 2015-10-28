@@ -7,5 +7,7 @@ import java.net.Socket;
  * Connection Handler interface
  */
 public interface ConnectionHandler {
-    public void handle(Socket client) throws IOException;
+
+    public void handle(Socket client, int numOfClients) throws IOException;
+
 }

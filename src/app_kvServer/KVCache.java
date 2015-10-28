@@ -26,9 +26,7 @@ public class KVCache {
     public KVCache (final int cacheSize, String Policy) {
 
         this.cacheSize = cacheSize;
-        policy = CachePolicy.valueOf(Policy.toUpperCase());
-
-        switch (policy) {
+        switch (policy = CachePolicy.valueOf(Policy)) {
             case LRU:
                 map = new LinkedHashMap<String, String>(cacheSize +1, 1F, true) {
                     // (an anonymous inner class)

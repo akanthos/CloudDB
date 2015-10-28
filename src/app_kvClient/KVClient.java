@@ -153,9 +153,12 @@ public class KVClient implements Runnable {
         // TODO: Analyse kvResponse, if put/get and to the appropriate backend stuff
         if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
             // Do the GET
+            String value = kvCache.get(kvMessage.getKey());
             response = new KVMessageImpl("", "", KVMessage.StatusType.PUT_SUCCESS); // Dummy
         } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
             // Do the PUT
+            // TODO: error reporting and handling needed from KVCache
+            kvCache.put(kvMessage.getKey(), kvMessage.getValue());
             response = new KVMessageImpl("", "", KVMessage.StatusType.PUT_SUCCESS); // Dummy
         } else {
             logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));

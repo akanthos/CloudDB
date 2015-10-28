@@ -7,6 +7,7 @@ public class Server {
 
     private static Integer port, cacheSize;
     private static String displacementStrategy;
+    private static final Integer numberOfThreads = 10;
     static KVCache keyValue_server = null;
     static SocketServer server = null;
 
@@ -29,7 +30,7 @@ public class Server {
                     keyValue_server = new KVCache(cacheSize, displacementStrategy);
                     server = new SocketServer("localhost", port);
 
-                    ConnectionHandler handler = new KVConnectionHandler(keyValue_server, 10);
+                    ConnectionHandler handler = new KVConnectionHandler(keyValue_server, numberOfThreads);
                     server.addHandler(handler);
 
                     server.connect();

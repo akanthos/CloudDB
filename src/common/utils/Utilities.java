@@ -11,9 +11,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Created by sreenath on 24/10/15.
- */
+
 public class Utilities {
 
     private static Logger logger = Logger.getLogger(Utilities.class);
@@ -59,24 +57,60 @@ public class Utilities {
      * @return
      * @throws CannotConnectException
      */
-    public static byte[] receive(InputStream inputStream) throws CannotConnectException {
-        try {
-            byte[] answer = new byte[128*1024];
-            byte[] buffer = new byte[128*1024];
-            Integer count;
-            count = inputStream.read(buffer);
-            byte[] finalAnswer = new byte[count];
-            System.arraycopy(answer, 0, finalAnswer, 0, count);
-            return buffer;
-        } catch (UnsupportedEncodingException e) {
-            logger.error(e);
-            throw new CannotConnectException(ErrorMessages.ERROR_INVALID_MESSAGE_FROM_SERVER);
+    public static byte[] receive(InputStream input) throws CannotConnectException, IOException {
+
+        int index = 0;
+        int BUFFER_SIZE = 1024;
+        byte[] msgBytes = null, tmp = null;
+        byte[] bufferBytes = new byte[BUFFER_SIZE];
+
+		/* read first char from stream */
+        byte read = (byte) input.read();
+        boolean reading = true;
+        System.out.print((char)read);
+
+        while(read != 13 && reading) {/* carriage return */
+			/* if buffer filled, copy to msg array */
+            if(index == BUFFER_SIZE) {
+                if(msgBytes == null){
+                    tmp = new byte[BUFFER_SIZE];
+                    System.arraycopy(bufferBytes, 0, tmp, 0, BUFFER_SIZE);
+                } else {
+                    tmp = new byte[msgBytes.length + BUFFER_SIZE];
+                    System.arraycopy(msgBytes, 0, tmp, 0, msgBytes.length);
+                    System.arraycopy(bufferBytes, 0, tmp, msgBytes.length,
+                            BUFFER_SIZE);
+                }
+
+                msgBytes = tmp;
+                bufferBytes = new byte[BUFFER_SIZE];
+                index = 0;
+            }
+
+			/* only read valid characters, i.e. letters and constants */
+            bufferBytes[index] = read;
+            index++;
+
+			/* stop reading is DROP_SIZE is reached */
+            if(msgBytes != null && msgBytes.length + index >= 128*1024) {
+                reading = false;
+            }
+
+			/* read next char from stream */
+            read = (byte) input.read();
         }
-        catch(Exception e){
-            System.out.println("An Unknown Error has Occured");
-            e.printStackTrace();
+        if(msgBytes == null){
+            tmp = new byte[index];
+            System.arraycopy(bufferBytes, 0, tmp, 0, index);
+        } else {
+            tmp = new byte[msgBytes.length + index];
+            System.arraycopy(msgBytes, 0, tmp, 0, msgBytes.length);
+            System.arraycopy(bufferBytes, 0, tmp, msgBytes.length, index);
         }
-        return null;
+        String tt = new String(tmp, "US-ASCII").trim();
+
+        return tmp;
+
     }
 
 

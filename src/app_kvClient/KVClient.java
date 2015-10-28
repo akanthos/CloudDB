@@ -40,9 +40,8 @@ public class KVClient implements Runnable {
                 byte[] recvBytes = Utilities.receive(inputStream);
                 message = new String(recvBytes, Constants.DEFAULT_ENCODING).trim();
                 System.out.println(String.format("Client %d: %s", clientNumber, message));
-                // TODO: parse and persist the message
 
-                Utilities.send(recvBytes, outputStream);
+                Utilities.send(message, outputStream);
             } catch (CannotConnectException e) {
                 e.printStackTrace();
                 logger.error("Error receiving messages", e);

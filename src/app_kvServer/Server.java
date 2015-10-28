@@ -14,9 +14,10 @@ public class Server {
      */
     public static void main(String[] args) throws IOException {
 
+        //Primary
         System.out.println("Binding Server:");
         keyValue_server = new KVCache(3, "fifo");
-        server = new SocketServer("localhost", 8080);
+        server = new SocketServer("localhost", 5673);
         ConnectionHandler handler = new KVConnectionHandler(keyValue_server, 10);
 
         server.addHandler(handler);

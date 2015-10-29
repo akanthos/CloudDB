@@ -43,7 +43,9 @@ public class KVPersistenceEngine {
      * @return    the value for this key, or null if no value with this key exists in the cache.
      */
     public KVMessageImpl get (String key) {
-        // TODO: Do the put.
+        // TODO: Do the get.
+        // TODO: If key exists then return GET_SUCCESS.
+        // TODO: If key doesn't exist then return GET_ERROR.
         return new KVMessageImpl("", "", KVMessage.StatusType.GET_SUCCESS); // Dummy
     }
 
@@ -57,6 +59,19 @@ public class KVPersistenceEngine {
      */
     public KVMessageImpl put (String key, String value) {
         // TODO: Do the put.
+        // TODO: If key doesn't exist then return PUT_SUCCESS.
+        // TODO: If key exists then return PUT_UPDATE.
+        // TODO: If there is any trouble return PUT_ERROR.
         return new KVMessageImpl("", "", KVMessage.StatusType.PUT_SUCCESS); // Dummy
     }
+
+
+    public KVMessageImpl remove (String key) {
+        // TODO: Do the remove.
+        // TODO: If key exists then return DELETE_SUCCESS.
+        // TODO: If key doesn't exist then return DELETE_ERROR.
+        return new KVMessageImpl("", "", KVMessage.StatusType.DELETE_SUCCESS); // Dummy
+    }
+
+
 }

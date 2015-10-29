@@ -22,10 +22,26 @@ public class KVCache {
 
     private LinkedHashMap<String,String> map;
     private LFUCache lfu;
-    private KVPersistenceEngine persistene;
+    private KVPersistenceEngine persistence;
     final Integer cacheSize;
     CachePolicy policy;
     private static Logger logger = Logger.getLogger(KVCache.class);
+
+
+
+    /* IMPORTANT NOTE:
+     *  From http://docs.oracle.com/javase/7/docs/api/java/util/LinkedHashMap.html
+     *  Note that this implementation is not synchronized.
+     *  If multiple threads access a linked hash map concurrently, and at least one of the threads modifies the
+     *  map structurally, it must be synchronized externally. This is typically accomplished by synchronizing on
+     *  some object that naturally encapsulates the map. If no such object exists, the map should be "wrapped" using
+     *  the Collections.synchronizedMap method. This is best done at creation time, to prevent accidental
+     *  unsynchronized access to the map:
+     *          Map m = Collections.synchronizedMap(new LinkedHashMap(...));
+     *  TODO: Should we consider that method??
+     * /
+
+
 
 
 
@@ -52,14 +68,14 @@ public class KVCache {
                         return size() > KVCache.this.cacheSize; }};
                 break;
             case LFU:
-                lfu = new LFUCache(cacheSize, persistene);
+                lfu = new LFUCache(cacheSize, persistence);
                 break;
             default:
                 System.out.println("No such Cache replacement policy.");
                 break;
 
         }
-        this.persistene = new KVPersistenceEngine();
+        this.persistence = new KVPersistenceEngine();
 
     }
 
@@ -72,6 +88,7 @@ public class KVCache {
     public synchronized KVMessageImpl get (String key) {
 
         if (policy == LFU) {
+            // LFU does the job
             return lfu.getCacheEntry(key); // Just forward the request to the other cache
         }
         else {
@@ -82,10 +99,10 @@ public class KVCache {
             }
             else {
                 // Cache miss.... Forward request to KVPersistenceEngine.
-                KVMessageImpl result = persistene.get(key);
+                KVMessageImpl result = persistence.get(key);
                 if (result.getStatus().equals(KVMessage.StatusType.GET_SUCCESS)) {
                     // Key found in persistence file. Put it in cache too.
-                    if (map.size() < cacheSize) {
+                    if (!isFull()) {
                         map.put(key, result.getValue());
                     }
                     else {
@@ -94,11 +111,11 @@ public class KVCache {
 
                         // Write victim to persistence
                         // Then delete it from cache and add new (k,v)
-                        if (!key.isEmpty()) {
+                        if (!victimKey.isEmpty()) {
                             String victimValue = map.get(victimKey);
                             map.remove(victimKey);
                             map.put(key, result.getValue());
-                            persistene.put(victimKey, victimValue);
+                            persistence.put(victimKey, victimValue);
                         }
                         else {
                             logger.error("Couldn't find cache victim");
@@ -128,67 +145,75 @@ public class KVCache {
      * @param value  a value, associated with the specified key.
      */
     public synchronized KVMessageImpl put (String key, String value) {
+
+        // TODO: Delete is missing (if key is "")
+
         if (policy == LFU) {
             return lfu.addCacheEntry(key, value); // Just forward the request to the other cache
         }
         else {
             // "This" does the job
-            if (map.containsKey(key)) {
-                // Cache has the key
-                return new KVMessageImpl(key, map.get(key), KVMessage.StatusType.PUT_UPDATE);
+            if (value.equals("")) {
+                map.remove(key);
+                return persistence.remove(key);
             }
             else {
-                // Cache miss.... Forward request to KVPersistenceEngine.
-                KVMessageImpl result = persistene.put(key, value);
-                if (result.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS) || result.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) {
-                    // Key was written in persistence file. Put it in cache too.
-                    // Or key found and updated in persistence file. Put it in cache too. :-)
+                if (map.containsKey(key)) {
+                    map.replace(key, value);
+                    //return persistence.put(key, value); // Write-through policy
+                    return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_SUCCESS);
+                } else {
+                    // Cache miss.... Forward request to KVPersistenceEngine.
+                    KVMessageImpl result = persistence.put(key, value);
+                    if (result.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS) || result.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) {
+                        // Key was written in persistence file. Put it in cache too.
+                        // Or key found and updated in persistence file. Put it in cache too. :-)
 
-                    if (map.size() < cacheSize) {
-                        map.put(key, value);
-                    }
-                    else {
-                        // Find victim, write it to persistence and
-                        String victimKey = findVictimKey();
+                        // The rest for Write-allocate policy
+                        if (!isFull()) {
+                            map.put(key, value);
+                        } else {
+                            // Find victim, write it to persistence and
+                            String victimKey = findVictimKey();
 
-                        // Write victim to persistence
-                        // Then delete it from cache and add new (k,v)
-                        if (!key.isEmpty()) {
-                            String victimValue = map.get(victimKey);
-                            map.remove(victimKey);
-                            map.put(key, result.getValue());
-                            persistene.put(victimKey, victimValue);
+                            // Write victim to persistence
+                            // Then delete it from cache and add new (k,v)
+                            if (!key.isEmpty()) {
+                                String victimValue = map.get(victimKey);
+                                map.remove(victimKey);
+                                map.put(key, result.getValue());
+                                persistence.put(victimKey, victimValue);
+                            } else {
+                                logger.error("Couldn't find cache victim");
+                                return new KVMessageImpl("", "", KVMessage.StatusType.PUT_ERROR);
+                            }
                         }
-                        else {
-                            logger.error("Couldn't find cache victim");
-                            return new KVMessageImpl("", "", KVMessage.StatusType.PUT_ERROR);
-                        }
+                    } else {
+                        logger.error("Error while putting value to persistence");
                     }
-                }
-                else {
-                    result = new KVMessageImpl(key, value, KVMessage.StatusType.PUT_ERROR );
-                }
 
-                return result;
+                    return result;
 
+                }
             }
-
         }
     }
 
     private String findVictimKey() {
-        // TODO: Implement victim strategies
+        // TODO: Implement victim strategies. Is that enough? Do we need switch?
         String victimKey = new String();
-        switch (policy) {
+        Iterator it = map.entrySet().iterator();
+        Map.Entry pair = (Map.Entry)it.next();
+        victimKey = pair.getKey().toString();
+        /*switch (policy) {
             case FIFO:
-                victimKey = ""; // Dummy Same algorithm as above
+                 // Dummy Same algorithm as above
                 break;
             case LRU:
-                victimKey = ""; // Dummy
                 break;
             default:
                 logger.error("Should not be reached. Something is wrong with policies.");
-        }
+        }*/
         return victimKey;
     }
 
@@ -207,6 +232,13 @@ public class KVCache {
             }
         }
 
+    }
+
+    public boolean isFull() {
+        if (map.size() == cacheSize)
+            return true;
+
+        return false;
     }
 
 

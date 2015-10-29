@@ -52,6 +52,7 @@ public class KVCache {
     public KVCache (final int cacheSize, String Policy) throws StorageException {
 
         this.cacheSize = cacheSize;
+        this.persistence = new KVPersistenceEngine();
         switch (policy = valueOf(Policy)) {
             case LRU:
                 map = new LinkedHashMap<String, String>(cacheSize +1, 1F, true) {
@@ -75,7 +76,7 @@ public class KVCache {
                 break;
 
         }
-        this.persistence = new KVPersistenceEngine();
+
 
     }
 
@@ -153,13 +154,13 @@ public class KVCache {
         }
         else {
             // "This" does the job
-            if (value.equals("")) {
+            if (value.equals("null")) {
                 map.remove(key);
                 return persistence.remove(key);
             }
             else {
                 if (map.containsKey(key)) {
-                    map.replace(key, value);
+                    map.put(key, value);
                     //return persistence.put(key, value); // Write-through policy
                     return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_SUCCESS);
                 } else {
@@ -247,7 +248,7 @@ public class KVCache {
 
         KVCache c = null;
         try {
-            c = new KVCache(3, "LFU");
+            c = new KVCache(3, "LRU");
         } catch (StorageException e) {
             e.printStackTrace();
         }
@@ -256,6 +257,7 @@ public class KVCache {
         c.put ("3", "three");
         c.put ("4", "four");
 
+        System.out.println("=============");
         if (c.get("2") == null) throw new Error();
         c.put ("5", "five");
         c.put ("4", "second four");

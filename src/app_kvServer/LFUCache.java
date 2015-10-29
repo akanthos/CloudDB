@@ -54,7 +54,7 @@ public class LFUCache {
         if (map.containsKey(key)) {
             // Cache has the key
             CacheEntry oldCacheEntry = map.get(key);
-     //       map.replace(key, new CacheEntry(oldCacheEntry.getValue(), oldCacheEntry.getFrequency()+1));
+            map.put(key, new CacheEntry(oldCacheEntry.getValue(), oldCacheEntry.getFrequency()+1));
             return new KVMessageImpl(key, oldCacheEntry.getValue(), KVMessage.StatusType.GET_SUCCESS);
         }
         else {
@@ -105,7 +105,7 @@ public class LFUCache {
         // TODO: Delete is missing (if key is "")
 
         // "This" does the job
-        if (value.equals("")) {
+        if (value.equals("null")) {
             map.remove(key);
             return persistence.remove(key);
         }
@@ -113,7 +113,7 @@ public class LFUCache {
             if (map.containsKey(key)) {
                 // Cache has the key
                 CacheEntry oldEntry = map.get(key);
-   //             map.replace(key, new CacheEntry(value, oldEntry.getFrequency()+1));
+                map.put(key, new CacheEntry(value, oldEntry.getFrequency()+1));
                 //return persistence.put(key, value); // Write-through policy
                 return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_SUCCESS);
             } else {

@@ -5,31 +5,34 @@ import common.messages.KVMessageImpl;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Properties;
 
 /**
  * Created by aacha on 10/28/2015.
  */
 public class KVPersistenceEngine {
+
     private Properties prop;
-    private final String fileName = "data.persistence";
-    private InputStream fileStream;
+    private final String fileName = "data.store";
+    private InputStream input = null;
+    private OutputStream output = null;
     private static Logger logger = Logger.getLogger(KVPersistenceEngine.class);
 
 
     public KVPersistenceEngine() throws StorageException {
         try {
             // Initialize properties file
+            File storeFile = new File(fileName);
             prop = new Properties();
-            fileStream = getClass().getClassLoader().getResourceAsStream(fileName);
-            if (fileStream != null) {
-                prop.load(fileStream);
+            if(!storeFile.exists()) {
+                storeFile.createNewFile();
+                System.out.println("Created file!");
             }
-            else {
-                // TODO: Create new file
-            }
+            input = new FileInputStream(fileName);
+            output = new FileOutputStream(fileName);
+            prop.load(input);
+
         } catch (IOException e) {
             logger.error("Cannot initialize persistence file", e);
             throw new StorageException("Cannot initialize persistence file");
@@ -42,11 +45,14 @@ public class KVPersistenceEngine {
      * @param key the key whose the associated value is to be returned by the function.
      * @return    the value for this key, or null if no value with this key exists in the cache.
      */
-    public KVMessageImpl get (String key) {
-        // TODO: Do the get.
-        // TODO: If key exists then return GET_SUCCESS.
-        // TODO: If key doesn't exist then return GET_ERROR.
-        return new KVMessageImpl("", "", KVMessage.StatusType.GET_SUCCESS); // Dummy
+    public KVMessageImpl get (String key){
+
+        String resultValue = prop.getProperty(key);
+        if (resultValue !=null)
+            return new KVMessageImpl(key, resultValue, KVMessage.StatusType.GET_SUCCESS);
+        else
+            return new KVMessageImpl(key, "", KVMessage.StatusType.GET_ERROR);
+
     }
 
     /**
@@ -57,20 +63,44 @@ public class KVPersistenceEngine {
      * @param key    the key with which the specified value.
      * @param value  a value, associated with the specified key.
      */
-    public KVMessageImpl put (String key, String value) {
-        // TODO: Do the put.
-        // TODO: If key doesn't exist then return PUT_SUCCESS.
-        // TODO: If key exists then return PUT_UPDATE.
-        // TODO: If there is any trouble return PUT_ERROR.
-        return new KVMessageImpl("", "", KVMessage.StatusType.PUT_SUCCESS); // Dummy
+    public KVMessageImpl put (String key, String value){
+
+        try {
+
+            String oldValue = prop.getProperty(key);
+            prop.setProperty(key, value);
+            prop.put(key, value);
+            output = new FileOutputStream(fileName);
+            prop.store(output, null);
+            String newValue = prop.getProperty(key);
+
+            return oldValue==null ? new KVMessageImpl(key, newValue, KVMessage.StatusType.PUT_SUCCESS)
+                    : new KVMessageImpl(key, newValue, KVMessage.StatusType.PUT_UPDATE);
+
+        } catch (IOException e) {
+            logger.error("Cannot write to persistence file", e);
+            return new KVMessageImpl(key, "", KVMessage.StatusType.PUT_ERROR);
+        }
+
     }
 
 
-    public KVMessageImpl remove (String key) {
-        // TODO: Do the remove.
-        // TODO: If key exists then return DELETE_SUCCESS.
-        // TODO: If key doesn't exist then return DELETE_ERROR.
-        return new KVMessageImpl("", "", KVMessage.StatusType.DELETE_SUCCESS); // Dummy
+    public KVMessageImpl remove (String key){
+
+        try {
+            String resultValue = prop.getProperty(key);
+            if (prop.remove(key) == null)
+                return new KVMessageImpl(key, resultValue, KVMessage.StatusType.DELETE_ERROR);
+            output = new FileOutputStream(fileName);
+            prop.store(output, null);
+            return new KVMessageImpl(key, resultValue, KVMessage.StatusType.DELETE_SUCCESS);
+        }
+        catch (IOException e){
+            logger.error("Cannot remove entry from persistence file", e);
+            return new KVMessageImpl(key, "", KVMessage.StatusType.DELETE_ERROR);
+        }
+
+
     }
 
 

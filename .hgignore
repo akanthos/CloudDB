@@ -13,3 +13,4 @@ clouddb.iml
 
 # Class files
 out/
+data.store

@@ -115,7 +115,7 @@ public class LFUCache {
                 CacheEntry oldEntry = map.get(key);
                 map.put(key, new CacheEntry(value, oldEntry.getFrequency()+1));
                 //return persistence.put(key, value); // Write-through policy
-                return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_SUCCESS);
+                return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_UPDATE);
             } else {
                 // Cache miss.... Forward request to KVPersistenceEngine.
                 KVMessageImpl result = persistence.put(key, value);

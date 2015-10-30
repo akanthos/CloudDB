@@ -73,17 +73,18 @@ public class KVStore implements KVCommInterface {
         } else {
             try {
                 // TODO: Maybe we shouldnt send the following text message. It complicates the protocol and a simple .close() should be enough
-                Utilities.send(Constants.CLIENT_QUIT_MESSAGE, outStream);
+                //Utilities.send(Constants.CLIENT_QUIT_MESSAGE, outStream);
                 inStream.close();
                 outStream.close();
                 clientSocket.close();
+                clientSocket = null;
                 logger.info("Connection with server: " +host+ " terminated");
             } catch (IOException e) {
                 logger.error(e);
                 System.out.println("Error: " + e.getMessage());
-            } catch (CannotConnectException e) {
+            } /*catch (CannotConnectException e) {
                 logger.error(e);
-            } finally {
+            } */finally {
                 isConnected = false;
                 host = "";
                 port = 0;

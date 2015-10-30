@@ -45,14 +45,6 @@ public class KVClient implements Runnable {
     @Override
     public void run() {
         try {
-            /*String initialMessage = "Connection to MSRG Echo server established: "
-                    + clientSocket.getLocalAddress() + " / "
-                    + clientSocket.getLocalPort();
-            Utilities.send(initialMessage, outputStream);*/
-            /* There is also the TextMessage way to send the initial message.
-               Kept it in case it will be needed */
-            // TextMessage message = new TextMessage(initialMessage);
-            // Utilities.send(message.getMsgBytes(), outputStream);
             KVMessage kvMessage;
             byte[] byteMessage;
             String stringMessage;
@@ -62,17 +54,17 @@ public class KVClient implements Runnable {
                     byteMessage = Utilities.receive(inputStream);
                     // TODO: Do we really need this step for connection teardown ???
                     stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
-                    if (stringMessage==null || stringMessage.equalsIgnoreCase(Constants.CLIENT_QUIT_MESSAGE)) {
+                    /*if (stringMessage==null || stringMessage.equalsIgnoreCase(Constants.CLIENT_QUIT_MESSAGE)) {
                         isOpen = false;
                     }
-                    else {
+                    else {*/
                         kvMessage = extractMessage(stringMessage);
                         // Process the message and do the required backend actions
                         // If it fails, it returns a GENERAL_ERROR KVMessage
                         KVMessageImpl kvResponse = processMessage(kvMessage);
                         // Send appropriate response according to the above backend actions
                         Utilities.send(kvResponse.getMsgBytes(), outputStream);
-                    }
+                    /*}*/
                 } catch (IOException ioe) {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
@@ -81,6 +73,7 @@ public class KVClient implements Runnable {
                 } catch (Exception e) { // TODO: Maybe create a specific exception for KVMessage constructor
                     logger.error("Unable to parse string message from client");
                     e.printStackTrace();
+                    isOpen = false;
                 }
 
             }
@@ -148,7 +141,7 @@ public class KVClient implements Runnable {
         try {
             kvMessage = new KVMessageImpl(messageString);
         } catch (Exception e) {
-            logger.error(String.format("Unable to process message from client %d. Message: %s", clientNumber, messageString), e);
+            logger.error(String.format("Unable to process message from client %d.", clientNumber), e);
             kvMessage.setStatus(KVMessage.StatusType.GENERAL_ERROR);
         }
         return kvMessage;

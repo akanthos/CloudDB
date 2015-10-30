@@ -14,3 +14,4 @@ clouddb.iml
 # Class files
 out/
 data.store
+testing\testing.iml

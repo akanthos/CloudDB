@@ -5,7 +5,7 @@ import common.messages.KVMessage;
 public interface KVCommInterface {
 
 	/**
-	 * Establishes a connection to the KV Server.
+	 * Establishes a connection to the KV KVServer.
 	 * 
 	 * @throws Exception
 	 *             if connection could not be established.

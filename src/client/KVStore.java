@@ -44,7 +44,7 @@ public class KVStore implements KVCommInterface {
                 clientSocket = new Socket(address, port);
                 inStream = clientSocket.getInputStream();
                 outStream = clientSocket.getOutputStream();
-                logger.info("Server connection established");
+                logger.info("KVServer connection established");
                 isConnected = true;
                 // Sending messages.
                 put("key1", "value1");
@@ -59,7 +59,7 @@ public class KVStore implements KVCommInterface {
             }
         }
         catch (UnknownHostException e) {
-            logger.error("Server hostname cannot be resolved", e);
+            logger.error("KVServer hostname cannot be resolved", e);
             throw new CannotConnectException(ErrorMessages.ERROR_CANNOT_RESOLVE_HOSTNAME);
         }
 		

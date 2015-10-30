@@ -5,13 +5,14 @@ import helpers.MessageCommands;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 /**
  * Created by sreenath on 27/10/15.
  */
-public class KVMessageImpl implements KVMessage {
+public class KVMessageImpl implements KVMessage, Serializable {
 
     String key;
     String value;

@@ -162,7 +162,7 @@ public class KVCache {
                 if (map.containsKey(key)) {
                     map.put(key, value);
                     //return persistence.put(key, value); // Write-through policy
-                    return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_SUCCESS);
+                    return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_UPDATE);
                 } else {
                     // Cache miss.... Forward request to KVPersistenceEngine.
                     KVMessageImpl result = persistence.put(key, value);

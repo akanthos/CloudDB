@@ -45,10 +45,10 @@ public class KVClient implements Runnable {
     @Override
     public void run() {
         try {
-            String initialMessage = "Connection to MSRG Echo server established: "
+            /*String initialMessage = "Connection to MSRG Echo server established: "
                     + clientSocket.getLocalAddress() + " / "
                     + clientSocket.getLocalPort();
-            Utilities.send(initialMessage, outputStream);
+            Utilities.send(initialMessage, outputStream);*/
             /* There is also the TextMessage way to send the initial message.
                Kept it in case it will be needed */
             // TextMessage message = new TextMessage(initialMessage);
@@ -84,8 +84,6 @@ public class KVClient implements Runnable {
                 }
 
             }
-        } catch (CannotConnectException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

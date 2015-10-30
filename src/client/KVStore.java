@@ -47,9 +47,9 @@ public class KVStore implements KVCommInterface {
                 logger.info("KVServer connection established");
                 isConnected = true;
                 // Sending messages.
-                put("key1", "value1");
+                /*put("key1", "value1");
                 get("key1");
-                put("key2", "value2");
+                put("key2", "value2");*/
             } catch (NumberFormatException e) {
                 logger.error("Number Format Exception", e);
                 throw new CannotConnectException(ErrorMessages.ERROR_INTERNAL);
@@ -60,7 +60,7 @@ public class KVStore implements KVCommInterface {
         }
         catch (UnknownHostException e) {
             logger.error("KVServer hostname cannot be resolved", e);
-            throw new CannotConnectException(ErrorMessages.ERROR_CANNOT_RESOLVE_HOSTNAME);
+            throw e;
         }
 		
 	}
@@ -103,6 +103,9 @@ public class KVStore implements KVCommInterface {
      */
 	@Override
 	public KVMessage put(String key, String value) throws Exception {
+        if (!isConnected()) {
+            throw new Exception("Client not Connected to server");
+        }
         KVMessageImpl kvMessage;
         kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);
         try {

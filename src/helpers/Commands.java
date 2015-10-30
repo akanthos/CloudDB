@@ -1,5 +1,5 @@
 package helpers;
 
 public enum Commands {
-	CONNECT, SEND, DISCONNECT, LOGLEVEL, HELP, QUIT
+	CONNECT, GET, PUT, DISCONNECT, LOGLEVEL, HELP, QUIT
 }

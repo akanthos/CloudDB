@@ -36,10 +36,10 @@ public class KVClient implements Runnable {
             outputStream = clientSocket.getOutputStream();
             this.isOpen = true;
         } catch (IOException e) {
-            logger.error(String.format("Client: %d. Unable to initialize streams.", clientNumber), e);
+            //logger.error(String.format("Client: %d. Unable to initialize streams.", clientNumber), e);
             throw new IOException("Unable to initialize streams from socket");
         }
-        logger.info(String.format("Client: %d connected", clientNumber));
+        //logger.info(String.format("Client: %d connected", clientNumber));
     }
 
     @Override
@@ -63,10 +63,10 @@ public class KVClient implements Runnable {
                 } catch (IOException ioe) {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
-                    logger.error("Error! Connection lost!");
+                    //logger.error("Error! Connection lost!");
                     isOpen = false;
                 } catch (Exception e) {
-                    logger.error("Unable to parse string message from client");
+                    //logger.error("Unable to parse string message from client");
                     e.printStackTrace();
                     isOpen = false;
                 }
@@ -82,7 +82,7 @@ public class KVClient implements Runnable {
                     clientSocket.close();
                 }
             }catch(IOException ioe){
-                logger.error("Error! Unable to tear down connection!", ioe);
+                //logger.error("Error! Unable to tear down connection!", ioe);
             }
         }
     }
@@ -92,7 +92,7 @@ public class KVClient implements Runnable {
         try {
             kvMessage = new KVMessageImpl(messageString);
         } catch (Exception e) {
-            logger.error(String.format("Unable to process message from client %d.", clientNumber), e);
+            //logger.error(String.format("Unable to process message from client %d.", clientNumber), e);
             kvMessage = new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
         }
         return kvMessage;
@@ -107,7 +107,7 @@ public class KVClient implements Runnable {
             // Do the PUT
             response = kvCache.put(kvMessage.getKey(), kvMessage.getValue());
         } else {
-            logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
+            //logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
             //kvMessage.setStatus(KVMessage.StatusType.GENERAL_ERROR);
             response = new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
         }

@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Base class of KVServer including main()
+ */
 public class KVServer {
 
     private static Integer port, cacheSize;
@@ -51,7 +54,7 @@ public class KVServer {
 
 
     /**
-     * @param args
+     * @param args <Port> <Cachesize> <CachePolicy>
      * @throws IOException
      */
     public static void main(String[] args) {
@@ -97,13 +100,27 @@ public class KVServer {
 
     }
 
+    /**
+     *
+     * @param hostPort Port Server is running on
+     * @return
+     */
     private static boolean isPortValid(Integer hostPort) {
         return ((port >= 0) && (port <= 65535));
     }
+
+    /**
+     *
+     * @param cacheSize
+     * @return  False if given Cache size <0 else True
+     */
     private boolean isCacheSizeValid(Integer cacheSize) {
         return (cacheSize>=0);
     }
 
+    /**
+     * Execution usage help
+     */
     private static void printHelp() {
         System.out.println("Usage: KVServer <port> <cache size> <displacement strategy>\n" +
                 "    Strategy can be: FIFO, LRU, LFU");

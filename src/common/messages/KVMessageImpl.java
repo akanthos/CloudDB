@@ -9,8 +9,9 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
+
 /**
- * Created by sreenath on 27/10/15.
+ * KVMessage represantion of connection Message
  */
 public class KVMessageImpl implements KVMessage, Serializable {
 
@@ -25,12 +26,23 @@ public class KVMessageImpl implements KVMessage, Serializable {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
     }
 
+    /**
+     * Constractor
+     * @param key Key of the connection KV Message
+     * @param value Value of the connection KV Message
+     * @param status Status of the connection KV Messag
+     */
     public KVMessageImpl(String key, String value, StatusType status) {
         this.key = key;
         this.value = value;
         this.status = status;
     }
 
+    /**
+     * Contructor using String represantion of connection message
+     * @param messageString String representation of the KV Message
+     * @throws Exception
+     */
     public KVMessageImpl(String messageString) throws Exception {
         try {
             String[] msgParts = messageString.split(":");
@@ -52,34 +64,62 @@ public class KVMessageImpl implements KVMessage, Serializable {
         }
     }
 
+    /**
+     * Key getter
+     * @return key of Message
+     */
     @Override
     public String getKey() {
         return key;
     }
 
+    /**
+     * Value getter
+     * @return Value of Message
+     */
     @Override
     public String getValue() {
         return value;
     }
 
+    /**
+     * Status getter
+     * @return Status of Message
+     */
     @Override
     public StatusType getStatus() {
         return status;
     }
 
+    /**
+     * Key setter
+     * @param key key to set in Message
+     */
     public void setKey(String key) {
         this.key = key;
     }
 
+    /**
+     * Key setter
+     * @param value value to set in Message
+     */
     public void setValue(String value) {
         this.value = value;
     }
 
+    /**
+     * Status setter
+     * @param status status to set in Message
+     */
     @Override
     public void setStatus(StatusType status) {
         this.status = status;
     }
 
+    /**
+     * toString method for KV Message
+     * @return String representation of Message
+     */
     @Override
     public String toString() {
         StringBuilder msgString = new StringBuilder();
@@ -95,6 +135,11 @@ public class KVMessageImpl implements KVMessage, Serializable {
         return msgString.toString();
     }
 
+    /**
+     *
+     * @return bytes repreentation of Message
+     * @throws UnsupportedEncodingException
+     */
     public byte[] getMsgBytes() throws UnsupportedEncodingException {
         byte[] bytes;
         byte[] ctrBytes;

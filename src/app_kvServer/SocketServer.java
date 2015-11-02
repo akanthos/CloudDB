@@ -7,7 +7,7 @@ import java.net.ServerSocket;
 /**
  * Class handling all TCP  connections
  * arriving on a given (host, port).
- * The connection handling lives in a ConnectionHandler (KVConnectionHandler)
+ * The connection handling lives in a KVClient
  */
 public class SocketServer {
     String hostname;
@@ -17,12 +17,21 @@ public class SocketServer {
     boolean open;
     int numOfClients;
 
+    /**
+     * Constructor of Socket server
+     * @param hostname name of Server host
+     * @param port Port Server is running on
+     */
     public SocketServer(String hostname, int port) {
         this.hostname = hostname;
         this.port = port;
         open = false;
     }
 
+    /**
+     * Creation of unbound server socket
+     * @throws IOException
+     */
     public void connect() throws IOException {
         if (open) return;
         server = new ServerSocket();
@@ -61,7 +70,9 @@ public class SocketServer {
         this.closeSocket();
     }
 
-
+    /**
+     * close Server Socket
+     */
     private void closeSocket() {
         try {
             server.close();
@@ -71,8 +82,4 @@ public class SocketServer {
         }
     }
 
-    protected void finalize(){
-
-        closeSocket();
-    }
 }

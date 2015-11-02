@@ -42,9 +42,6 @@ public class KVCache {
      * /
 
 
-
-
-
     /**
      * Creates a new LRU or FIFO or LFU cache according to the cache replacing policy.
      * @param cacheSize the maximum number of entries that will be kept in this cache.
@@ -77,14 +74,13 @@ public class KVCache {
 
         }
 
-
     }
 
     /**
      * Retrieves an entry from the cache.
      * e.g. If we use LRU policy: The retrieved entry becomes the MRU (most recently used) entry.
-     * @param key the key whose the associated value is to be returned by the function.
-     * @return    the value for this key, or null if no value with this key exists in the cache.
+     * @param key the key whose the associated KVMessage is to be returned by the function.
+     * @return    KVMessage representation of KV found, retrieved from Cache or Disk (File)
      */
     public synchronized KVMessageImpl get (String key) {
 
@@ -138,19 +134,16 @@ public class KVCache {
     }
 
     /**
-     * Adds an entry to the cache.
-     * The new entry becomes the most recently used (MRU) entry.
-     * If an entry with the specified key already exists in the cache, it is replaced by the new entry.
-     * If the cache is full, the least recently used (LRU) entry is removed from the cache.
-     * @param key    the key with which the specified value.
-     * @param value  a value, associated with the specified key.
+     * Adds an entry to the Cache.
+     * We are using Write-Back and Write-Allocate policies for
+     * the case of Cache Hit and Miss respectively
+     * @param key    Key of the KV pair to be stored
+     * @param value Value of the KV pair to be stored
      */
-    public synchronized KVMessageImpl put (String key, String value) {
-
-
+    public synchronized KVMessageImpl put(String key, String value) {
 
         if (policy == LFU) {
-            return lfu.addCacheEntry(key, value); // Just forward the request to the other cache
+            return lfu.addCacheEntry(key, value); // Just forward the request to the LFU cache
         }
         else {
             // "This" does the job
@@ -169,7 +162,6 @@ public class KVCache {
                     if (result.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS) || result.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) {
                         // Key was written in persistence file. Put it in cache too.
                         // Or key found and updated in persistence file. Put it in cache too. :-)
-
                         // The rest for Write-allocate policy
                         if (!isFull()) {
                             map.put(key, value);
@@ -200,6 +192,10 @@ public class KVCache {
         }
     }
 
+    /**
+     *
+     * @return the Key of the victim to throw from Cache
+     */
     private String findVictimKey() {
         String victimKey;
         Iterator it = map.entrySet().iterator();
@@ -208,6 +204,9 @@ public class KVCache {
         return victimKey;
     }
 
+    /**
+     * Simple print function
+     */
     public void prettyPrintCache() {
 
         if (policy == LFU)
@@ -225,34 +224,15 @@ public class KVCache {
 
     }
 
+    /**
+     *
+     * @return True if we reached the Cache's max capacity else False
+     */
     public boolean isFull() {
         if (map.size() == cacheSize)
             return true;
 
         return false;
-    }
-
-
-    // Test routine for the KVCache class.
-    public static void main (String[] args) {
-
-        KVCache c = null;
-        try {
-            c = new KVCache(3, "LRU");
-        } catch (StorageException e) {
-            e.printStackTrace();
-        }
-        c.put ("1", "one");
-        c.put ("2", "two");
-        c.put ("3", "three");
-        c.put ("4", "four");
-
-        System.out.println("=============");
-        if (c.get("2") == null) throw new Error();
-        c.put ("5", "five");
-        c.put ("4", "second four");
-
-        c.prettyPrintCache();
     }
 
 }

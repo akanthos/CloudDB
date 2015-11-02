@@ -15,7 +15,8 @@ import helpers.Commands;
 import org.apache.log4j.Logger;
 
 /**
- * Main class
+ * Main Client class
+ * Implementing Client Command Line Interface (CLI)
  */
 public class ClientCLI {
 

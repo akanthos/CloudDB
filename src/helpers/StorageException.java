@@ -1,7 +1,7 @@
 package helpers;
 
 /**
- * Created by aacha on 10/28/2015.
+ * Custom Storage Exception
  */
 public class StorageException extends Exception {
     private static final long serialVersionUID = 1L;

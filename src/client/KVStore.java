@@ -35,7 +35,11 @@ public class KVStore implements KVCommInterface {
         this.port = port;
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
 	}
-	
+
+    /**
+     * Implements the connection of the Client with the Server
+     * @throws Exception
+     */
 	@Override
 	public void connect() throws Exception {
         try {
@@ -65,6 +69,9 @@ public class KVStore implements KVCommInterface {
 		
 	}
 
+    /**
+     * Disconnect to server / close open connections
+     */
 	@Override
 	public void disconnect() {
         if (!isConnected) {
@@ -93,10 +100,8 @@ public class KVStore implements KVCommInterface {
     /**
      * Puts an entry into the server.
      *
-     * @param key
-     *            the key that identifies the given value.
-     * @param value
-     *            the value that is indexed by the given key.
+     * @param key the key that identifies the given value.
+     * @param value the value that is indexed by the given key.
      * @return
      * @throws Exception
      */
@@ -122,8 +127,7 @@ public class KVStore implements KVCommInterface {
     /**
      * Gets an entry from the server.
      *
-     * @param key
-     *            the key that identifies the value.
+     * @param key the key that identifies the value.
      * @return
      * @throws Exception
      */
@@ -164,7 +168,7 @@ public class KVStore implements KVCommInterface {
     }
 
     /**
-     * This function sets the loglevel for the logger object bassed on the argument passed to it.
+     * This function sets the loglevel for the logger object passed on the argument passed to it.
      *
      * @param level Logging Level defined by the client using the CLI
      */
@@ -210,30 +214,58 @@ public class KVStore implements KVCommInterface {
         }
     }
 
+    /**
+     *
+     * @return True if connected else False
+     */
     public boolean isConnected() {
         return isConnected;
     }
 
+    /**
+     * Set connection Status
+     * @param isConnected
+     */
     public void setIsConnected(boolean isConnected) {
         this.isConnected = isConnected;
     }
 
+    /**
+     * get Server's hostname
+     * @return
+     */
     public String getHost() {
         return host;
     }
 
+    /**
+     * set Server's hostname
+     * @param host
+     */
     public void setHost(String host) {
         this.host = host;
     }
 
+    /**
+     * get Server's communication Port
+     * @return
+     */
     public int getPort() {
         return port;
     }
 
+    /**
+     * set Server's communication Port
+     * @param port
+     */
     public void setPort(int port) {
         this.port = port;
     }
 
+    /**
+     *
+     * @return Logger's Loglevel
+     */
     public Level getLogLevel() {
         return logger.getLevel();
     }

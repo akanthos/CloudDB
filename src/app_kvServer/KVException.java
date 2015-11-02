@@ -3,6 +3,9 @@ package app_kvServer;
 
 import common.messages.KVMessage;
 
+/**
+ * Custom Exception for KVServer
+ */
 public class KVException extends Exception {
 
     private static final long serialVersionUID = 1L;

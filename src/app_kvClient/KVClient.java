@@ -42,6 +42,9 @@ public class KVClient implements Runnable {
         //logger.info(String.format("Client: %d connected", clientNumber));
     }
 
+    /**
+     * run function handles the incoming client's request
+     */
     @Override
     public void run() {
         try {
@@ -86,6 +89,11 @@ public class KVClient implements Runnable {
         }
     }
 
+    /**
+     * Message Unmarshaller
+     * @param messageString message to be unmarshalled to KVMessage type
+     * @return resulting KVMessage
+     */
     private KVMessage extractMessage(String messageString) {
         KVMessage kvMessage = null;
         try {
@@ -97,6 +105,11 @@ public class KVClient implements Runnable {
         return kvMessage;
     }
 
+    /**
+     * Process of the KVMessage and communication with the cache
+     * @param kvMessage KVMessage representation of the client request
+     * @return resulting KVMessageImpl
+     */
     private KVMessageImpl processMessage(KVMessage kvMessage) {
         KVMessageImpl response;
         if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
@@ -113,13 +126,4 @@ public class KVClient implements Runnable {
         return response;
     }
 
-    /* Sree's stuff again here
-    private void sendMsgToClient(String message) {
-        try {
-            Utilities.send(message, outputStream);
-        } catch (CannotConnectException e) {
-            logger.error(String.format("Client: %d. Unable to send message to client. Message: %s", clientNumber, message), e);
-        }
-    }
-    */
 }

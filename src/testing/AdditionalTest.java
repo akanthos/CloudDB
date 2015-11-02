@@ -1,10 +1,8 @@
 package testing;
 
-import app_kvClient.KVClient;
 import app_kvServer.KVCache;
 import client.KVStore;
 import common.messages.KVMessage;
-import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.junit.Test;
 
 import junit.framework.TestCase;
@@ -14,29 +12,22 @@ import java.util.concurrent.*;
 
 public class AdditionalTest extends TestCase {
 
-	// TODO add your test cases, at least 3
 	private ExecutorService threadpool = null;
-	private KVStore kvClient;
 
 	public void setUp() {
 		threadpool = Executors.newFixedThreadPool(5);
-		kvClient = new KVStore("localhost", 50000);
-		try {
-			kvClient.connect();
-		} catch (Exception e) {
-		}
 	}
 
 	public void tearDown() {
 		threadpool.shutdown();
 	}
 
+
 	@Test
 	public void testConnectManyClients() {
-		final Integer NUMBER_OF_CLIENTS = 500;
-		Exception[] ex = new Exception[NUMBER_OF_CLIENTS];
+		Exception[] ex = new Exception[5];
 
-		for(int i = 0; i < NUMBER_OF_CLIENTS; i++) {
+		for(int i = 0; i < 5; i++) {
 			KVStore kvClient = new KVStore("localhost", 50000);
 			try {
 				kvClient.connect();
@@ -44,36 +35,14 @@ public class AdditionalTest extends TestCase {
 				ex[i] = e;
 			}
 		}
-		for(int i = 0; i < NUMBER_OF_CLIENTS; i++) {
-			assertNull(ex[i]);
 
-		}
+		assertNull(ex[0]);
+		assertNull(ex[1]);
+		assertNull(ex[2]);
+		assertNull(ex[3]);
+		assertNull(ex[4]);
 	}
 
-	/**
-	 * This test tests the usage of delimiter symbols in the
-	 * key and the value fields with an put and update sequence
-	 */
-	@Test
-	public void testUpdateDelimited() {
-		String key = "updateTestValue";
-		String initialValue = "ini,,,t,ial";
-		String updatedValue = "u,p,d,a,t,e,d";
-
-		KVMessage response = null;
-		Exception ex = null;
-
-		try {
-			kvClient.put(key, initialValue);
-			response = kvClient.put(key, updatedValue);
-
-		} catch (Exception e) {
-			ex = e;
-		}
-
-		assertTrue(ex == null && response.getStatus() == KVMessage.StatusType.PUT_UPDATE
-				&& response.getValue().equals(updatedValue));
-	}
 
 	/**
 	 * This test creates 5 clients and they all send a put command

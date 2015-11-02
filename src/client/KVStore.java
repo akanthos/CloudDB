@@ -156,7 +156,6 @@ public class KVStore implements KVCommInterface {
         try {
             String msgFromServer = new String(answer, "US-ASCII").trim();
             logger.info("Message received from server: " + msgFromServer);
-            System.out.println("EchoClient> " + msgFromServer);
             return msgFromServer;
         } catch (UnsupportedEncodingException e) {
             logger.error("Unsupported Encoding in message from server", e);

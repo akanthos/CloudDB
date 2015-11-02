@@ -35,16 +35,19 @@ public class KVMessageImpl implements KVMessage, Serializable {
         try {
             String[] msgParts = messageString.split(":");
             this.status = StatusType.valueOf(msgParts[0]);
-            String[] keyAndValue = msgParts[1].split(",");
-            this.key = keyAndValue[0];
+
+
+
+            String[] keyAndValue = msgParts[1].split("(?<!\\\\),");
+            this.key = keyAndValue[0].replaceAll("\\\\,",",");
             // For GET requests, value would be null
             if (keyAndValue.length > 1) {
-                this.value = keyAndValue[1];
+                this.value = keyAndValue[1].replaceAll("\\\\,",",");
             } else {
                 this.value = "";
             }
         } catch (Exception e) {
-            logger.error(String.format("Cannot parse message string"), e);
+            //logger.error(String.format("Cannot parse message string"), e);
             throw new Exception("Unable to parse message string");
         }
     }
@@ -82,9 +85,13 @@ public class KVMessageImpl implements KVMessage, Serializable {
         StringBuilder msgString = new StringBuilder();
         msgString.append(status);
         msgString.append(":");
-        msgString.append(key);
+
+
+        String delimitedKey = key.replaceAll(",", "\\\\,");
+        msgString.append(delimitedKey);
         msgString.append(",");
-        msgString.append(value);
+        String delimitedValue = value.replaceAll(",", "\\\\,");
+        msgString.append(delimitedValue);
         return msgString.toString();
     }
 

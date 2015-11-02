@@ -1,5 +1,6 @@
 package testing;
 
+import app_kvClient.KVClient;
 import app_kvServer.KVCache;
 import client.KVStore;
 import common.messages.KVMessage;
@@ -15,9 +16,15 @@ public class AdditionalTest extends TestCase {
 
 	// TODO add your test cases, at least 3
 	private ExecutorService threadpool = null;
+	private KVStore kvClient;
 
 	public void setUp() {
 		threadpool = Executors.newFixedThreadPool(5);
+		kvClient = new KVStore("localhost", 50000);
+		try {
+			kvClient.connect();
+		} catch (Exception e) {
+		}
 	}
 
 	public void tearDown() {
@@ -26,9 +33,10 @@ public class AdditionalTest extends TestCase {
 
 	@Test
 	public void testConnectManyClients() {
-		Exception[] ex = new Exception[5];
+		final Integer NUMBER_OF_CLIENTS = 500;
+		Exception[] ex = new Exception[NUMBER_OF_CLIENTS];
 
-		for(int i = 0; i < 5; i++) {
+		for(int i = 0; i < NUMBER_OF_CLIENTS; i++) {
 			KVStore kvClient = new KVStore("localhost", 50000);
 			try {
 				kvClient.connect();
@@ -36,38 +44,35 @@ public class AdditionalTest extends TestCase {
 				ex[i] = e;
 			}
 		}
-		assertNull(ex[0]);
-		assertNull(ex[1]);
-		assertNull(ex[2]);
-		assertNull(ex[3]);
-		assertNull(ex[4]);
+		for(int i = 0; i < NUMBER_OF_CLIENTS; i++) {
+			assertNull(ex[i]);
+
+		}
 	}
 
 	/**
-	 * This test creates 5 clients and they all send a put command
-	 * to the server. No exceptions should be returned.
+	 * This test tests the usage of delimiter symbols in the
+	 * key and the value fields with an put and update sequence
 	 */
 	@Test
-	public void testPutExceptionsManyClients() {
-		Future<Exception>[] futures = new Future[5];
+	public void testUpdateDelimited() {
+		String key = "updateTestValue";
+		String initialValue = "ini,,,t,ial";
+		String updatedValue = "u,p,d,a,t,e,d";
+
+		KVMessage response = null;
+		Exception ex = null;
+
 		try {
-			for(int i = 0; i < 5; i++)
-			{
-				futures[i] = threadpool.submit(new Client(i));
-			}
-			assertNull(futures[0].get());
-			assertNull(futures[1].get());
-			assertNull(futures[2].get());
-			assertNull(futures[3].get());
-			assertNull(futures[4].get());
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
+			kvClient.put(key, initialValue);
+			response = kvClient.put(key, updatedValue);
+
 		} catch (Exception e) {
-			e.printStackTrace();
+			ex = e;
 		}
 
+		assertTrue(ex == null && response.getStatus() == KVMessage.StatusType.PUT_UPDATE
+				&& response.getValue().equals(updatedValue));
 	}
 
 	/**
@@ -97,32 +102,6 @@ public class AdditionalTest extends TestCase {
 		}
 	}
 
-	@Test
-	public void testRandomResultManyClients() {
-		/*Client[] clients = new Client[10];
-		Future<KVMessage>[] futures = new Future[10];
-		Integer min = 5, max = 10;
-		Random random = new Random();
-		Integer times = random.nextInt(max - min + 1) + min;
-		try {
-			for(int i = 0; i < times; i++)
-			{
-				initializeClients(); // Initializes clients with random
-				futures[i] = threadpool.submit(new ClientResult(i));
-			}
-			assertTrue(futures[0].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-			assertTrue(futures[1].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-			assertTrue(futures[2].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-			assertTrue(futures[3].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-			assertTrue(futures[4].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		} catch (ExecutionException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}*/
-	}
 }
 
 class Client implements Callable<Exception> {

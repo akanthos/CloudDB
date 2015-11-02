@@ -67,7 +67,6 @@ public class KVClient implements Runnable {
                     isOpen = false;
                 } catch (Exception e) {
                     //logger.error("Unable to parse string message from client");
-                    e.printStackTrace();
                     isOpen = false;
                 }
 

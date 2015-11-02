@@ -44,7 +44,7 @@ public class KVMessageImpl implements KVMessage, Serializable {
                 this.value = "";
             }
         } catch (Exception e) {
-            logger.error(String.format("Cannot parse message string"), e);
+            //logger.error(String.format("Cannot parse message string"), e);
             throw new Exception("Unable to parse message string");
         }
     }

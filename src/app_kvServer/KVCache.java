@@ -147,7 +147,7 @@ public class KVCache {
      */
     public synchronized KVMessageImpl put (String key, String value) {
 
-        // TODO: Delete is missing (if key is "")
+
 
         if (policy == LFU) {
             return lfu.addCacheEntry(key, value); // Just forward the request to the other cache
@@ -201,20 +201,10 @@ public class KVCache {
     }
 
     private String findVictimKey() {
-        // TODO: Implement victim strategies. Is that enough? Do we need switch?
-        String victimKey = new String();
+        String victimKey;
         Iterator it = map.entrySet().iterator();
         Map.Entry pair = (Map.Entry)it.next();
         victimKey = pair.getKey().toString();
-        /*switch (policy) {
-            case FIFO:
-                 // Dummy Same algorithm as above
-                break;
-            case LRU:
-                break;
-            default:
-                logger.error("Should not be reached. Something is wrong with policies.");
-        }*/
         return victimKey;
     }
 

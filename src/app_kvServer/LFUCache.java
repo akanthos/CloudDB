@@ -63,7 +63,7 @@ public class LFUCache {
             if (result.getStatus().equals(KVMessage.StatusType.GET_SUCCESS)) {
                 // Key found in persistence file. Put it in cache too.
                 if (!isFull()) {
-                    map.put(key, new CacheEntry(result.getValue(), 1)); // TODO: Is "1" right?
+                    map.put(key, new CacheEntry(result.getValue(), 0));
                 }
                 else {
                     // Find victim, write it to persistence and
@@ -74,7 +74,7 @@ public class LFUCache {
                     if (!victimKey.isEmpty()) {
                         String victimValue = map.get(victimKey).getValue();
                         map.remove(victimKey);
-                        map.put(key, new CacheEntry(result.getValue(), 1)); // TODO: Is "1" right?
+                        map.put(key, new CacheEntry(result.getValue(), 0));
                         persistence.put(victimKey, victimValue);
                     }
                     else {
@@ -102,8 +102,6 @@ public class LFUCache {
 
     public KVMessageImpl addCacheEntry(String key, String value) {
 
-        // TODO: Delete is missing (if key is "")
-
         // "This" does the job
         if (value.equals("null")) {
             map.remove(key);
@@ -125,7 +123,7 @@ public class LFUCache {
 
                     // The rest for Write-allocate policy
                     if (!isFull()) {
-                        map.put(key, new CacheEntry(value, 1)); // TODO: Is "1" right?
+                        map.put(key, new CacheEntry(value, 0));
                     } else {
                         // Find victim, write it to persistence and
                         String victimKey = findVictimKey();
@@ -135,7 +133,7 @@ public class LFUCache {
                         if (!key.isEmpty()) {
                             CacheEntry victimEntry = map.get(victimKey);
                             map.remove(victimKey);
-                            map.put(key, new CacheEntry(result.getValue(), 1)); // TODO: Is "1" right?
+                            map.put(key, new CacheEntry(result.getValue(), 0));
                             persistence.put(victimKey, victimEntry.getValue());
                         } else {
                             logger.error("Couldn't find cache victim");

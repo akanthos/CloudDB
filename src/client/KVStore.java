@@ -72,8 +72,6 @@ public class KVStore implements KVCommInterface {
             System.out.println("Try the <connect> command first");
         } else {
             try {
-                // TODO: Maybe we shouldnt send the following text message. It complicates the protocol and a simple .close() should be enough
-                //Utilities.send(Constants.CLIENT_QUIT_MESSAGE, outStream);
                 inStream.close();
                 outStream.close();
                 clientSocket.close();

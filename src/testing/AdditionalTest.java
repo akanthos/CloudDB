@@ -43,7 +43,10 @@ public class AdditionalTest extends TestCase {
 		assertNull(ex[4]);
 	}
 
-
+	/**
+	 * This test creates 5 clients and they all send a put command
+	 * to the server. No exceptions should be returned.
+	 */
 	@Test
 	public void testPutExceptionsManyClients() {
 		Future<Exception>[] futures = new Future[5];
@@ -67,6 +70,11 @@ public class AdditionalTest extends TestCase {
 
 	}
 
+	/**
+	 * This test creates 5 clients and they all send a put command
+	 * to the server. The results returned by the server need to be
+	 * all PUT_SUCCESS.
+	 */
 	@Test
 	public void testPutResultManyClients() {
 		Future<KVMessage>[] futures = new Future[5];

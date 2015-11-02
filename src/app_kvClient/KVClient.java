@@ -48,29 +48,24 @@ public class KVClient implements Runnable {
             KVMessage kvMessage;
             byte[] byteMessage;
             String stringMessage;
-            while (isOpen /* TODO: is termination condition enough? */) {
+            while (isOpen) {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
-                    // TODO: Do we really need this step for connection teardown ???
+
                     stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
-                    /*if (stringMessage==null || stringMessage.equalsIgnoreCase(Constants.CLIENT_QUIT_MESSAGE)) {
-                        isOpen = false;
-                    }
-                    else {*/
-                        kvMessage = extractMessage(stringMessage);
-                        // Process the message and do the required backend actions
-                        // If it fails, it returns a GENERAL_ERROR KVMessage
-                        KVMessageImpl kvResponse = processMessage(kvMessage);
-                        // Send appropriate response according to the above backend actions
-                        Utilities.send(kvResponse.getMsgBytes(), outputStream);
-                    /*}*/
+                    kvMessage = extractMessage(stringMessage);
+                    // Process the message and do the required backend actions
+                    // If it fails, it returns a GENERAL_ERROR KVMessage
+                    KVMessageImpl kvResponse = processMessage(kvMessage);
+                    // Send appropriate response according to the above backend actions
+                    Utilities.send(kvResponse.getMsgBytes(), outputStream);
                 } catch (IOException ioe) {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
                     logger.error("Error! Connection lost!");
                     isOpen = false;
-                } catch (Exception e) { // TODO: Maybe create a specific exception for KVMessage constructor
+                } catch (Exception e) {
                     logger.error("Unable to parse string message from client");
                     e.printStackTrace();
                     isOpen = false;
@@ -90,50 +85,6 @@ public class KVClient implements Runnable {
                 logger.error("Error! Unable to tear down connection!", ioe);
             }
         }
-
-
-        /*  HERE IS SREE'S VERSION OF SERVER. ALREADY MERGED HIS IMPLEMENTATIONS.
-            I GOT THE TRY-CATCH-FINALLY STRUCTURE FROM THE EXAMPLE SERVER PROVIDED FROM MILESTONE1
-            IF YOU LIKE MY VERSION ABOVE KEEP IT
-            IF YOU DONT LIKE MY VERSION ABOVE KEEP SREE'S
-         */
-        /*
-        String message = "";
-        String msgForClient = "";
-        // TODO: Infinite Loop? Seriously?
-        while (true) {
-            try {
-                byte[] recvBytes = Utilities.receive(inputStream);
-                message = new String(recvBytes, Constants.DEFAULT_ENCODING).trim();
-                if (message==null || message.equalsIgnoreCase(Constants.CLIENT_QUIT_MESSAGE)) {
-                    break;
-                }
-                KVMessage kvMessage = extractMessage(message);
-                processMessage(kvMessage);
-                logger.debug(String.format("Client: %d. Processed message: %s", clientNumber, kvMessage.toString()));
-                msgForClient = kvMessage.toString();
-            } catch (CannotConnectException e) {
-                logger.error(String.format("Client: %d. Error receiving messages", clientNumber), e);
-                msgForClient = "Could not receive message properly.";
-            } catch (UnsupportedEncodingException e) {
-                logger.error(String.format("Client: %d. Unsupported encoding in messages", clientNumber), e);
-                msgForClient = "Unsupported encoding in messages";
-            } catch (IOException e) {
-                logger.error(String.format("Client: %d. IOException while sending and receiving messages", clientNumber), e);
-                msgForClient = "Communication went wrong";
-            } finally {
-                sendMsgToClient(msgForClient);
-
-            }
-        }
-        try {
-            inputStream.close();
-            outputStream.close();
-        } catch (IOException e) {
-            logger.error(String.format("Client: %d. Unable to close streams", clientNumber), e);
-        }
-        logger.info(String.format("Client %d left", clientNumber));
-         */
     }
 
     private KVMessage extractMessage(String messageString) {
@@ -142,14 +93,13 @@ public class KVClient implements Runnable {
             kvMessage = new KVMessageImpl(messageString);
         } catch (Exception e) {
             logger.error(String.format("Unable to process message from client %d.", clientNumber), e);
-            kvMessage.setStatus(KVMessage.StatusType.GENERAL_ERROR);
+            kvMessage = new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
         }
         return kvMessage;
     }
 
     private KVMessageImpl processMessage(KVMessage kvMessage) {
         KVMessageImpl response;
-        // TODO: Analyse kvResponse, if put/get and to the appropriate backend stuff
         if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
             // Do the GET
             response = kvCache.get(kvMessage.getKey());

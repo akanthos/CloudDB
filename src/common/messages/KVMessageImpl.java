@@ -1,13 +1,11 @@
 package common.messages;
 
 import helpers.Constants;
-import helpers.MessageCommands;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 
 
 /**
@@ -47,9 +45,6 @@ public class KVMessageImpl implements KVMessage, Serializable {
         try {
             String[] msgParts = messageString.split(":");
             this.status = StatusType.valueOf(msgParts[0]);
-
-
-
             String[] keyAndValue = msgParts[1].split("(?<!\\\\),");
             this.key = keyAndValue[0].replaceAll("\\\\,",",");
             // For GET requests, value would be null
@@ -59,7 +54,7 @@ public class KVMessageImpl implements KVMessage, Serializable {
                 this.value = "";
             }
         } catch (Exception e) {
-            //logger.error(String.format("Cannot parse message string"), e);
+            logger.error(String.format("Cannot parse message string"), e);
             throw new Exception("Unable to parse message string");
         }
     }

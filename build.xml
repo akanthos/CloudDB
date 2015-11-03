@@ -22,7 +22,7 @@
 
   <path id="project.classpath">
     <pathelement location="${src.dir}"/>
-    <path refid="external.jars" />
+    <path refid="external.jars" />a
   </path>
 
   <target name="init">

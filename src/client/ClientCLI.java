@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import common.messages.KVMessage;
+import common.messages.KVMessageImpl;
 import helpers.ErrorMessages;
 import helpers.CannotConnectException;
 import helpers.Commands;
@@ -13,7 +15,8 @@ import helpers.Commands;
 import org.apache.log4j.Logger;
 
 /**
- * Main class
+ * Main Client class
+ * Implementing Client Command Line Interface (CLI)
  */
 public class ClientCLI {
 
@@ -97,14 +100,24 @@ public class ClientCLI {
 							printHelp("connect");
 							break;
 						}
-					} else if (tokens[0].equals("send")) {
-						// Send the message
-						if (tokens.length > 1) {
-							String arr[] = input.split(" ", 2);
-							String msg = arr[1];
-							sendStuff(msg);
+					} else if (tokens[0].equals("get")) {
+						// Get value of key
+						if (tokens.length == 2) {
+							String key = tokens[1];
+							KVMessage response = engine.get(key);
+							printGetResponse(response);
 						} else {
-							printHelp("send");
+							printHelp("get");
+						}
+					} else if (tokens[0].equals("put")) {
+						// Puts, updates or deletes value for key
+						if (tokens.length == 3) {
+							String key = tokens[1];
+							String value = tokens[2];
+							KVMessage response = engine.put(key, value);
+							printPutResponse(response);
+						} else {
+							printHelp("put");
 						}
 					} else if (tokens[0].equals("logLevel")) {
 						// Change the loglevel
@@ -125,6 +138,12 @@ public class ClientCLI {
 			} catch (IOException e) {
 				logger.error("IOException occurred", e);
 				System.out.println(ErrorMessages.ERROR_INTERNAL);
+			} catch (CannotConnectException e) {
+				logger.error("Connection error", e);
+				System.out.println(ErrorMessages.CONNECTION_ERROR);
+			} catch (Exception e) {
+				logger.error("Exception occurred", e);
+				System.out.println(ErrorMessages.ERROR_INTERNAL);
 			}
 		}
 
@@ -135,22 +154,26 @@ public class ClientCLI {
 		System.out.println("ClientCLI exit!");
 	}
 
-	/**
-	 * This function calls the engine's send function while handling any exceptions.
-	 *
-	 * @param msg: message to be send
-	 */
-	private static void sendStuff(String msg) {
-		if (engine.isConnected()) {
-			try {
-				engine.send(msg);
-			} catch (CannotConnectException e) {
-				System.out.println("Error: " + e.getErrorMessage());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		} else {
-			System.out.println("No connection to server yet :-(\n" + "Try the <connect> command first");
+	private static void printPutResponse(KVMessage response) {
+		if (response.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)) {
+			System.out.println("Put operation successful");
+		} else if (response.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) {
+			System.out.println("Update operation successful");
+		} else if (response.getStatus().equals(KVMessage.StatusType.DELETE_SUCCESS)) {
+			System.out.println("Delete operation successful");
+		} else if (response.getStatus().equals(KVMessage.StatusType.PUT_ERROR)) {
+			System.out.println("Put operation failed");
+		} else if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
+			System.out.println("Delete operation failed");
+		}
+	}
+
+	private static void printGetResponse(KVMessage response) {
+		if (response.getStatus().equals(KVMessage.StatusType.GET_SUCCESS) && response.getValue() != null) {
+			System.out.println(response.getValue());
+		}
+		else if (response.getStatus().equals(KVMessage.StatusType.GET_ERROR)) {
+			System.out.println("Value could not be retrieved");
 		}
 	}
 
@@ -172,7 +195,7 @@ public class ClientCLI {
 		} catch (NullPointerException e) {
 			return false;
 		}
-		final String IPADDRESS_PATTERN = "(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
+		final String IPADDRESS_PATTERN = "((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))|localhost";
 		final String DOMAIN_START_END_PATTERN_STRING = "^([a-zA-Z0-9]+\\.)+[a-zA-Z][a-zA-Z]";
 		final String PATTERN = IPADDRESS_PATTERN + "|" + DOMAIN_START_END_PATTERN_STRING;
 
@@ -195,8 +218,10 @@ public class ClientCLI {
 		printHelp("connect");
 		System.out.println("\ndisconnect:");
 		printHelp("disconnect");
-		System.out.println("\nsend:");
-		printHelp("send");
+		System.out.println("\nget:");
+		printHelp("get");
+		System.out.println("\nput:");
+		printHelp("put");
 		System.out.println("\nlogLevel:");
 		printHelp("logLevel");
 		System.out.println("\nhelp:");
@@ -221,9 +246,15 @@ public class ClientCLI {
 			case DISCONNECT:
 				System.out.println("Syntax: disconnect\n " + "Tries to disconnect from the connected server");
 				break;
-			case SEND:
-				System.out.println("Syntax: send <text message>\n " + "Will send the given text message to the"
-						+ " currently connected echo server");
+			case GET:
+				System.out.println("Syntax: get <key>\n " + "Retrieves the value for the given key from the " +
+						"currently connected storage server");
+				break;
+			case PUT:
+				System.out.println("Syntax: put <key> <value>\n " +
+						"Inserts a key-value pair into the storage server.\n " +
+						"Updates (overwrites) the current value with the given value if the server already contains the specified key.\n " +
+						"Deletes the entry for the given key if <value> equals null.");
 				break;
 			case LOGLEVEL:
 				System.out.println("Syntax: logLevel <level>\n " + "Sets the logger to the specified log level");

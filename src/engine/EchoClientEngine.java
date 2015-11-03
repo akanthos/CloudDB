@@ -95,7 +95,7 @@ public class EchoClientEngine implements ClientConnection{
 			}
 		} 
 		catch (UnknownHostException e) {
-			logger.error("Server hostname cannot be resolved", e);
+			logger.error("KVServer hostname cannot be resolved", e);
 			throw new CannotConnectException(ErrorMessages.ERROR_CANNOT_RESOLVE_HOSTNAME);
 		}
 	}

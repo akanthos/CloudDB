@@ -25,7 +25,7 @@ public class Utilities {
     /**
      * This function sends a message to the server using the established connection.
      *
-     * @param msg
+     * @param msg String Message to be sent over the established connection
      * @throws CannotConnectException
      */
     public static void send(String msg, OutputStream outputStream) throws CannotConnectException {
@@ -54,7 +54,7 @@ public class Utilities {
     }
 
     /**
-     * Receives an array bytes over the connection.
+     * Receives an array of bytes over the connection.
      *
      * @return
      * @throws CannotConnectException

@@ -35,7 +35,11 @@ public class KVStore implements KVCommInterface {
         this.port = port;
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
 	}
-	
+
+    /**
+     * Implements the connection of the Client with the Server
+     * @throws Exception
+     */
 	@Override
 	public void connect() throws Exception {
         try {
@@ -44,12 +48,12 @@ public class KVStore implements KVCommInterface {
                 clientSocket = new Socket(address, port);
                 inStream = clientSocket.getInputStream();
                 outStream = clientSocket.getOutputStream();
-                logger.info("Server connection established");
+                logger.info("KVServer connection established");
                 isConnected = true;
                 // Sending messages.
-                put("key1", "value1");
+                /*put("key1", "value1");
                 get("key1");
-                put("key2", "value2");
+                put("key2", "value2");*/
             } catch (NumberFormatException e) {
                 logger.error("Number Format Exception", e);
                 throw new CannotConnectException(ErrorMessages.ERROR_INTERNAL);
@@ -59,12 +63,15 @@ public class KVStore implements KVCommInterface {
             }
         }
         catch (UnknownHostException e) {
-            logger.error("Server hostname cannot be resolved", e);
-            throw new CannotConnectException(ErrorMessages.ERROR_CANNOT_RESOLVE_HOSTNAME);
+            logger.error("KVServer hostname cannot be resolved", e);
+            throw e;
         }
 		
 	}
 
+    /**
+     * Disconnect to server / close open connections
+     */
 	@Override
 	public void disconnect() {
         if (!isConnected) {
@@ -72,17 +79,17 @@ public class KVStore implements KVCommInterface {
             System.out.println("Try the <connect> command first");
         } else {
             try {
-                Utilities.send(Constants.CLIENT_QUIT_MESSAGE, outStream);
                 inStream.close();
                 outStream.close();
                 clientSocket.close();
+                clientSocket = null;
                 logger.info("Connection with server: " +host+ " terminated");
             } catch (IOException e) {
                 logger.error(e);
                 System.out.println("Error: " + e.getMessage());
-            } catch (CannotConnectException e) {
+            } /*catch (CannotConnectException e) {
                 logger.error(e);
-            } finally {
+            } */finally {
                 isConnected = false;
                 host = "";
                 port = 0;
@@ -93,15 +100,16 @@ public class KVStore implements KVCommInterface {
     /**
      * Puts an entry into the server.
      *
-     * @param key
-     *            the key that identifies the given value.
-     * @param value
-     *            the value that is indexed by the given key.
+     * @param key the key that identifies the given value.
+     * @param value the value that is indexed by the given key.
      * @return
      * @throws Exception
      */
 	@Override
 	public KVMessage put(String key, String value) throws Exception {
+        if (!isConnected()) {
+            throw new Exception("Client not Connected to server");
+        }
         KVMessageImpl kvMessage;
         kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);
         try {
@@ -119,8 +127,7 @@ public class KVStore implements KVCommInterface {
     /**
      * Gets an entry from the server.
      *
-     * @param key
-     *            the key that identifies the value.
+     * @param key the key that identifies the value.
      * @return
      * @throws Exception
      */
@@ -153,7 +160,6 @@ public class KVStore implements KVCommInterface {
         try {
             String msgFromServer = new String(answer, "US-ASCII").trim();
             logger.info("Message received from server: " + msgFromServer);
-            System.out.println("EchoClient> " + msgFromServer);
             return msgFromServer;
         } catch (UnsupportedEncodingException e) {
             logger.error("Unsupported Encoding in message from server", e);
@@ -162,7 +168,7 @@ public class KVStore implements KVCommInterface {
     }
 
     /**
-     * This function sets the loglevel for the logger object bassed on the argument passed to it.
+     * This function sets the loglevel for the logger object passed on the argument passed to it.
      *
      * @param level Logging Level defined by the client using the CLI
      */
@@ -208,30 +214,58 @@ public class KVStore implements KVCommInterface {
         }
     }
 
+    /**
+     *
+     * @return True if connected else False
+     */
     public boolean isConnected() {
         return isConnected;
     }
 
+    /**
+     * Set connection Status
+     * @param isConnected
+     */
     public void setIsConnected(boolean isConnected) {
         this.isConnected = isConnected;
     }
 
+    /**
+     * get Server's hostname
+     * @return
+     */
     public String getHost() {
         return host;
     }
 
+    /**
+     * set Server's hostname
+     * @param host
+     */
     public void setHost(String host) {
         this.host = host;
     }
 
+    /**
+     * get Server's communication Port
+     * @return
+     */
     public int getPort() {
         return port;
     }
 
+    /**
+     * set Server's communication Port
+     * @param port
+     */
     public void setPort(int port) {
         this.port = port;
     }
 
+    /**
+     *
+     * @return Logger's Loglevel
+     */
     public Level getLogLevel() {
         return logger.getLevel();
     }

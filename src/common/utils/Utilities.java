@@ -68,7 +68,6 @@ public class Utilities {
 		/* read first char from stream */
         byte read = (byte) input.read();
         boolean reading = true;
-        System.out.print((char)read);
 
         while(read != 13 && reading) {/* carriage return */
             if (read == -1) {

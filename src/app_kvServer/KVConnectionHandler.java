@@ -1,10 +1,7 @@
 package app_kvServer;
 
-import app_kvClient.KVClient;
-
 import java.io.IOException;
 import java.net.Socket;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -36,7 +33,7 @@ public class KVConnectionHandler implements ConnectionHandler {
      */
     @Override
     public void handle(Socket client, int numOfClients) throws IOException {
-        Runnable rr = new KVClient(client, numOfClients, kv_cache);
+        Runnable rr = new KVRequestHandler(client, numOfClients, kv_cache);
         //try {
             //threadpool.addToQueue(rr);
             threadpool.execute(rr);

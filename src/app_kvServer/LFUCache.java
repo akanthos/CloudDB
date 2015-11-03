@@ -3,44 +3,15 @@ package app_kvServer;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
 import org.apache.log4j.Logger;
+import sun.misc.Cache;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class LFUCache {
 
-    class CacheEntry {
-        private String value;
-        private Integer frequency;
-
-        // default constructor
-        private CacheEntry(String value, Integer frequency) {
-            this.value = value;
-            this.frequency = frequency;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        public Integer getFrequency() {
-            return frequency;
-        }
-
-        public void setFrequency(Integer frequency) {
-            this.frequency = frequency;
-        }
-
-    }
 
     private static int cacheSize = 10;
-    private static LinkedHashMap<String, CacheEntry> map = new LinkedHashMap<String, CacheEntry>();
+    private static LinkedHashMap<String, LfuCacheEntry> map = new LinkedHashMap<String, LfuCacheEntry>();
     private KVPersistenceEngine persistence;
     private static Logger logger = Logger.getLogger(KVCache.class);
 
@@ -49,13 +20,13 @@ public class LFUCache {
         this.persistence = persistence;
     }
 
-    public KVMessageImpl getCacheEntry(String key) {
+    public KVMessageImpl getLfuCacheEntry(String key) {
         // "This" does the job
         if (map.containsKey(key)) {
             // Cache has the key
-            CacheEntry oldCacheEntry = map.get(key);
-            map.put(key, new CacheEntry(oldCacheEntry.getValue(), oldCacheEntry.getFrequency()+1));
-            return new KVMessageImpl(key, oldCacheEntry.getValue(), KVMessage.StatusType.GET_SUCCESS);
+            LfuCacheEntry oldLfuCacheEntry = map.get(key);
+            map.put(key, new LfuCacheEntry(oldLfuCacheEntry.getValue(), oldLfuCacheEntry.getFrequency()+1));
+            return new KVMessageImpl(key, oldLfuCacheEntry.getValue(), KVMessage.StatusType.GET_SUCCESS);
         }
         else {
             // Cache miss.... Forward request to KVPersistenceEngine.
@@ -63,7 +34,7 @@ public class LFUCache {
             if (result.getStatus().equals(KVMessage.StatusType.GET_SUCCESS)) {
                 // Key found in persistence file. Put it in cache too.
                 if (!isFull()) {
-                    map.put(key, new CacheEntry(result.getValue(), 0));
+                    map.put(key, new LfuCacheEntry(result.getValue(), 0));
                 }
                 else {
                     // Find victim, write it to persistence and
@@ -74,7 +45,7 @@ public class LFUCache {
                     if (!victimKey.isEmpty()) {
                         String victimValue = map.get(victimKey).getValue();
                         map.remove(victimKey);
-                        map.put(key, new CacheEntry(result.getValue(), 0));
+                        map.put(key, new LfuCacheEntry(result.getValue(), 0));
                         persistence.put(victimKey, victimValue);
                     }
                     else {
@@ -92,7 +63,7 @@ public class LFUCache {
         }
         /*if (map.containsKey(key))  // cache hit
         {
-            CacheEntry temp = map.get(key);
+            LfuCacheEntry temp = map.get(key);
             temp.frequency++;
             map.put(key, temp);
             return temp.value;
@@ -100,7 +71,7 @@ public class LFUCache {
         return null; // cache miss*/
     }
 
-    public KVMessageImpl addCacheEntry(String key, String value) {
+    public KVMessageImpl addLfuCacheEntry(String key, String value) {
 
         // "This" does the job
         if (value.equals("null")) {
@@ -110,8 +81,8 @@ public class LFUCache {
         else {
             if (map.containsKey(key)) {
                 // Cache has the key
-                CacheEntry oldEntry = map.get(key);
-                map.put(key, new CacheEntry(value, oldEntry.getFrequency()+1));
+                LfuCacheEntry oldEntry = map.get(key);
+                map.put(key, new LfuCacheEntry(value, oldEntry.getFrequency()+1));
                 //return persistence.put(key, value); // Write-through policy
                 return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_UPDATE);
             } else {
@@ -123,7 +94,7 @@ public class LFUCache {
 
                     // The rest for Write-allocate policy
                     if (!isFull()) {
-                        map.put(key, new CacheEntry(value, 0));
+                        map.put(key, new LfuCacheEntry(value, 0));
                     } else {
                         // Find victim, write it to persistence and
                         String victimKey = findVictimKey();
@@ -131,9 +102,9 @@ public class LFUCache {
                         // Write victim to persistence
                         // Then delete it from cache and add new (k,v)
                         if (!key.isEmpty()) {
-                            CacheEntry victimEntry = map.get(victimKey);
+                            LfuCacheEntry victimEntry = map.get(victimKey);
                             map.remove(victimKey);
-                            map.put(key, new CacheEntry(result.getValue(), 0));
+                            map.put(key, new LfuCacheEntry(result.getValue(), 0));
                             persistence.put(victimKey, victimEntry.getValue());
                         } else {
                             logger.error("Couldn't find cache victim");
@@ -154,10 +125,10 @@ public class LFUCache {
         String key = new String();
         Integer minFreq = Integer.MAX_VALUE;
 
-        for (Map.Entry<String, CacheEntry> entry : map.entrySet()) {
-            if (minFreq > entry.getValue().frequency) {
+        for (Map.Entry<String, LfuCacheEntry> entry : map.entrySet()) {
+            if (minFreq > entry.getValue().getFrequency()) {
                 key = entry.getKey();
-                minFreq = entry.getValue().frequency;
+                minFreq = entry.getValue().getFrequency();
             }
         }
 
@@ -171,6 +142,11 @@ public class LFUCache {
         return false;
     }
 
+    public synchronized Collection<Map.Entry<String, LfuCacheEntry>> getAll() {
+
+        return new ArrayList<Map.Entry<String, LfuCacheEntry>>(map.entrySet());
+
+    }
 
 
     public void printLFUCache() {
@@ -182,9 +158,13 @@ public class LFUCache {
         while (i.hasNext()) {
             Map.Entry me = (Map.Entry) i.next();
             System.out.print(me.getKey() + ": ");
-            CacheEntry x = (CacheEntry) me.getValue();
+            LfuCacheEntry x = (LfuCacheEntry) me.getValue();
             System.out.println(x.getValue());
         }
+    }
+
+    public LinkedHashMap<String, LfuCacheEntry> getCacheMap(){
+        return map;
     }
 
 }

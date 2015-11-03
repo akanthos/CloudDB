@@ -7,7 +7,7 @@ import java.net.ServerSocket;
 /**
  * Class handling all TCP  connections
  * arriving on a given (host, port).
- * The connection handling lives in a KVClient
+ * The connection handling lives in a KVRequestHandler
  */
 public class SocketServer {
     String hostname;

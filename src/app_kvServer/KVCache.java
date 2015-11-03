@@ -86,7 +86,7 @@ public class KVCache {
 
         if (policy == LFU) {
             // LFU does the job
-            return lfu.getCacheEntry(key); // Just forward the request to the other cache
+            return lfu.getLfuCacheEntry(key); // Just forward the request to the other cache
         }
         else {
             // "This" does the job
@@ -143,7 +143,7 @@ public class KVCache {
     public synchronized KVMessageImpl put(String key, String value) {
 
         if (policy == LFU) {
-            return lfu.addCacheEntry(key, value); // Just forward the request to the LFU cache
+            return lfu.addLfuCacheEntry(key, value); // Just forward the request to the LFU cache
         }
         else {
             // "This" does the job
@@ -229,10 +229,26 @@ public class KVCache {
      * @return True if we reached the Cache's max capacity else False
      */
     public boolean isFull() {
-        if (map.size() == cacheSize)
-            return true;
-
-        return false;
+        if (policy == LFU)
+            return this.lfu.isFull();
+        else
+            return map.size() == cacheSize;
     }
+
+    public synchronized Collection<Map.Entry<String, String>> getAll() {
+
+        return new ArrayList<Map.Entry<String, String>>(map.entrySet());
+
+    }
+
+    public LFUCache getLFU(){
+
+        return this.lfu;
+    }
+
+    public LinkedHashMap<String, String> getCacheMap(){
+        return map;
+    }
+
 
 }

@@ -71,78 +71,78 @@ public class AdditionalTest extends TestCase {
 		}
 	}
 
-}
+	class Client implements Callable<Exception> {
+		protected KVStore kvClient;
+		protected Integer i;
 
-class Client implements Callable<Exception> {
-	protected KVStore kvClient;
-	protected Integer i;
+		public Client(Integer i) throws Exception{
+			this.i = i;
+			kvClient = new KVStore("localhost", 50000);
+			try {
+				kvClient.connect();
+				System.out.println("Client " + i + ": Connected");
+			} catch (Exception e) {
+				System.out.println("Client " + i + ": Cannot connect");
+			}
 
-	public Client(Integer i) throws Exception{
-		this.i = i;
-		kvClient = new KVStore("localhost", 50000);
-		try {
-			kvClient.connect();
-			System.out.println("Client " + i + ": Connected");
-		} catch (Exception e) {
-			System.out.println("Client " + i + ": Cannot connect");
 		}
 
-	}
+		@Override
+		public Exception call() {
+			String key = "foo" + i;
+			String value = "bar" + i;
+			KVMessage response = null;
+			Exception ex = null;
 
-	@Override
-	public Exception call() {
-		String key = "foo" + i;
-		String value = "bar" + i;
-		KVMessage response = null;
-		Exception ex = null;
-
-		try {
-			response = kvClient.put(key, value);
-		} catch (Exception e) {
-			ex = e;
-		}
+			try {
+				response = kvClient.put(key, value);
+			} catch (Exception e) {
+				ex = e;
+			}
 		/*response.setStatus(KVMessage.StatusType.DELETE_ERROR);
 		if (ex != null) System.out.println("Client " + i + ": Exception at putting");
 		if (ex == null) System.out.println("Client " + i + ": Put status: " + response.getStatus().toString());
 		assertTrue(false*//*ex == null && response.getStatus() == KVMessage.StatusType.PUT_SUCCESS*//*);
 		kvClient.disconnect();*/
-		return ex;
-	}
-}
-
-class ClientResult implements Callable<KVMessage> {
-	protected KVStore kvClient;
-	protected Integer i;
-
-	public ClientResult(Integer i) throws Exception{
-		this.i = i;
-		kvClient = new KVStore("localhost", 50000);
-		try {
-			kvClient.connect();
-			System.out.println("Client " + i + ": Connected");
-		} catch (Exception e) {
-			System.out.println("Client " + i + ": Cannot connect");
+			return ex;
 		}
-
 	}
 
-	@Override
-	public KVMessage call() {
-		String key = "foo" + i;
-		String value = "bar" + i;
-		KVMessage response = null;
-		Exception ex = null;
+	class ClientResult implements Callable<KVMessage> {
+		protected KVStore kvClient;
+		protected Integer i;
 
-		try {
-			response = kvClient.put(key, value);
-		} catch (Exception e) {
-			ex = e;
+		public ClientResult(Integer i) throws Exception{
+			this.i = i;
+			kvClient = new KVStore("localhost", 50000);
+			try {
+				kvClient.connect();
+				System.out.println("Client " + i + ": Connected");
+			} catch (Exception e) {
+				System.out.println("Client " + i + ": Cannot connect");
+			}
+
 		}
+
+		@Override
+		public KVMessage call() {
+			String key = "foo" + i;
+			String value = "bar" + i;
+			KVMessage response = null;
+			Exception ex = null;
+
+			try {
+				response = kvClient.put(key, value);
+			} catch (Exception e) {
+				ex = e;
+			}
 		/*response.setStatus(KVMessage.StatusType.DELETE_ERROR);
 		if (ex != null) System.out.println("Client " + i + ": Exception at putting");
 		if (ex == null) System.out.println("Client " + i + ": Put status: " + response.getStatus().toString());
 		assertTrue(false*//*ex == null && response.getStatus() == KVMessage.StatusType.PUT_SUCCESS*//*);
 		kvClient.disconnect();*/
-		return response;
+			return response;
+		}
 	}
 }
+

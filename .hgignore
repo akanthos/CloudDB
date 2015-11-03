@@ -15,3 +15,5 @@ clouddb.iml
 out/
 data.store
 testing\testing.iml
+classes/
+logs/

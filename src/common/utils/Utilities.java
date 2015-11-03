@@ -71,6 +71,9 @@ public class Utilities {
         System.out.print((char)read);
 
         while(read != 13 && reading) {/* carriage return */
+            if (read == -1) {
+                return new byte[]{-1};
+            }
 			/* if buffer filled, copy to msg array */
             if(index == BUFFER_SIZE) {
                 if(msgBytes == null){

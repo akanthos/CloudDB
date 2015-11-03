@@ -56,13 +56,18 @@ public class KVClient implements Runnable {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
 
-                    stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
-                    kvMessage = extractMessage(stringMessage);
-                    // Process the message and do the required backend actions
-                    // If it fails, it returns a GENERAL_ERROR KVMessage
-                    KVMessageImpl kvResponse = processMessage(kvMessage);
-                    // Send appropriate response according to the above backend actions
-                    Utilities.send(kvResponse.getMsgBytes(), outputStream);
+                    if (byteMessage[0] == -1) {
+                        isOpen = false;
+                    }
+                    else {
+                        stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
+                        kvMessage = extractMessage(stringMessage);
+                        // Process the message and do the required backend actions
+                        // If it fails, it returns a GENERAL_ERROR KVMessage
+                        KVMessageImpl kvResponse = processMessage(kvMessage);
+                        // Send appropriate response according to the above backend actions
+                        Utilities.send(kvResponse.getMsgBytes(), outputStream);
+                    }
                 } catch (IOException ioe) {
                     /* connection either terminated by the client or lost due to
                      * network problems*/

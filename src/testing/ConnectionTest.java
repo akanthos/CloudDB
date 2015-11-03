@@ -20,7 +20,7 @@ public class ConnectionTest extends TestCase {
 		} catch (Exception e) {
 			ex = e;
 		}	
-		
+
 		assertNull(ex);
 	}
 	

@@ -15,7 +15,7 @@ public class KVServer {
 
     private static Integer port, cacheSize;
     private static String displacementStrategy;
-    private static final Integer numberOfThreads = 10;
+    private static final Integer numberOfThreads = Runtime.getRuntime().availableProcessors();
     static KVCache kvCache = null;
     static SocketServer server = null;
     private static Logger logger = Logger.getLogger(KVServer.class);

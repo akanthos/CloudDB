@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.concurrent.Callable;
 
 /**
  * Logic for handling client requests.
@@ -117,15 +118,14 @@ public class KVRequestHandler implements Runnable {
         KVMessageImpl response;
         if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
             // Do the GET
-            response = kvCache.get(kvMessage.getKey());
+                response = kvCache.get(kvMessage.getKey());
         } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
             // Do the PUT
-            response = kvCache.put(kvMessage.getKey(), kvMessage.getValue());
+                response = kvCache.put(kvMessage.getKey(), kvMessage.getValue());
         } else {
             logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
             response = new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
         }
         return response;
     }
-
 }

@@ -7,23 +7,29 @@ import org.junit.Test;
 
 import junit.framework.TestCase;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 
 public class AdditionalTest extends TestCase {
 
-	private ExecutorService threadpool = Executors.newFixedThreadPool(5);
+	private ExecutorService threadpool;
 
 	public void setUp() {
 
-
+		threadpool = Executors.newFixedThreadPool(15);
 	}
 
 	public void tearDown() {
-
+		threadpool.shutdownNow();
 	}
 
 
+	/**
+	 * This test creates 500 clients and they all try to connect concurrently
+	 * to the server.
+	 */
 	@Test
 	public void testConnectManyClients() {
 		final Integer NUMBER_OF_CLIENTS = 500;
@@ -45,23 +51,23 @@ public class AdditionalTest extends TestCase {
 
 
 	/**
-	 * This test creates 5 clients and they all send a put command
+	 * This test creates 500 clients and they all send a put command
 	 * to the server. The results returned by the server need to be
 	 * all PUT_SUCCESS.
 	 */
 	@Test
 	public void testPutResultManyClients() {
-		Future<KVMessage>[] futures = new Future[5];
+		final Integer NUMBER_OF_CLIENTS = 500;
+		List<Callable<KVMessage>> tasks = new ArrayList<>();
 		try {
-			for(int i = 0; i < 5; i++)
+			for(int i = 0; i < NUMBER_OF_CLIENTS; i++)
 			{
-				futures[i] = threadpool.submit(new ClientResult(i));
+				tasks.add(new ClientResult(i));
 			}
-			assertTrue(futures[0].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-			assertTrue(futures[1].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-			assertTrue(futures[2].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-			assertTrue(futures[3].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-			assertTrue(futures[4].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
+			List<Future<KVMessage>> futures = threadpool.invokeAll(tasks);
+			for (Future<KVMessage> f : futures) {
+				assertTrue(f.get(8, TimeUnit.SECONDS).getStatus() == KVMessage.StatusType.PUT_SUCCESS);
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (ExecutionException e) {
@@ -99,11 +105,6 @@ public class AdditionalTest extends TestCase {
 			} catch (Exception e) {
 				ex = e;
 			}
-		/*response.setStatus(KVMessage.StatusType.DELETE_ERROR);
-		if (ex != null) System.out.println("Client " + i + ": Exception at putting");
-		if (ex == null) System.out.println("Client " + i + ": Put status: " + response.getStatus().toString());
-		assertTrue(false*//*ex == null && response.getStatus() == KVMessage.StatusType.PUT_SUCCESS*//*);
-		kvClient.disconnect();*/
 			return response;
 		}
 	}

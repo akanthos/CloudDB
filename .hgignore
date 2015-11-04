@@ -17,3 +17,4 @@ data.store
 testing\testing.iml
 classes/
 logs/
+bin/

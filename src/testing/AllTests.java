@@ -18,7 +18,7 @@ public class AllTests {
 			new LogSetup("logs/testing/test.log", Level.ERROR);
 			new Thread(new Runnable() {
 				public void run() {
-					new KVServer(50000, 10, "FIFO");
+					new KVServer(50000, 20, "FIFO");
 				}
 			}).start();
 		} catch (IOException e) {

@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
-Ant-Version: Apache Ant 1.9.6
-Created-By: 1.7.0_79-b15 (Oracle Corporation)
-built-by: spyroslalos
+Ant-Version: Apache Ant 1.9.4
+Created-By: 1.8.0_60-b27 (Oracle Corporation)
+built-by: aacha
 Main-Class: app_kvClient.KVClient
 Class-Path: ${project.classpath}
 

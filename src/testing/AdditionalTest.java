@@ -49,27 +49,27 @@ public class AdditionalTest extends TestCase {
 	 * to the server. The results returned by the server need to be
 	 * all PUT_SUCCESS.
 	 */
-//	@Test
-//	public void testPutResultManyClients() {
-//		Future<KVMessage>[] futures = new Future[5];
-//		try {
-//			for(int i = 0; i < 5; i++)
-//			{
-//				futures[i] = threadpool.submit(new ClientResult(i));
-//			}
-//			assertTrue(futures[0].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-//			assertTrue(futures[1].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-//			assertTrue(futures[2].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-//			assertTrue(futures[3].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-//			assertTrue(futures[4].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		} catch (ExecutionException e) {
-//			e.printStackTrace();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//	}
+	@Test
+	public void testPutResultManyClients() {
+		Future<KVMessage>[] futures = new Future[5];
+		try {
+			for(int i = 0; i < 5; i++)
+			{
+				futures[i] = threadpool.submit(new ClientResult(i));
+			}
+			assertTrue(futures[0].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
+			assertTrue(futures[1].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
+			assertTrue(futures[2].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
+			assertTrue(futures[3].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
+			assertTrue(futures[4].get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 	class ClientResult implements Callable<KVMessage> {
 		protected KVStore kvClient;

@@ -168,6 +168,11 @@ public class KVClient {
 		}
 	}
 
+	/**
+	 * Helper function for printing the result of a get response to the client CLI
+	 *
+	 * @param response
+     */
 	private static void printGetResponse(KVMessage response) {
 		if (response.getStatus().equals(KVMessage.StatusType.GET_SUCCESS) && response.getValue() != null) {
 			System.out.println(response.getValue());

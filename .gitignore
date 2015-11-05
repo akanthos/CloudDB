@@ -1,20 +1,17 @@
+# IntelliJ
+.idea/
+*.iml
+
 .settings/
 
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 
-# Eclipse Core
-.project
-
-# IntelliJ
-.idea/
-syntax: glob
-clouddb.iml
-
 # Class files
 out/
-data.store
-testing\testing.iml
 classes/
-logs/
 bin/
+
+# Project specific
+logs/
+data.store

@@ -1,7 +1,7 @@
 package helpers;
 
 /**
- * Created by sreenath on 24/10/15.
+ * Simple Class defining used constants
  */
 public class Constants {
 

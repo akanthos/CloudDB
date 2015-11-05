@@ -12,12 +12,19 @@ import org.junit.Test;
 
 import java.util.*;
 
+/**
+ * Test Class for KVCache
+ */
 public class KVCacheTest extends TestCase{
 
     private String policy="LRU";
     private int cacheSize=1;
     KVMessageImpl CacheRet;
 
+    /**
+     * Test put operation
+     * @throws StorageException
+     */
     @Test
     //set size =1, cache size =1
     public void testPut() throws StorageException {
@@ -40,6 +47,10 @@ public class KVCacheTest extends TestCase{
 
     }
 
+    /**
+     * Test Discard operation
+     * @throws StorageException
+     */
     @Test
     public void testCacheDiscard() throws StorageException {
 
@@ -63,6 +74,10 @@ public class KVCacheTest extends TestCase{
     }
 
 
+    /**
+     * Test LRU Policy
+     * @throws StorageException
+     */
     @Test
     public void testLRUPolicy() throws StorageException {
 
@@ -89,6 +104,10 @@ public class KVCacheTest extends TestCase{
 
     }
 
+    /**
+     * Test LFU Policy
+     * @throws StorageException
+     */
     @Test
     public void testLFUPolicy() throws StorageException {
 
@@ -117,6 +136,10 @@ public class KVCacheTest extends TestCase{
 
     }
 
+    /**
+     * Test FIFO policy
+     * @throws StorageException
+     */
     @Test
     public void testFIFOPolicy() throws StorageException {
 

@@ -7,6 +7,10 @@ import sun.misc.Cache;
 
 import java.util.*;
 
+/**
+ * Class representing the LFU Cache
+ * The KV pairs are represented by the LfuCacheEntry class
+ */
 public class LFUCache {
 
 
@@ -15,11 +19,21 @@ public class LFUCache {
     private KVPersistenceEngine persistence;
     private static Logger logger = Logger.getLogger(KVCache.class);
 
+    /**
+     *
+     * @param cacheSize size of the LFU Cache
+     * @param persistence KVPersistenceEngine instance for accessing the store File
+     */
     public LFUCache(int cacheSize, KVPersistenceEngine persistence) {
         this.cacheSize = cacheSize;
         this.persistence = persistence;
     }
 
+    /**
+     *
+     * @param key key of the Cache Entry to be accessed
+     * @return KVMessage representation of the returned KV pair (Cache Entry)
+     */
     public KVMessageImpl getLfuCacheEntry(String key) {
         // "This" does the job
         if (map.containsKey(key)) {
@@ -71,6 +85,12 @@ public class LFUCache {
         return null; // cache miss*/
     }
 
+    /**
+     * Add a new KV pair in Cache
+     * @param key key of the Cache Entry to be inserted
+     * @param value value of the Cache Entry to be inserted
+     * @return
+     */
     public KVMessageImpl addLfuCacheEntry(String key, String value) {
 
         // "This" does the job
@@ -121,6 +141,10 @@ public class LFUCache {
         }
     }
 
+    /**
+     *
+     * @return the value of the key of the Victim KV pair
+     */
     public String findVictimKey() {
         String key = new String();
         Integer minFreq = Integer.MAX_VALUE;
@@ -135,6 +159,10 @@ public class LFUCache {
         return key;
     }
 
+    /**
+     *
+     * @return true if Cache is full else false
+     */
     public static boolean isFull() {
         if (map.size() == cacheSize)
             return true;
@@ -149,6 +177,9 @@ public class LFUCache {
     }
 
 
+    /**
+     * Simple print of the LFU Cache
+     */
     public void printLFUCache() {
 
         Set set = map.entrySet();
@@ -163,6 +194,10 @@ public class LFUCache {
         }
     }
 
+    /**
+     *
+     * @return the LinkedHashMap representing the Cache
+     */
     public LinkedHashMap<String, LfuCacheEntry> getCacheMap(){
         return map;
     }

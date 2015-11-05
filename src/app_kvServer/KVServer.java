@@ -10,16 +10,23 @@ import java.util.regex.Pattern;
 
 /**
  * Base class of KVServer including main()
+ * function setting up and running the Server
  */
 public class KVServer {
 
     private static Integer port, cacheSize;
     private static String displacementStrategy;
-    private static final Integer numberOfThreads = Runtime.getRuntime().availableProcessors();
+    private static final Integer numberOfThreads = 10;
     static KVCache kvCache = null;
     static SocketServer server = null;
     private static Logger logger = Logger.getLogger(KVServer.class);
 
+    /**
+     * Constructor of the Server
+     * @param port
+     * @param cacheSize
+     * @param cacheStrategy
+     */
     public KVServer(Integer port, Integer cacheSize, String cacheStrategy) {
         this.port = port;
         this.cacheSize = cacheSize;
@@ -111,8 +118,8 @@ public class KVServer {
 
     /**
      *
-     * @param cacheSize
-     * @return  False if given Cache size <0 else True
+     * @param cacheSize the size of the LRU || FIFO Cache
+     * @return  false if given Cache size <0 else True
      */
     private boolean isCacheSizeValid(Integer cacheSize) {
         return (cacheSize>=0);

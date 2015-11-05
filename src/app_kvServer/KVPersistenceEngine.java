@@ -8,8 +8,10 @@ import org.apache.log4j.Logger;
 import java.io.*;
 import java.util.Properties;
 
+
 /**
- * Created by aacha on 10/28/2015.
+ * Class handling the communication with
+ * the Store File (Persistant Storage) read/write
  */
 public class KVPersistenceEngine {
 
@@ -20,6 +22,11 @@ public class KVPersistenceEngine {
     private static Logger logger = Logger.getLogger(KVPersistenceEngine.class);
 
 
+    /**
+     *
+     * @throws StorageException
+     * indicating problems accessing the persistant file
+     */
     public KVPersistenceEngine() throws StorageException {
         try {
             // Initialize properties file
@@ -40,10 +47,9 @@ public class KVPersistenceEngine {
     }
 
     /**
-     * Retrieves an entry from the cache.
-     * e.g. If we use LRU policy: The retrieved entry becomes the MRU (most recently used) entry.
-     * @param key the key whose the associated value is to be returned by the function.
-     * @return    the value for this key, or null if no value with this key exists in the cache.
+     * Retrieves an entry from file.
+     * @param key the key of the KV pair to be retrieved from the file.
+     * @return    KVMessage representation of the retrieved KV pair with the respective Status.
      */
     public KVMessageImpl get (String key){
 
@@ -56,12 +62,11 @@ public class KVPersistenceEngine {
     }
 
     /**
-     * Adds an entry to the cache.
-     * The new entry becomes the most recently used (MRU) entry.
-     * If an entry with the specified key already exists in the cache, it is replaced by the new entry.
-     * If the cache is full, the least recently used (LRU) entry is removed from the cache.
-     * @param key    the key with which the specified value.
-     * @param value  a value, associated with the specified key.
+     * Writes an KV pair entry to file.
+     * @param key the key of the KV pair to be written in the file.
+     * @param value  the value, associated with the specified key.
+     * @return    KVMessage representation of the KV pair written to the file with
+     *            respective Status.
      */
     public KVMessageImpl put (String key, String value){
 
@@ -84,7 +89,12 @@ public class KVPersistenceEngine {
 
     }
 
-
+    /**
+     * Remove an entry from the file representing the persistant space
+     * @param key key of the KV pair to be removed
+     * @return KVMessage representation of the KeyValue pair to be removed including
+     * the Status of the operation
+     */
     public KVMessageImpl remove (String key){
 
         try {

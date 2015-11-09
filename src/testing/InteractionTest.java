@@ -27,7 +27,7 @@ public class InteractionTest extends TestCase {
 	
 	@Test
 	public void testPut() {
-		String key = "foo";
+		String key = "foobar";
 		String value = "bar";
 		KVMessage response = null;
 		Exception ex = null;

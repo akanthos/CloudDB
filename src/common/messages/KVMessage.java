@@ -12,7 +12,10 @@ public interface KVMessage {
 		PUT_ERROR, 		/* Put - request not successful */
 		DELETE_SUCCESS, /* Delete - request successful */
 		DELETE_ERROR, 	/* Delete - request successful */
-		GENERAL_ERROR 	/* If an unexpected situation is encountered */
+		GENERAL_ERROR, 	/* If an unexpected situation is encountered */
+		SERVER_STOPPED,         /* Server is stopped, no requests are processed */
+		SERVER_WRITE_LOCK,      /* Server locked for out, only get possible */
+		SERVER_NOT_RESPONSIBLE  /* Request not successful, server not responsible for key */
 	}
 
 	/**

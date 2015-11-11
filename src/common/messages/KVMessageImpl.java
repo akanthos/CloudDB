@@ -1,5 +1,6 @@
 package common.messages;
 
+import common.utils.Utilities;
 import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -16,8 +17,6 @@ public class KVMessageImpl implements KVMessage, Serializable {
     String key;
     String value;
     StatusType status;
-    private static final char LINE_FEED = 0x0A;
-    private static final char RETURN = 0x0D;
     private static Logger logger = Logger.getLogger(KVMessageImpl.class);
 
     static {
@@ -136,21 +135,6 @@ public class KVMessageImpl implements KVMessage, Serializable {
      * @throws UnsupportedEncodingException
      */
     public byte[] getMsgBytes() throws UnsupportedEncodingException {
-        byte[] bytes;
-        byte[] ctrBytes;
-        byte[] tmp;
-        try {
-            bytes = this.toString().getBytes("UTF-8");
-            ctrBytes = new byte[]{LINE_FEED, RETURN};
-            tmp = new byte[bytes.length + ctrBytes.length];
-
-            System.arraycopy(bytes, 0, tmp, 0, bytes.length);
-            System.arraycopy(ctrBytes, 0, tmp, bytes.length, ctrBytes.length);
-
-        } catch (UnsupportedEncodingException e) {
-            logger.error(String.format("Cannot convert message to byte array"), e);
-            throw new UnsupportedEncodingException("Cannot convert message to byte array");
-        }
-        return tmp;
+        return Utilities.getBytes(this);
     }
 }

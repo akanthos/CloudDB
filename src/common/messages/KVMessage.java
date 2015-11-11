@@ -1,6 +1,6 @@
 package common.messages;
 
-public interface KVMessage {
+public interface KVMessage extends GenericMessage {
 	
 	public enum StatusType {
 		GET, 			/* Get - request */

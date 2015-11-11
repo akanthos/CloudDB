@@ -1,6 +1,9 @@
 package app_kvServer;
 
 
+import app_kvEcs.ServerInfo;
+import common.utils.KVMetadata;
+import common.utils.KVRange;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
@@ -104,6 +107,81 @@ public class KVServer {
             printHelp();
         }
 
+
+    }
+
+    /**
+     * Initialize the KVServer with the meta-data, it’s local cache size, and the
+     * cache displacement strategy, and block it for client requests, i.e., all client
+     * requests are rejected with an SERVER_STOPPED error message; ECS requests have
+     * to be processed.
+     *
+     * @param metadata
+     * @param cacheSize
+     * @param displacementStrategy
+     */
+    public void initKVServer(KVMetadata metadata, Integer cacheSize, String displacementStrategy){
+
+    }
+
+    /**
+     * Starts the KVServer, all client requests and all ECS requests are processed.
+     *
+     */
+    public void start() {
+
+    }
+
+    /**
+     * Stops the KVServer, all client requests are rejected and only ECS requests are processed.
+     *
+     */
+    public void stop() {
+
+    }
+
+    /**
+     * Exits the KVServer application.
+     *
+     */
+    public void shutDown() {
+
+    }
+
+    /**
+     * Lock the KVServer for write operations.
+     *
+     */
+    public void lockWrite() {
+
+    }
+
+    /**
+     * Unlock the KVServer for write operations.
+     *
+     */
+    public void unLockWrite() {
+
+    }
+
+    /**
+     * Transfer a subset (range) of the KVServer’s data to another KVServer
+     * (reallocation before removing this server or adding a new KVServer to
+     * the ring); send a notification to the ECS, if data transfer is completed.
+     *
+     * @param range
+     * @param server
+     */
+    public void moveData(KVRange range, ServerInfo server) {
+
+    }
+
+    /**
+     * Update the meta-data repository of this server
+     *
+     * @param metadata
+     */
+    public void update(KVMetadata metadata) {
 
     }
 

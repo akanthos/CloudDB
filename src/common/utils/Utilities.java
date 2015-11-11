@@ -1,5 +1,6 @@
 package common.utils;
 
+import common.messages.GenericMessage;
 import helpers.CannotConnectException;
 import helpers.ErrorMessages;
 import org.apache.log4j.Logger;
@@ -17,6 +18,8 @@ public class Utilities {
     private static Logger logger = Logger.getLogger(Utilities.class);
     private static final int BUFFER_SIZE = 1024;
     private static final int DROP_SIZE = 128 * BUFFER_SIZE;
+    private static final char LINE_FEED = 0x0A;
+    private static final char RETURN = 0x0D;
 
     static {
         PropertyConfigurator.configure("conf/log.config");
@@ -116,5 +119,22 @@ public class Utilities {
 
     }
 
+    public static byte[] getBytes(GenericMessage message) throws UnsupportedEncodingException {
+        byte[] bytes;
+        byte[] ctrBytes;
+        byte[] tmp;
+        try {
+            bytes = message.toString().getBytes("UTF-8");
+            ctrBytes = new byte[]{LINE_FEED, RETURN};
+            tmp = new byte[bytes.length + ctrBytes.length];
 
+            System.arraycopy(bytes, 0, tmp, 0, bytes.length);
+            System.arraycopy(ctrBytes, 0, tmp, bytes.length, ctrBytes.length);
+
+        } catch (UnsupportedEncodingException e) {
+            logger.error(String.format("Cannot convert message to byte array"), e);
+            throw new UnsupportedEncodingException("Cannot convert message to byte array");
+        }
+        return tmp;
+    }
 }

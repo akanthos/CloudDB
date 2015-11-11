@@ -1,6 +1,10 @@
 package app_kvEcs;
 
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 public class ServerInfo implements java.io.Serializable{
 
     private String ServerName;
@@ -33,6 +37,13 @@ public class ServerInfo implements java.io.Serializable{
     @Override
     public String toString() {
         return this.getServerIP()+":"+this.getServerIP();
+    }
+
+    public byte[] getHash() throws UnsupportedEncodingException, NoSuchAlgorithmException {
+        byte[] bytesOfMessage = this.toString().getBytes("UTF-8");
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        return md.digest(bytesOfMessage);
     }
 
 }

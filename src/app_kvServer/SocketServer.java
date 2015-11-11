@@ -5,6 +5,9 @@ import common.utils.KVMetadata;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Class handling all TCP  connections
@@ -13,13 +16,16 @@ import java.net.ServerSocket;
  */
 public class SocketServer {
     boolean initialized;
-    boolean writeLock;
+    boolean stopped;
+    boolean writeLocked;
     String hostname;
     int port;
     ConnectionHandler handler;
     ServerSocket server;
     boolean open;
     int numOfClients;
+
+    private List<ServerActionListener> runnableListeners;
     private KVMetadata metadata;
 
     /**
@@ -29,10 +35,12 @@ public class SocketServer {
      */
     public SocketServer(String hostname, Integer port) {
         this.initialized = false;
-        this.writeLock = false;
+        this.stopped = true;
+        this.writeLocked = false;
         this.hostname = hostname;
         this.port = port;
         this.open = false;
+        this.runnableListeners = Collections.synchronizedList(new ArrayList<>());
     }
 
     /**
@@ -93,15 +101,63 @@ public class SocketServer {
         this.initialized = initialized;
     }
 
-    public synchronized void setWriteLock(){
-        this.writeLock = true;
-    }
-    public synchronized void unsetWriteLock(){
-        this.writeLock = false;
+    public boolean isInitialized() {
+        return initialized;
     }
 
     public void setMetadata(KVMetadata metadata) {
         this.metadata = metadata;
     }
+
+    public KVMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void addListener(ServerActionListener l) {
+        runnableListeners.add(l);
+    }
+
+    public void removeListener(KVRequestHandler kvRequestHandler) {
+        runnableListeners.remove(kvRequestHandler);
+    }
+
+    public void startServing() {
+        this.stopped = false;
+        for (ServerActionListener l : runnableListeners) {
+            l.serverStarted();
+        }
+    }
+    public void stopServing() {
+        this.stopped = true;
+        for (ServerActionListener l : runnableListeners) {
+            l.serverStopped();
+        }
+    }
+    public synchronized void writeLock() {
+        this.writeLocked = true;
+//        for (ServerActionListener l : runnableListeners) {
+//            l.serverWriteLocked();
+//        }
+    }
+    public synchronized void writeUnlock() {
+        this.writeLocked = false;
+//        for (ServerActionListener l : runnableListeners) {
+//            l.serverWriteUnlocked();
+//        }
+    }
+    public synchronized boolean isWriteLocked() {
+        return writeLocked;
+    }
+
+    public void shutDown() {
+        this.open = false;
+        this.closeSocket();
+        this.handler.shutDown();
+        for (ServerActionListener l : runnableListeners) {
+            l.serverShutDown();
+        }
+        // In Java 8 : runnableListeners.forEach(ServerActionListener::serverShutDown);
+    }
+
 
 }

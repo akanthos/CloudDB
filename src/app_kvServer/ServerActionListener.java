@@ -8,4 +8,5 @@ public interface ServerActionListener {
     void serverStopped();
     void serverWriteLocked();
     void serverWriteUnlocked();
+    void serverShutDown();
 }

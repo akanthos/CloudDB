@@ -1,6 +1,7 @@
 package app_kvServer;
 
 import common.messages.KVAdminMessage;
+import common.messages.KVAdminMessage.StatusType;
 import common.messages.KVAdminMessageImpl;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
@@ -13,7 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.EventListener;
+
 
 /**
  * Logic for handling client requests.
@@ -27,6 +28,8 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
     InputStream inputStream;
     OutputStream outputStream;
     private boolean isOpen;
+    private boolean writeLock;
+    private boolean stopped;
     private static Logger logger = Logger.getLogger(KVRequestHandler.class);
 
     public KVRequestHandler(SocketServer server, Socket clientSocket, int clientNumber, KVCache kvCache) throws IOException {
@@ -35,6 +38,8 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
         this.clientSocket = clientSocket;
         this.clientNumber = clientNumber;
         this.kvCache = kvCache;
+        this.writeLock = false;
+        this.stopped = true;
         try {
             inputStream = clientSocket.getInputStream();
             outputStream = clientSocket.getOutputStream();
@@ -104,6 +109,7 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
                     inputStream.close();
                     outputStream.close();
                     clientSocket.close();
+                    server.removeListener(this);
                 }
             }catch(IOException ioe){
                 logger.error("Error! Unable to tear down connection!", ioe);
@@ -122,7 +128,7 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             kvAdminMessage = new KVAdminMessageImpl(messageString);
         } catch (Exception e) {
             logger.error(String.format("Unable to process message from client %d.", clientNumber), e);
-            kvAdminMessage = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
+            kvAdminMessage = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         }
         return kvAdminMessage;
     }
@@ -151,32 +157,45 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
     private KVAdminMessageImpl processAdminMessage(KVAdminMessage kvAdminMessage) {
         // TODO:
         KVAdminMessageImpl response;
-        if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.INIT)) {
+        if (kvAdminMessage.getStatus().equals(StatusType.INIT)) {
             try {
                 kvCache = new KVCache(kvAdminMessage.getCacheSize(), kvAdminMessage.getDisplacementStrategy());
             } catch (StorageException e) {
-                return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
+                return new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
             }
             server.setMetadata(kvAdminMessage.getMetadata());
-            return new KVAdminMessageImpl(KVAdminMessage.StatusType.INIT_SUCCESS);
+            server.setInitialized(true);
+            return new KVAdminMessageImpl(StatusType.INIT_SUCCESS);
 
-        } else if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.START)) {
-            response = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
-        } else if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.STOP)) {
-            response = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
-        } else if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.SHUT_DOWN)) {
-            response = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
-        } else if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.LOCK_WRITE)) {
-            response = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
-        } else if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.UNLOCK_WRITE)) {
-            response = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
-        } else if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.MOVE_DATA)) {
-            response = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
-        } else if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.UPDATE_METADATA)) {
-            response = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
+        } else if (kvAdminMessage.getStatus().equals(StatusType.START)) {
+            server.startServing();
+            response = new KVAdminMessageImpl(StatusType.START_SUCCESS);
+
+        } else if (kvAdminMessage.getStatus().equals(StatusType.STOP)) {
+            server.stopServing();
+            response = new KVAdminMessageImpl(StatusType.STOP_SUCCESS);
+
+        } else if (kvAdminMessage.getStatus().equals(StatusType.SHUT_DOWN)) {
+            server.shutDown();
+            response = new KVAdminMessageImpl(StatusType.SHUT_DOWN_SUCCESS);
+
+        } else if (kvAdminMessage.getStatus().equals(StatusType.LOCK_WRITE)) {
+            server.writeLock();
+            response = new KVAdminMessageImpl(StatusType.LOCK_WRITE_SUCCESS);
+
+        } else if (kvAdminMessage.getStatus().equals(StatusType.UNLOCK_WRITE)) {
+            server.writeUnlock();
+            response = new KVAdminMessageImpl(StatusType.UNLOCK_WRITE_SUCCESS);
+
+        } else if (kvAdminMessage.getStatus().equals(StatusType.MOVE_DATA)) {
+            // TODO:
+            response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
+        } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
+            // TODO:
+            response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         } else {
             logger.error(String.format("ECS: Invalid message from ECS: %s", kvAdminMessage.toString()));
-            response = new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
+            response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         }
         return response;
     }
@@ -188,37 +207,56 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
      * @return resulting KVMessageImpl
      */
     private KVMessageImpl processMessage(KVMessage kvMessage) {
-        KVMessageImpl response;
-        if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
-            // Do the GET
+//        synchronized (server) {
+//            while (server.isWriteLocked()) {
+//                try {
+//                    server.wait();
+//                    // TODO: Do the work here
+//                } catch (InterruptedException e) {
+//                    logger.error("Client " + clientNumber+ ": Interrupted exception on wait");
+//                }
+//            }
+//        }
+        if (server.isInitialized() && (!server.isWriteLocked())) {
+            KVMessageImpl response;
+            if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
+                // Do the GET
                 response = kvCache.get(kvMessage.getKey());
-        } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
-            // Do the PUT
+            } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
+                // Do the PUT
                 response = kvCache.put(kvMessage.getKey(), kvMessage.getValue());
+            } else {
+                logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
+                response = new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
+            }
+            return response;
         } else {
-            logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
-            response = new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
+            return new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
         }
-        return response;
     }
 
     @Override
     public void serverStarted() {
-        // TODO:
+        this.stopped = false;
     }
 
     @Override
     public void serverStopped() {
-        // TODO:
+        this.stopped = true;
     }
 
     @Override
     public void serverWriteLocked() {
-        // TODO:
+        this.writeLock = true;
     }
 
     @Override
     public void serverWriteUnlocked() {
-        // TODO:
+        this.writeLock = false;
+    }
+
+    @Override
+    public void serverShutDown() {
+        this.isOpen = false;
     }
 }

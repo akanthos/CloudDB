@@ -3,8 +3,6 @@ package app_kvServer;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -15,14 +13,13 @@ import java.util.concurrent.Executors;
  */
 public class KVConnectionHandler implements ConnectionHandler {
 
-    private List<ServerActionListener> runnableListeners;
+
     private SocketServer server;
     private KVCache kv_cache = null;
     private ExecutorService threadpool = null;
 
     public KVConnectionHandler(SocketServer server) {
         this.server = server;
-        this.runnableListeners = new ArrayList<>();
     }
 
     /**
@@ -45,9 +42,14 @@ public class KVConnectionHandler implements ConnectionHandler {
     @Override
     public void handle(Socket client, int numOfClient) throws IOException {
         KVRequestHandler rr = new KVRequestHandler(server, client, numOfClient, kv_cache);
-        runnableListeners.add(rr);
+        server.addListener(rr);
 //        new Thread(rr).start();
         threadpool.submit(rr);
+    }
+
+    @Override
+    public void shutDown() {
+        threadpool.shutdownNow();
     }
 }
 

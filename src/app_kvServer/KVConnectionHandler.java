@@ -2,6 +2,8 @@ package app_kvServer;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,17 +15,24 @@ import java.util.concurrent.Executors;
  */
 public class KVConnectionHandler implements ConnectionHandler {
 
+    private List<ServerActionListener> runnableListeners;
+    private SocketServer server;
     private KVCache kv_cache = null;
     private ExecutorService threadpool = null;
 
+    public KVConnectionHandler(SocketServer server) {
+        this.server = server;
+        this.runnableListeners = new ArrayList<>();
+    }
+
     /**
      *
-     * @param kv_cache Cache to be queried
+     * @param server the SocketServre instance that carries this handler
      * @param connections number of connections/threads
      */
-    public KVConnectionHandler(KVCache kv_cache, int connections) {
-        this.kv_cache = kv_cache;
-//        threadpool = Executors.newFixedThreadPool(connections);
+    public KVConnectionHandler(/*KVCache kv_cache*/ SocketServer server, int connections) {
+        this.server = server;
+//        this.kv_cache = kv_cache;
         threadpool = Executors.newCachedThreadPool();
     }
 
@@ -35,8 +44,8 @@ public class KVConnectionHandler implements ConnectionHandler {
      */
     @Override
     public void handle(Socket client, int numOfClient) throws IOException {
-        Runnable rr = new KVRequestHandler(client, numOfClient, kv_cache);
-//        Callable<Object> rr = new KVRequestHandler(client, numOfClient, kv_cache);
+        KVRequestHandler rr = new KVRequestHandler(server, client, numOfClient, kv_cache);
+        runnableListeners.add(rr);
 //        new Thread(rr).start();
         threadpool.submit(rr);
     }

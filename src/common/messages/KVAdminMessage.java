@@ -10,22 +10,23 @@ import common.utils.KVRange;
 public interface KVAdminMessage extends GenericMessage {
 
     public enum StatusType {
-        INIT, 			    /* Server initialization */
+        INIT, 			        /* Server initialization */
         INIT_SUCCESS,
-        START, 		        /* Server start, so that he accepts client requests too */
+        START, 		            /* Server start, so that he accepts client requests too */
         START_SUCCESS,
-        STOP, 	            /* Server stop, so that he doesn't accept client requests */
+        STOP, 	                /* Server stop, so that he doesn't accept client requests */
         STOP_SUCCESS,
-        SHUT_DOWN, 		    /* Exits the KVServer application */
+        SHUT_DOWN, 		        /* Exits the KVServer application */
         SHUT_DOWN_SUCCESS,
-        LOCK_WRITE, 	    /* Lock KVServer for write operations */
+        LOCK_WRITE, 	        /* Lock KVServer for write operations */
         LOCK_WRITE_SUCCESS,
-        UNLOCK_WRITE, 	    /* Unlock KVServer for write operations */
+        UNLOCK_WRITE, 	        /* Unlock KVServer for write operations */
         UNLOCK_WRITE_SUCCESS,
-        MOVE_DATA, 		    /* Transfer subrange to another server and notify ECS when complete */
+        MOVE_DATA, 		        /* Transfer subrange to another server and notify ECS when complete */
         MOVE_DATA_SUCCESS,
-        UPDATE_METADATA,    /* Update meta-data repository */
-        OPERATION_FAILED    /* Operation requested by the ECS failed */
+        UPDATE_METADATA,        /* Update meta-data repository */
+        OPERATION_FAILED,       /* Operation requested by the ECS failed */
+        GENERAL_ERROR           /* For other types of errors */
     }
 
     /**

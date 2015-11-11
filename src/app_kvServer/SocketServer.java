@@ -1,5 +1,7 @@
 package app_kvServer;
 
+import common.utils.KVMetadata;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -10,22 +12,27 @@ import java.net.ServerSocket;
  * The connection handling lives in a KVRequestHandler
  */
 public class SocketServer {
+    boolean initialized;
+    boolean writeLock;
     String hostname;
     int port;
     ConnectionHandler handler;
     ServerSocket server;
     boolean open;
     int numOfClients;
+    private KVMetadata metadata;
 
     /**
      * Constructor of Socket server
      * @param hostname name of Server host
      * @param port Port Server is running on
      */
-    public SocketServer(String hostname, int port) {
+    public SocketServer(String hostname, Integer port) {
+        this.initialized = false;
+        this.writeLock = false;
         this.hostname = hostname;
         this.port = port;
-        open = false;
+        this.open = false;
     }
 
     /**
@@ -80,6 +87,21 @@ public class SocketServer {
         } catch (IOException e) {
             return;
         }
+    }
+
+    public void setInitialized(boolean initialized) {
+        this.initialized = initialized;
+    }
+
+    public synchronized void setWriteLock(){
+        this.writeLock = true;
+    }
+    public synchronized void unsetWriteLock(){
+        this.writeLock = false;
+    }
+
+    public void setMetadata(KVMetadata metadata) {
+        this.metadata = metadata;
     }
 
 }

@@ -69,18 +69,34 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     @Override
     public String toString() {
         // TODO:
-        return null;
-//        StringBuilder msgString = new StringBuilder();
-//        msgString.append(status);
-//        msgString.append(":");
-//
-//
-//        String delimitedKey = key.replaceAll(",", "\\\\,");
-//        msgString.append(delimitedKey);
-//        msgString.append(",");
+
+        StringBuilder msgString = new StringBuilder();
+        msgString.append(status);
+        msgString.append(",");
+
+        if (status.equals(StatusType.INIT)) {
+            msgString.append(metadata.toString());
+            msgString.append(",");
+            msgString.append(cacheSize+"");
+            msgString.append(",");
+            msgString.append(displacementStrategy);
+        }
+        else if (status.equals(StatusType.MOVE_DATA)) {
+            msgString.append(range.toString());
+            msgString.append(",");
+            msgString.append(serverInfo+"");
+        }
+        else if (status.equals(StatusType.UPDATE_METADATA)) {
+            msgString.append(metadata.toString());
+        }
+        else {
+
+        }
+
+
 //        String delimitedValue = value.replaceAll(",", "\\\\,");
 //        msgString.append(delimitedValue);
-//        return msgString.toString();
+        return msgString.toString();
     }
 
     /**

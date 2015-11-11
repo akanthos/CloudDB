@@ -7,6 +7,8 @@ import org.apache.log4j.PropertyConfigurator;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 
 /**
@@ -136,5 +138,12 @@ public class KVMessageImpl implements KVMessage, Serializable {
      */
     public byte[] getMsgBytes() throws UnsupportedEncodingException {
         return Utilities.getBytes(this);
+    }
+
+    public byte[] getHash() throws UnsupportedEncodingException, NoSuchAlgorithmException {
+        byte[] bytesOfMessage = key.getBytes("UTF-8");
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        return md.digest(bytesOfMessage);
     }
 }

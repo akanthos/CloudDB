@@ -27,9 +27,7 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
     int clientNumber;
     InputStream inputStream;
     OutputStream outputStream;
-    private boolean isOpen;
-    private boolean writeLock;
-    private boolean stopped;
+    private ServerState state;
     private static Logger logger = Logger.getLogger(KVRequestHandler.class);
 
     public KVRequestHandler(SocketServer server, Socket clientSocket, int clientNumber, KVCache kvCache) throws IOException {
@@ -38,12 +36,13 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
         this.clientSocket = clientSocket;
         this.clientNumber = clientNumber;
         this.kvCache = kvCache;
-        this.writeLock = false;
-        this.stopped = true;
+        state = new ServerState();
+        state.setWriteLock(false);
+        state.setStopped(true);
         try {
             inputStream = clientSocket.getInputStream();
             outputStream = clientSocket.getOutputStream();
-            this.isOpen = true;
+            state.setIsOpen(true);
         } catch (IOException e) {
             logger.error(String.format("Client: %d. Unable to initialize streams.", clientNumber), e);
             throw new IOException("Unable to initialize streams from socket");
@@ -63,13 +62,13 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             KVAdminMessageImpl kvAdminResponse;
             byte[] byteMessage;
             String stringMessage;
-            while (isOpen) {
+            while (state.isOpen()) {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
 
                     if (byteMessage[0] == -1) {
-                        isOpen = false;
+                        state.setIsOpen(false);
                     }
                     else {
                         stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
@@ -94,10 +93,10 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
                     logger.error("Error! Connection lost!");
-                    isOpen = false;
+                    state.setIsOpen(false);
                 } catch (Exception e) {
                     logger.error("Unable to parse string message from client");
-                    isOpen = false;
+                    state.setIsOpen(false);
                 }
 
             }
@@ -237,26 +236,30 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
 
     @Override
     public void serverStarted() {
-        this.stopped = false;
+        state.setStopped(false);
     }
 
     @Override
     public void serverStopped() {
-        this.stopped = true;
+        state.setStopped(true);
     }
 
     @Override
     public void serverWriteLocked() {
-        this.writeLock = true;
+        synchronized (state) {
+            state.setWriteLock(true);
+        }
     }
 
     @Override
     public void serverWriteUnlocked() {
-        this.writeLock = false;
+        synchronized (state) {
+            state.setWriteLock(false);
+        }
     }
 
     @Override
     public void serverShutDown() {
-        this.isOpen = false;
+        state.setIsOpen(false);
     }
 }

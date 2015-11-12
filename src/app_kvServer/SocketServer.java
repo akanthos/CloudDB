@@ -7,7 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Class handling all TCP  connections
@@ -15,17 +15,14 @@ import java.util.List;
  * The connection handling lives in a KVRequestHandler
  */
 public class SocketServer {
-    boolean initialized;
-    boolean stopped;
-    boolean writeLocked;
+    ServerState state;
     String hostname;
     int port;
     ConnectionHandler handler;
     ServerSocket server;
-    boolean open;
     int numOfClients;
 
-    private List<ServerActionListener> runnableListeners;
+    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private KVMetadata metadata;
 
     /**
@@ -40,7 +37,7 @@ public class SocketServer {
         this.hostname = hostname;
         this.port = port;
         this.open = false;
-        this.runnableListeners = Collections.synchronizedList(new ArrayList<>());
+        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
 
     /**
@@ -158,6 +155,7 @@ public class SocketServer {
         }
         // In Java 8 : runnableListeners.forEach(ServerActionListener::serverShutDown);
     }
+
 
 
 }

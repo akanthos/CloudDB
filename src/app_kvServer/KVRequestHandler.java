@@ -76,12 +76,13 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
 
                         // If it fails, it returns a GENERAL_ERROR
                         if (kvMessage.getStatus()== KVMessage.StatusType.GENERAL_ERROR) {
+                            // It may be an admin message
                             kvAdminMessage = extractKVAdminMessage(stringMessage);
                             kvAdminResponse = processAdminMessage(kvAdminMessage);
                             // Send appropriate response according to the above backend actions
                             Utilities.send(kvAdminResponse.getMsgBytes(), outputStream);
                         }
-                        else { // It may be an admin message
+                        else {
                             kvResponse = processMessage(kvMessage);
                             // Send appropriate response according to the above backend actions
                             Utilities.send(kvResponse.getMsgBytes(), outputStream);
@@ -241,7 +242,9 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
 
     @Override
     public void serverStopped() {
-        state.setStopped(true);
+        synchronized (state) {
+            state.setStopped(true);
+        }
     }
 
     @Override

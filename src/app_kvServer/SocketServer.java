@@ -5,8 +5,6 @@ import common.utils.KVMetadata;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -31,12 +29,13 @@ public class SocketServer {
      * @param port Port Server is running on
      */
     public SocketServer(String hostname, Integer port) {
-        this.initialized = false;
-        this.stopped = true;
-        this.writeLocked = false;
+        this.state = new ServerState();
+        state.setInitialized(false);
+        state.setStopped(true);
+        state.setWriteLock(false);
+        state.setIsOpen(false);
         this.hostname = hostname;
         this.port = port;
-        this.open = false;
         this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
 
@@ -45,10 +44,10 @@ public class SocketServer {
      * @throws IOException
      */
     public void connect() throws IOException {
-        if (open) return;
+        if (state.isOpen()) return;
         server = new ServerSocket();
         server.bind(new InetSocketAddress(hostname, port));
-        open = true;
+        state.setIsOpen(true);
     }
 
     /**
@@ -56,10 +55,10 @@ public class SocketServer {
      * @throws IOException if there is a network error (for instance if the socket is inadvertently closed)
      */
     public void run() throws IOException {
-        if (!open) {
+        if (!state.isOpen()) {
             throw new IOException();
         }
-        while (open) {
+        while (state.isOpen()) {
             numOfClients++;
             handler.handle(server.accept(), numOfClients);
         }
@@ -78,7 +77,7 @@ public class SocketServer {
      * Stop the ServerSocket
      */
     public void stop() {
-        this.open = false;
+        state.setIsOpen(false);
         this.closeSocket();
     }
 
@@ -95,11 +94,11 @@ public class SocketServer {
     }
 
     public void setInitialized(boolean initialized) {
-        this.initialized = initialized;
+        state.setInitialized(initialized);
     }
 
     public boolean isInitialized() {
-        return initialized;
+        return state.isInitialized();
     }
 
     public void setMetadata(KVMetadata metadata) {
@@ -119,35 +118,35 @@ public class SocketServer {
     }
 
     public void startServing() {
-        this.stopped = false;
+        state.setStopped(false);
         for (ServerActionListener l : runnableListeners) {
             l.serverStarted();
         }
     }
     public void stopServing() {
-        this.stopped = true;
+        state.setStopped(true);
         for (ServerActionListener l : runnableListeners) {
             l.serverStopped();
         }
     }
     public synchronized void writeLock() {
-        this.writeLocked = true;
+        state.setWriteLock(true);
 //        for (ServerActionListener l : runnableListeners) {
 //            l.serverWriteLocked();
 //        }
     }
     public synchronized void writeUnlock() {
-        this.writeLocked = false;
+        state.setWriteLock(false);
 //        for (ServerActionListener l : runnableListeners) {
 //            l.serverWriteUnlocked();
 //        }
     }
     public synchronized boolean isWriteLocked() {
-        return writeLocked;
+        return state.isWriteLock();
     }
 
     public void shutDown() {
-        this.open = false;
+        state.setIsOpen(false);
         this.closeSocket();
         this.handler.shutDown();
         for (ServerActionListener l : runnableListeners) {

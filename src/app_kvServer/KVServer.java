@@ -4,7 +4,9 @@ package app_kvServer;
 import app_kvEcs.ServerInfo;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
+import helpers.Constants;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
 
@@ -29,6 +31,7 @@ public class KVServer {
      * @param cacheStrategy
      */
     public KVServer(Integer port) {//, Integer cacheSize, String cacheStrategy) {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.info = new ServerInfo(null, port);
         this.server = new SocketServer("localhost", port);
 

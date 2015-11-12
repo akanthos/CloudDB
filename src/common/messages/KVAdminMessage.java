@@ -1,6 +1,6 @@
 package common.messages;
 
-import app_kvEcs.ServerInfo;
+import app_kvEcs.ServerInfos;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 
@@ -58,7 +58,7 @@ public interface KVAdminMessage extends GenericMessage {
      * @return the information about the target server associated
      *         to this message
      */
-    public ServerInfo getServerInfo();
+    public ServerInfos getServerInfo();
 
     /**
      * @return a status string that is used to identify request types,

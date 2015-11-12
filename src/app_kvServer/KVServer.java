@@ -1,15 +1,13 @@
 package app_kvServer;
 
 
-import app_kvEcs.ServerInfo;
+import app_kvEcs.ServerInfos;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Base class of KVServer including main()
@@ -172,7 +170,7 @@ public class KVServer {
      * @param range
      * @param server
      */
-    public void moveData(KVRange range, ServerInfo server) {
+    public void moveData(KVRange range, ServerInfos server) {
 
     }
 

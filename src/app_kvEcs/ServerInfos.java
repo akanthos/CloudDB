@@ -5,13 +5,13 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class ServerInfo implements java.io.Serializable{
+public class ServerInfos implements java.io.Serializable{
 
     private String ServerName;
     private String ServerPort;
 
 
-    public ServerInfo( String hostname, String port ) {
+    public ServerInfos(String hostname, String port) {
 
         this.ServerName = hostname;
         this.ServerPort = port;

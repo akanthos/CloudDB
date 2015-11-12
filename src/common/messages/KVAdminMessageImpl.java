@@ -1,15 +1,13 @@
 package common.messages;
 
-import app_kvEcs.ServerInfo;
+import app_kvEcs.ServerInfos;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 import common.utils.Utilities;
 import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.pattern.IntegerPatternConverter;
 
-import javax.rmi.CORBA.Util;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 
@@ -22,7 +20,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     Integer cacheSize;
     String displacementStrategy;
     KVRange range;
-    ServerInfo serverInfo;
+    ServerInfos serverInfo;
     KVAdminMessage.StatusType status;
 
     private static Logger logger = Logger.getLogger(KVMessageImpl.class);
@@ -56,7 +54,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
 
-    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfo serverInfo) {
+    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfos serverInfo) {
         this.status = status;
         this.range = range;
         this.serverInfo = serverInfo;
@@ -129,7 +127,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
     @Override
-    public ServerInfo getServerInfo() {
+    public ServerInfos getServerInfo() {
         return serverInfo;
     }
 

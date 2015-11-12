@@ -16,7 +16,7 @@ public class ConfigReader {
     private final Pattern LINE_PATTERN = Pattern.compile( "(?m)^" + NODE_PATTERN + "(\\s)+" + HOSTNAME_PATTERN
                                                             + "(\\s)+" + PORT_PATTERN + "$");
 
-    private List<ServerInfo> servers = new ArrayList<ServerInfo>();
+    private List<ServerInfos> servers = new ArrayList<ServerInfos>();
 
     /**
      * Constructor
@@ -44,11 +44,11 @@ public class ConfigReader {
     }
 
     /**
-     * Reads a line from config file and adds a ServerInfo
+     * Reads a line from config file and adds a ServerInfos
      * element to the servers List Collection.
      * @param line line reading from file
      */
-    private void parseLine( final String line ) {
+    public void parseLine( final String line ) {
 
         final Matcher matcher = LINE_PATTERN.matcher(line);
         if ( ! matcher.matches() ) {
@@ -56,8 +56,16 @@ public class ConfigReader {
             return;
         }
         String[] splited = line.split("\\s+");
-        servers.add( new ServerInfo( splited[1], splited[2] ) );
+        servers.add( new ServerInfos( splited[1], splited[2] ) );
 
+    }
+
+    /**
+     *
+     * @return List of ServerInfos objects
+     */
+    public List<ServerInfos> getServers(){
+        return servers;
     }
 
 }

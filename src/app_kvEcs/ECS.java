@@ -26,6 +26,19 @@ public class ECS {
         }
     }
 
+    /**
+     * Randomly choose <numberOfNodes> servers from the available machines and start the KVServer
+     * by issuing a SSH call to the respective machine.
+     * This call launches the server with the specified cache size and displacement strategy.
+     * You can assume that the KVServer.jar is located in the same directory as the ECS.
+     * All servers are initialized with the meta-data and remain in state stopped
+     * @param numberOfNodes
+     * @param cacheSize
+     * @param displacementStrategy
+     * @return true if succeeded else false
+     */
+    public boolean initService(int numberOfNodes, int cacheSize, String displacementStrategy) { return true; }
+
     /**x
      * Starts the storage service; By calling start() on all
      * KVServer instances that participate the service
@@ -49,19 +62,6 @@ public class ECS {
      * @return true if succeeded else false
      */
     public boolean shutdown() { return true; }
-
-    /**
-     * Randomly choose <numberOfNodes> servers from the available machines and start the KVServer
-     * by issuing a SSH call to the respective machine.
-     * This call launches the server with the specified cache size and displacement strategy.
-     * You can assume that the KVServer.jar is located in the same directory as the ECS.
-     * All servers are initialized with the meta-data and remain in state stopped
-     * @param numberOfNodes
-     * @param cacheSize
-     * @param displacementStrategy
-     * @return true if succeeded else false
-     */
-    public boolean initService(int numberOfNodes, int cacheSize, String displacementStrategy) { return true; }
 
     /**
      * Create a new KVServer with the specified cache size and displacement strategy

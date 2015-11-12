@@ -21,6 +21,7 @@ import java.net.Socket;
  * This is the runnable class that will be running inside the threadpool when assigned to a thread
  */
 public class KVRequestHandler implements Runnable, ServerActionListener {
+    KVConnectionHandler myHandler;
     SocketServer server;
     Socket clientSocket;
     KVCache kvCache;
@@ -30,7 +31,8 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
     private ServerState state;
     private static Logger logger = Logger.getLogger(KVRequestHandler.class);
 
-    public KVRequestHandler(SocketServer server, Socket clientSocket, int clientNumber, KVCache kvCache) throws IOException {
+    public KVRequestHandler(KVConnectionHandler handler, SocketServer server, Socket clientSocket, int clientNumber, KVCache kvCache) throws IOException {
+        this.myHandler = handler;
         this.server = server;
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.clientSocket = clientSocket;
@@ -62,44 +64,41 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             KVAdminMessageImpl kvAdminResponse;
             byte[] byteMessage;
             String stringMessage;
-            while (state.isOpen()) {
-                try {
-                    // Get a new message
-                    byteMessage = Utilities.receive(inputStream);
+            synchronized (state) {
+                while (state.isOpen()) {
+                    try {
+                        // Get a new message
+                        byteMessage = Utilities.receive(inputStream);
 
-                    if (byteMessage[0] == -1) {
+                        if (byteMessage[0] == -1) {
+                            state.setIsOpen(false);
+                        } else {
+                            stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
+                            kvMessage = extractKVMessage(stringMessage);
+
+                            // If it fails, it returns a GENERAL_ERROR
+                            if (kvMessage.getStatus() == KVMessage.StatusType.GENERAL_ERROR) {
+                                // It may be an admin message
+                                kvAdminMessage = extractKVAdminMessage(stringMessage);
+                                kvAdminResponse = processAdminMessage(kvAdminMessage);
+                                // Send appropriate response according to the above backend actions
+                                Utilities.send(kvAdminResponse.getMsgBytes(), outputStream);
+                            } else {
+                                kvResponse = processMessage(kvMessage);
+                                // Send appropriate response according to the above backend actions
+                                Utilities.send(kvResponse.getMsgBytes(), outputStream);
+                            }
+                        }
+                    } catch (IOException ioe) {
+                        /* connection either terminated by the client or lost due to
+                         * network problems*/
+                        logger.error("Error! Connection lost!");
+                        state.setIsOpen(false);
+                    } catch (Exception e) {
+                        logger.error("Unable to parse string message from client");
                         state.setIsOpen(false);
                     }
-                    else {
-                        stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
-                        kvMessage = extractKVMessage(stringMessage);
-
-                        // If it fails, it returns a GENERAL_ERROR
-                        if (kvMessage.getStatus()== KVMessage.StatusType.GENERAL_ERROR) {
-                            // It may be an admin message
-                            kvAdminMessage = extractKVAdminMessage(stringMessage);
-                            kvAdminResponse = processAdminMessage(kvAdminMessage);
-                            // Send appropriate response according to the above backend actions
-                            Utilities.send(kvAdminResponse.getMsgBytes(), outputStream);
-                        }
-                        else {
-                            kvResponse = processMessage(kvMessage);
-                            // Send appropriate response according to the above backend actions
-                            Utilities.send(kvResponse.getMsgBytes(), outputStream);
-                        }
-
-
-                    }
-                } catch (IOException ioe) {
-                    /* connection either terminated by the client or lost due to
-                     * network problems*/
-                    logger.error("Error! Connection lost!");
-                    state.setIsOpen(false);
-                } catch (Exception e) {
-                    logger.error("Unable to parse string message from client");
-                    state.setIsOpen(false);
                 }
-
             }
         } catch (Exception e) {
             logger.error(e);
@@ -155,11 +154,10 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
      * @return resulting KVAdminMessageImpl
      */
     private KVAdminMessageImpl processAdminMessage(KVAdminMessage kvAdminMessage) {
-        // TODO:
         KVAdminMessageImpl response;
         if (kvAdminMessage.getStatus().equals(StatusType.INIT)) {
             try {
-                kvCache = new KVCache(kvAdminMessage.getCacheSize(), kvAdminMessage.getDisplacementStrategy());
+                myHandler.setCache(new KVCache(kvAdminMessage.getCacheSize(), kvAdminMessage.getDisplacementStrategy()));
             } catch (StorageException e) {
                 return new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
             }
@@ -168,30 +166,30 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             return new KVAdminMessageImpl(StatusType.INIT_SUCCESS);
 
         } else if (kvAdminMessage.getStatus().equals(StatusType.START)) {
-            server.startServing();
+            server.startServing(this);
             response = new KVAdminMessageImpl(StatusType.START_SUCCESS);
 
         } else if (kvAdminMessage.getStatus().equals(StatusType.STOP)) {
-            server.stopServing();
+            server.stopServing(this);
             response = new KVAdminMessageImpl(StatusType.STOP_SUCCESS);
 
         } else if (kvAdminMessage.getStatus().equals(StatusType.SHUT_DOWN)) {
-            server.shutDown();
+            server.shutDown(this);
             response = new KVAdminMessageImpl(StatusType.SHUT_DOWN_SUCCESS);
 
         } else if (kvAdminMessage.getStatus().equals(StatusType.LOCK_WRITE)) {
-            server.writeLock();
+            server.writeLock(this);
             response = new KVAdminMessageImpl(StatusType.LOCK_WRITE_SUCCESS);
 
         } else if (kvAdminMessage.getStatus().equals(StatusType.UNLOCK_WRITE)) {
-            server.writeUnlock();
+            server.writeUnlock(this);
             response = new KVAdminMessageImpl(StatusType.UNLOCK_WRITE_SUCCESS);
 
         } else if (kvAdminMessage.getStatus().equals(StatusType.MOVE_DATA)) {
             // TODO:
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
-            // TODO:
+            server.setMetadata(kvAdminMessage.getMetadata());
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         } else {
             logger.error(String.format("ECS: Invalid message from ECS: %s", kvAdminMessage.toString()));
@@ -217,52 +215,36 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
 //                }
 //            }
 //        }
-        if (server.isInitialized() && (!server.isWriteLocked())) {
-            KVMessageImpl response;
+        if (state.isStopped()) {
+            return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_STOPPED);
+        }
+        if (server.isInitialized()) {
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
                 // Do the GET
-                response = kvCache.get(kvMessage.getKey());
+                return kvCache.get(kvMessage.getKey());
             } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
-                // Do the PUT
-                response = kvCache.put(kvMessage.getKey(), kvMessage.getValue());
+                if (state.isWriteLock()) {
+                    // Cannot proceed PUT request
+                    return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_WRITE_LOCK);
+                }
+                else {
+                    // Do the PUT
+                    return kvCache.put(kvMessage.getKey(), kvMessage.getValue());
+                }
             } else {
                 logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
-                response = new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
+                return new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
             }
-            return response;
         } else {
             return new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
         }
     }
 
-    @Override
-    public void serverStarted() {
-        state.setStopped(false);
-    }
 
     @Override
-    public void serverStopped() {
+    public void updateState(ServerState s) {
         synchronized (state) {
-            state.setStopped(true);
+            state = s;
         }
-    }
-
-    @Override
-    public void serverWriteLocked() {
-        synchronized (state) {
-            state.setWriteLock(true);
-        }
-    }
-
-    @Override
-    public void serverWriteUnlocked() {
-        synchronized (state) {
-            state.setWriteLock(false);
-        }
-    }
-
-    @Override
-    public void serverShutDown() {
-        state.setIsOpen(false);
     }
 }

@@ -41,12 +41,15 @@ public class KVConnectionHandler implements ConnectionHandler {
      */
     @Override
     public void handle(Socket client, int numOfClient) throws IOException {
-        KVRequestHandler rr = new KVRequestHandler(server, client, numOfClient, kv_cache);
+        KVRequestHandler rr = new KVRequestHandler(this, server, client, numOfClient, kv_cache);
         server.addListener(rr);
 //        new Thread(rr).start();
         threadpool.submit(rr);
     }
 
+    public synchronized void setCache(KVCache kvCache) {
+        this.kv_cache = kv_cache;
+    }
     @Override
     public void shutDown() {
         threadpool.shutdownNow();

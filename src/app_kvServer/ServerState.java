@@ -13,7 +13,6 @@ public class ServerState {
 
     }
 
-
     public void setInitialized(boolean init) {
         this.initialized = init;
     }
@@ -30,15 +29,11 @@ public class ServerState {
     public boolean isInitialized() {
         return initialized;
     }
-    public boolean isOpen() {
-        return isOpen;
-    }
+    public boolean isOpen() { return isOpen;  }
     public boolean isStopped() {
         return stopped;
     }
     public boolean isWriteLock() {
         return writeLock;
     }
-
-
 }

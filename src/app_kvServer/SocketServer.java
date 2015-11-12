@@ -93,19 +93,19 @@ public class SocketServer {
         }
     }
 
-    public void setInitialized(boolean initialized) {
+    public synchronized void setInitialized(boolean initialized) {
         state.setInitialized(initialized);
     }
 
-    public boolean isInitialized() {
+    public synchronized boolean isInitialized() {
         return state.isInitialized();
     }
 
-    public void setMetadata(KVMetadata metadata) {
+    public synchronized void setMetadata(KVMetadata metadata) {
         this.metadata = metadata;
     }
 
-    public KVMetadata getMetadata() {
+    public synchronized KVMetadata getMetadata() {
         return metadata;
     }
 
@@ -117,44 +117,43 @@ public class SocketServer {
         runnableListeners.remove(kvRequestHandler);
     }
 
-    public void startServing() {
+    private void updateStateToListeners(KVRequestHandler handler) {
+        for (ServerActionListener l : runnableListeners) {
+            // Maybe exclude myself
+//            if (l != handler) {
+                l.updateState(this.state);
+//            }
+        }
+    }
+    /* State Setters - only one of them can be called at a time by other threads */
+    public synchronized void startServing(KVRequestHandler handler) {
         state.setStopped(false);
-        for (ServerActionListener l : runnableListeners) {
-            l.serverStarted();
-        }
+        updateStateToListeners(handler);
     }
-    public void stopServing() {
+    public synchronized void stopServing(KVRequestHandler handler) {
         state.setStopped(true);
-        for (ServerActionListener l : runnableListeners) {
-            l.serverStopped();
-        }
+        updateStateToListeners(handler);
     }
-    public synchronized void writeLock() {
+    public synchronized void writeLock(KVRequestHandler handler) {
         state.setWriteLock(true);
-//        for (ServerActionListener l : runnableListeners) {
-//            l.serverWriteLocked();
-//        }
+        updateStateToListeners(handler);
     }
-    public synchronized void writeUnlock() {
+    public synchronized void writeUnlock(KVRequestHandler handler) {
         state.setWriteLock(false);
-//        for (ServerActionListener l : runnableListeners) {
-//            l.serverWriteUnlocked();
-//        }
+        updateStateToListeners(handler);
     }
+    public synchronized void shutDown(KVRequestHandler handler) {
+        state.setIsOpen(false);
+        updateStateToListeners(handler);
+        this.closeSocket();
+        this.handler.shutDown();
+    }
+
+    /* State Getters*/
     public synchronized boolean isWriteLocked() {
         return state.isWriteLock();
     }
-
-    public void shutDown() {
-        state.setIsOpen(false);
-        this.closeSocket();
-        this.handler.shutDown();
-        for (ServerActionListener l : runnableListeners) {
-            l.serverShutDown();
-        }
-        // In Java 8 : runnableListeners.forEach(ServerActionListener::serverShutDown);
+    public synchronized boolean isStopped() {
+        return state.isStopped();
     }
-
-
-
 }

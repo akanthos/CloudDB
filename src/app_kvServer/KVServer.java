@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class KVServer {
 
-    private static ServerInfo info;
+    private static ServerInfos info;
     private static Integer cacheSize;
     private static String displacementStrategy;
     private static final Integer numberOfThreads = 10;
@@ -32,7 +32,7 @@ public class KVServer {
      */
     public KVServer(Integer port) {//, Integer cacheSize, String cacheStrategy) {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
-        this.info = new ServerInfo(null, port);
+        this.info = new ServerInfos(null, port);
         this.server = new SocketServer("localhost", port);
 
         ConnectionHandler handler = new KVConnectionHandler(server, numberOfThreads);//kvCache

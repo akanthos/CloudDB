@@ -56,7 +56,7 @@ public class ConfigReader {
             return;
         }
         String[] splited = line.split("\\s+");
-        servers.add( new ServerInfos( splited[1], splited[2] ) );
+        servers.add( new ServerInfos( splited[1], Integer.parseInt(splited[2])));
 
     }
 

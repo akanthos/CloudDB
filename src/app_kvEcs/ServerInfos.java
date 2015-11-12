@@ -12,7 +12,7 @@ public class ServerInfos implements java.io.Serializable{
     private Integer ServerPort;
 
 
-    public ServerInfo( String hostname, Integer port ) {
+    public ServerInfos( String hostname, Integer port ) {
         this.ServerName = hostname;
         this.ServerPort = port;
     }

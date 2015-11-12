@@ -28,20 +28,6 @@ public class KVCache {
     private static Logger logger = Logger.getLogger(KVCache.class);
 
 
-
-    /* IMPORTANT NOTE:
-     *  From http://docs.oracle.com/javase/7/docs/api/java/util/LinkedHashMap.html
-     *  Note that this implementation is not synchronized.
-     *  If multiple threads access a linked hash map concurrently, and at least one of the threads modifies the
-     *  map structurally, it must be synchronized externally. This is typically accomplished by synchronizing on
-     *  some object that naturally encapsulates the map. If no such object exists, the map should be "wrapped" using
-     *  the Collections.synchronizedMap method. This is best done at creation time, to prevent accidental
-     *  unsynchronized access to the map:
-     *          Map m = Collections.synchronizedMap(new LinkedHashMap(...));
-     *  TODO: Should we consider that method??
-     * /
-
-
     /**
      * Creates a new LRU or FIFO or LFU cache according to the cache replacing policy.
      * @param cacheSize the maximum number of entries that will be kept in this cache.

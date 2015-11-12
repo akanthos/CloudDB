@@ -39,6 +39,21 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
     /**
+     * Contructor using String represantion of connection message
+     * @param messageString String representation of the KV Message
+     * @throws Exception
+     */
+    public KVAdminMessageImpl(String messageString) throws Exception {
+        try {
+            // TODO: Unmarshalling
+            throw new Exception();
+        } catch (Exception e) {
+            logger.error(String.format("Cannot parse message string"), e);
+            throw new Exception("Unable to parse message string");
+        }
+    }
+
+    /**
      * INIT message
      *
      * @param status
@@ -54,7 +69,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
 
-    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfos serverInfo) {
+    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfo serverInfo) {
         this.status = status;
         this.range = range;
         this.serverInfo = serverInfo;
@@ -75,7 +90,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
         if (status.equals(StatusType.INIT)) {
             msgString.append(metadata.toString());
             msgString.append(",");
-            msgString.append(cacheSize+"");
+            msgString.append(cacheSize);
             msgString.append(",");
             msgString.append(displacementStrategy);
         }

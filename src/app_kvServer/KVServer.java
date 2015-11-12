@@ -4,8 +4,9 @@ package app_kvServer;
 import app_kvEcs.ServerInfos;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
-import helpers.StorageException;
+import helpers.Constants;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
 
@@ -15,7 +16,8 @@ import java.io.IOException;
  */
 public class KVServer {
 
-    private static Integer port, cacheSize;
+    private static ServerInfo info;
+    private static Integer cacheSize;
     private static String displacementStrategy;
     private static final Integer numberOfThreads = 10;
     static KVCache kvCache = null;
@@ -28,35 +30,49 @@ public class KVServer {
      * @param cacheSize
      * @param cacheStrategy
      */
-    public KVServer(Integer port, Integer cacheSize, String cacheStrategy) {
-        this.port = port;
-        this.cacheSize = cacheSize;
+    public KVServer(Integer port) {//, Integer cacheSize, String cacheStrategy) {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+        this.info = new ServerInfo(null, port);
+        this.server = new SocketServer("localhost", port);
+
+        ConnectionHandler handler = new KVConnectionHandler(server, numberOfThreads);//kvCache
+        server.addHandler(handler);
+
         try {
-
-            if (cacheStrategy.equals("FIFO") || cacheStrategy.equals("LRU") || cacheStrategy.equals("LFU")) {
-                displacementStrategy = cacheStrategy;
-
-                System.out.println("Binding KVServer:");
-                this.kvCache = new KVCache(cacheSize, displacementStrategy);
-                this.server = new SocketServer("localhost", port);
-
-                ConnectionHandler handler = new KVConnectionHandler(kvCache, numberOfThreads);
-                server.addHandler(handler);
-
-                server.connect();
-                System.out.println("Starting the KeyValue KVServer ...");
-
-                server.run();
-            } else {
-                System.out.println("Please give a valid cache displacement strategy");
-                printHelp();
-            }
+            server.connect();
+            server.run();
         } catch (IOException e) {
             logger.error("Cannot open socket... Terminating", e);
-        } catch (StorageException e) {
-            logger.error(e.getErrorMessage(), e);
-            e.printStackTrace();
         }
+
+
+//        this.cacheSize = cacheSize;
+//        try {
+//
+//            if (cacheStrategy.equals("FIFO") || cacheStrategy.equals("LRU") || cacheStrategy.equals("LFU")) {
+//                displacementStrategy = cacheStrategy;
+//
+//                System.out.println("Binding KVServer:");
+//                this.kvCache = new KVCache(cacheSize, displacementStrategy);
+//                this.server = new SocketServer("localhost", port);
+//
+//                ConnectionHandler handler = new KVConnectionHandler(kvCache, numberOfThreads);
+//                server.addHandler(handler);
+//
+//                server.connect();
+//                System.out.println("Starting the KeyValue KVServer ...");
+//
+//                server.run();
+//            } else {
+//                System.out.println("Please give a valid cache displacement strategy");
+//                printHelp();
+//            }
+//        } catch (IOException e) {
+//            logger.error("Cannot open socket... Terminating", e);
+//        } catch (StorageException e) {
+//            logger.error(e.getErrorMessage(), e);
+//            e.printStackTrace();
+//        }
     }
 
 
@@ -67,38 +83,13 @@ public class KVServer {
      */
     public static void main(String[] args) {
 
-        //Primary
-        // Parsing port
-        if( args.length == 3 ) {
+        if( args.length == 1 ) {
             try {
-                port = Integer.parseInt(args[0]);
-                cacheSize = Integer.parseInt(args[1]);
-                if (args[2].equals("FIFO") || args[2].equals("LRU") || args[2].equals("LFU")) {
-                    displacementStrategy = args[2];
-
-                    System.out.println("Binding KVServer:");
-                    kvCache = new KVCache(cacheSize, displacementStrategy);
-                    server = new SocketServer("localhost", port);
-
-                    ConnectionHandler handler = new KVConnectionHandler(kvCache, numberOfThreads);
-                    server.addHandler(handler);
-
-                    server.connect();
-                    System.out.println("Starting the KeyValue KVServer ...");
-
-                    server.run();
-                } else {
-                    System.out.println("Please give a valid cache displacement strategy");
-                    printHelp();
-                }
+                Integer port = Integer.parseInt(args[0]);
+                KVServer kvServer = new KVServer(port);
             } catch (NumberFormatException e) {
                 logger.error("Cannot parse port number or cache size", e);
                 printHelp();
-            } catch (IOException e) {
-                logger.error("Cannot open socket... Terminating", e);
-            } catch (StorageException e) {
-                logger.error(e.getErrorMessage(), e);
-                e.printStackTrace();
             }
         }
         else {
@@ -189,7 +180,7 @@ public class KVServer {
      * @return
      */
     private static boolean isPortValid(Integer hostPort) {
-        return ((port >= 0) && (port <= 65535));
+        return ((info.getHostPort() >= 0) && (info.getHostPort() <= 65535));
     }
 
     /**

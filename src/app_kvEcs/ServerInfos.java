@@ -2,26 +2,26 @@ package app_kvEcs;
 
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class ServerInfos implements java.io.Serializable{
 
     private String ServerName;
-    private String ServerPort;
+    private Integer ServerPort;
 
 
-    public ServerInfos(String hostname, String port) {
-
+    public ServerInfo( String hostname, Integer port ) {
         this.ServerName = hostname;
         this.ServerPort = port;
     }
 
-    public String getHostPort() {
+    public Integer getHostPort() {
         return ServerPort;
     }
 
-    public void setServerPort( String HostPort ) {
+    public void setServerPort( Integer HostPort ) {
         this.ServerPort = HostPort;
     }
 
@@ -39,11 +39,12 @@ public class ServerInfos implements java.io.Serializable{
         return this.getServerIP()+":"+this.getServerIP();
     }
 
-    public byte[] getHash() throws UnsupportedEncodingException, NoSuchAlgorithmException {
+    public String getHash() throws UnsupportedEncodingException, NoSuchAlgorithmException {
         byte[] bytesOfMessage = this.toString().getBytes("UTF-8");
-
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        return md.digest(bytesOfMessage);
+        MessageDigest mdEnc = MessageDigest.getInstance("MD5");
+        mdEnc.update(bytesOfMessage, 0, bytesOfMessage.length);
+        String md5 = new BigInteger(1, mdEnc.digest()).toString(16); // Hash value
+        return md5;
     }
 
 }

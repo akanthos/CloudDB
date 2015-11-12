@@ -69,7 +69,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
 
-    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfo serverInfo) {
+    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfos serverInfo) {
         this.status = status;
         this.range = range;
         this.serverInfo = serverInfo;

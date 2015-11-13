@@ -27,7 +27,7 @@ public class KVMessageImpl implements KVMessage, Serializable {
     }
 
     /**
-     * Constractor
+     * Constructor
      * @param key Key of the connection KV Message
      * @param value Value of the connection KV Message
      * @param status Status of the connection KV Messag
@@ -39,7 +39,7 @@ public class KVMessageImpl implements KVMessage, Serializable {
     }
 
     /**
-     * Contructor using String represantion of connection message
+     * Constructor using String representation of connection message
      * @param messageString String representation of the KV Message
      * @throws Exception
      */

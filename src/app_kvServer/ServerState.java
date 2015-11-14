@@ -13,27 +13,25 @@ public class ServerState {
 
     }
 
-    public void setInitialized(boolean init) {
+    public synchronized void setInitialized(boolean init) {
         this.initialized = init;
     }
-    public void setIsOpen(boolean isOpen) {
-        this.isOpen = isOpen;
-    }
-    public void setWriteLock(boolean wl) {
+    public synchronized void setIsOpen(boolean isOpen) { this.isOpen = isOpen; }
+    public synchronized void setWriteLock(boolean wl) {
         this.writeLock = wl;
     }
-    public void setStopped(boolean s) {
+    public synchronized void setStopped(boolean s) {
         this.stopped = s;
     }
 
-    public boolean isInitialized() {
+    public synchronized boolean isInitialized() {
         return initialized;
     }
-    public boolean isOpen() { return isOpen;  }
-    public boolean isStopped() {
+    public synchronized boolean isOpen() { return isOpen;  }
+    public synchronized boolean isStopped() {
         return stopped;
     }
-    public boolean isWriteLock() {
+    public synchronized boolean isWriteLock() {
         return writeLock;
     }
 }

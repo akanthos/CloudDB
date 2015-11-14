@@ -134,7 +134,7 @@ public class SocketServer {
         updateStateToListeners(handler);
         this.closeSocket();
         this.handler.shutDown();
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.SHUT_DOWN_SUCCESS)
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.SHUT_DOWN_SUCCESS);
     }
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfos server) {
         // TODO:

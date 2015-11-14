@@ -5,10 +5,12 @@ import common.ServerInfo;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 import helpers.Constants;
+import helpers.StorageException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * Base class of KVServer including main()
@@ -25,10 +27,10 @@ public class KVServer {
      * Constructor of the Server
      * @param port
      */
-    public KVServer(Integer port) {//, Integer cacheSize, String cacheStrategy) {
+    public KVServer(String address, Integer port) {//, Integer cacheSize, String cacheStrategy) {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
-        this.info = new ServerInfo(null, port);
-        this.server = new SocketServer("localhost", port);
+        this.info = new ServerInfo(address, port);
+        this.server = new SocketServer("localhost", port, this.info);
 
         ConnectionHandler handler = new KVConnectionHandler(server, numberOfThreads);//kvCache
         server.addHandler(handler);
@@ -39,35 +41,28 @@ public class KVServer {
         } catch (IOException e) {
             logger.error("Cannot open socket... Terminating", e);
         }
+    }
 
+    public KVServer(String address, Integer port, Integer cacheSize, String displacementStrategy) {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+        this.info = new ServerInfo(address, port);
+        this.server = new SocketServer("localhost", port, this.info);
 
-//        this.cacheSize = cacheSize;
-//        try {
-//
-//            if (cacheStrategy.equals("FIFO") || cacheStrategy.equals("LRU") || cacheStrategy.equals("LFU")) {
-//                displacementStrategy = cacheStrategy;
-//
-//                System.out.println("Binding KVServer:");
-//                this.kvCache = new KVCache(cacheSize, displacementStrategy);
-//                this.server = new SocketServer("localhost", port);
-//
-//                ConnectionHandler handler = new KVConnectionHandler(kvCache, numberOfThreads);
-//                server.addHandler(handler);
-//
-//                server.connect();
-//                System.out.println("Starting the KeyValue KVServer ...");
-//
-//                server.run();
-//            } else {
-//                System.out.println("Please give a valid cache displacement strategy");
-//                printHelp();
-//            }
-//        } catch (IOException e) {
-//            logger.error("Cannot open socket... Terminating", e);
-//        } catch (StorageException e) {
-//            logger.error(e.getErrorMessage(), e);
-//            e.printStackTrace();
-//        }
+        HashMap<ServerInfo, KVRange> map = new HashMap<>();
+        map.put(this.getInfo(), new KVRange(0, Long.MAX_VALUE));
+        KVMetadata metadata = new KVMetadata( map  );
+
+        ConnectionHandler handler = new KVConnectionHandler(server, numberOfThreads);//kvCache
+        server.addHandler(handler);
+        server.initKVServer(metadata, cacheSize, displacementStrategy);
+        server.startServing();
+
+        try {
+            server.connect();
+            server.run();
+        } catch (IOException e) {
+            logger.error("Cannot open socket... Terminating", e);
+        }
     }
 
 
@@ -78,18 +73,23 @@ public class KVServer {
      */
     public static void main(String[] args) {
 
-        if( args.length == 1 ) {
-            try {
-                Integer port = Integer.parseInt(args[0]);
-                KVServer kvServer = new KVServer(port);
-            } catch (NumberFormatException e) {
-                logger.error("Cannot parse port number or cache size", e);
-                printHelp();
-            }
-        }
-        else {
-            printHelp();
-        }
+//        if( args.length == 1 ) {
+//            try {
+//                Integer port = Integer.parseInt(args[0]);
+                new Thread(new Runnable() {
+                    public void run() {
+                        new KVServer("localhost", 50000, 10, "FIFO");
+                    }
+                }).start();
+
+//            } catch (NumberFormatException e) {
+//                logger.error("Cannot parse port number or cache size", e);
+//                printHelp();
+//            }
+//        }
+//        else {
+//            printHelp();
+//        }
 
 
     }
@@ -104,9 +104,20 @@ public class KVServer {
      * @param cacheSize
      * @param displacementStrategy
      */
-    public void initKVServer(KVMetadata metadata, Integer cacheSize, String displacementStrategy){
-
-
+    public synchronized void initKVServer(KVMetadata metadata, Integer cacheSize, String displacementStrategy){
+        if ((displacementStrategy.equals("FIFO") || displacementStrategy.equals("LRU") || displacementStrategy.equals("LFU"))
+                && cacheSize > 0 && metadata != null) {
+            System.out.println("Binding KVServer:");
+            try {
+                KVCache kvCache = new KVCache(cacheSize, displacementStrategy);
+                server.initKVServer(metadata, cacheSize, displacementStrategy);
+            } catch (StorageException e) {
+                logger.error("Cannot create KVCache instance", e);
+            }
+        } else {
+            System.out.println("Please give a valid cache displacement strategy");
+            printHelp();
+        }
     }
 
     /**
@@ -114,7 +125,7 @@ public class KVServer {
      *
      */
     public void start() {
-
+        server.startServing();
     }
 
     /**
@@ -122,7 +133,7 @@ public class KVServer {
      *
      */
     public void stop() {
-
+        server.stopServing();
     }
 
     /**
@@ -130,7 +141,7 @@ public class KVServer {
      *
      */
     public void shutDown() {
-
+        server.shutDown();
     }
 
     /**
@@ -138,7 +149,7 @@ public class KVServer {
      *
      */
     public void lockWrite() {
-
+        server.writeLock();
     }
 
     /**
@@ -146,7 +157,7 @@ public class KVServer {
      *
      */
     public void unLockWrite() {
-
+        server.writeUnlock();
     }
 
     /**
@@ -155,10 +166,10 @@ public class KVServer {
      * the ring); send a notification to the ECSImpl, if data transfer is completed.
      *
      * @param range
-     * @param server
+     * @param serverInfo
      */
-    public void moveData(KVRange range, ServerInfo server) {
-
+    public void moveData(KVRange range, ServerInfo serverInfo) {
+        server.moveData(range, serverInfo);
     }
 
     /**
@@ -167,7 +178,11 @@ public class KVServer {
      * @param metadata
      */
     public void update(KVMetadata metadata) {
+        server.update(metadata);
+    }
 
+    public ServerInfo getInfo() {
+        return info;
     }
 
     /**

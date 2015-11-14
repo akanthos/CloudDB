@@ -110,44 +110,45 @@ public class SocketServer {
         state.setInitialized(true);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.INIT_SUCCESS);
     }
-    public synchronized KVAdminMessageImpl startServing(KVRequestHandler handler) {
+    public synchronized KVAdminMessageImpl startServing() {
         state.setStopped(false);
-        updateStateToListeners(handler);
+        updateStateToListeners();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.START_SUCCESS);
     }
-    public synchronized KVAdminMessageImpl stopServing(KVRequestHandler handler) {
+    public synchronized KVAdminMessageImpl stopServing() {
         state.setStopped(true);
-        updateStateToListeners(handler);
+        updateStateToListeners();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.STOP_SUCCESS);
     }
-    public synchronized KVAdminMessageImpl writeLock(KVRequestHandler handler) {
+    public synchronized KVAdminMessageImpl writeLock() {
         state.setWriteLock(true);
-        updateStateToListeners(handler);
+        updateStateToListeners();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.LOCK_WRITE_SUCCESS);
     }
-    public synchronized KVAdminMessageImpl writeUnlock(KVRequestHandler handler) {
+    public synchronized KVAdminMessageImpl writeUnlock() {
         state.setWriteLock(false);
-        updateStateToListeners(handler);
+        updateStateToListeners();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.UNLOCK_WRITE_SUCCESS);
     }
-    public synchronized KVAdminMessageImpl shutDown(KVRequestHandler handler) {
+    public synchronized KVAdminMessageImpl shutDown() {
         state.setIsOpen(false);
-        updateStateToListeners(handler);
+        updateStateToListeners();
         this.closeSocket();
         this.handler.shutDown();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.SHUT_DOWN_SUCCESS);
     }
+
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
         // TODO:
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
     }
 
-    public synchronized KVAdminMessageImpl update(KVMetadata metadata, KVRequestHandler handler) {
+    public synchronized KVAdminMessageImpl update(KVMetadata metadata) {
         setMetadata(metadata);
-        updateMetadataToListeners(handler);
+        updateMetadataToListeners();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.UPDATE_SUCCESS);
     }
-    private void updateStateToListeners(KVRequestHandler handler) {
+    private void updateStateToListeners() {
         for (ServerActionListener l : runnableListeners) {
             // Maybe exclude myself
 //            if (l != handler) {
@@ -155,7 +156,7 @@ public class SocketServer {
 //            }
         }
     }
-    private void updateMetadataToListeners(KVRequestHandler handler) {
+    private void updateMetadataToListeners() {
         for (ServerActionListener l : runnableListeners) {
             // Maybe exclude myself
 //            if (l != handler) {

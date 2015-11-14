@@ -16,7 +16,7 @@ public class Ring<T> {
 
     /**
      * Add node to Ring topology
-     * pNode is most likely of type <ServerInfos>
+     * pNode is most likely of type <ServerInfo>
      * @param pNode
      */
     public void addVnode (T pNode){
@@ -25,7 +25,7 @@ public class Ring<T> {
 
     /**
      * Remove node from Ring topology
-     * pNode is most likely of type <ServerInfos>
+     * pNode is most likely of type <ServerInfo>
      * @param pNode
      */
     public void removeVnode (T pNode) {
@@ -48,7 +48,7 @@ public class Ring<T> {
     }
 
     /**
-     * Metadata: Sorted Map <Node_ID> < ServerInfos> : Node_ID is the hash("IP"+"port")
+     * Metadata: Sorted Map <Node_ID> < ServerInfo> : Node_ID is the hash("IP"+"port")
      * @return Sorted Map respresenting Ring
      */
     public SortedMap<Long, T> getMetaData(){

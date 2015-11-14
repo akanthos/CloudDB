@@ -20,7 +20,7 @@
   <property name="servermanifest.file" value="SERVER_MANIFEST.MF"/>
   <property name="servermain.class" value="app_kvServer.KVServer"/>
 
-  <!-- Configuration for ECS application -->
+  <!-- Configuration for ECSImpl application -->
   <property name="ecsjar.file"      value="ms3-ecs.jar"/>
   <property name="ecsmanifest.file" value="ECS_MANIFEST.MF"/>
   <property name="ecsmain.class" value="app_kvEcs.ECSClient"/>
@@ -110,7 +110,7 @@
     </jar>
   </target>
 
-  <!-- build ECS jar -->
+  <!-- build ECSImpl jar -->
   <target name="build-ecs-jar" depends="build">
     <delete file="${ecsjar.file}" />
     <delete file="${ecsmanifest.file}" />
@@ -128,7 +128,7 @@
     </jar>
   </target>
 
-  <!-- generate separate jar files for client, server and ECS application -->
+  <!-- generate separate jar files for client, server and ECSImpl application -->
   <target name="build-jar" depends="build-client-jar, build-server-jar, build-ecs-jar" />
 
   <!-- run test cases -->

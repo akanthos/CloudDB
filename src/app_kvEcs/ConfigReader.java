@@ -1,5 +1,7 @@
 package app_kvEcs;
 
+import common.ServerInfo;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,7 @@ public class ConfigReader {
     private final Pattern LINE_PATTERN = Pattern.compile( "(?m)^" + NODE_PATTERN + "(\\s)+" + HOSTNAME_PATTERN
                                                             + "(\\s)+" + PORT_PATTERN + "$");
 
-    private List<ServerInfos> servers = new ArrayList<ServerInfos>();
+    private List<ServerInfo> servers = new ArrayList<ServerInfo>();
 
     /**
      * Constructor
@@ -44,7 +46,7 @@ public class ConfigReader {
     }
 
     /**
-     * Reads a line from config file and adds a ServerInfos
+     * Reads a line from config file and adds a ServerInfo
      * element to the servers List Collection.
      * @param line line reading from file
      */
@@ -56,15 +58,15 @@ public class ConfigReader {
             return;
         }
         String[] splited = line.split("\\s+");
-        servers.add( new ServerInfos( splited[1], Integer.parseInt(splited[2])));
+        servers.add( new ServerInfo( splited[1], Integer.parseInt(splited[2])));
 
     }
 
     /**
      *
-     * @return List of ServerInfos objects
+     * @return List of ServerInfo objects
      */
-    public List<ServerInfos> getServers(){
+    public List<ServerInfo> getServers(){
         return servers;
     }
 

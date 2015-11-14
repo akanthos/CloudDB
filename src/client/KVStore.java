@@ -1,6 +1,6 @@
 package client;
 
-import app_kvEcs.ServerInfos;
+import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
 import common.utils.KVMetadata;
@@ -38,7 +38,7 @@ public class KVStore implements KVCommInterface {
         // All key requests going to a single server initially.
         KVRange range = new KVRange(0, Integer.MAX_VALUE);
         ranges.add(range);
-        ServerInfos serverInfo = new ServerInfos(address, port);
+        ServerInfo serverInfo = new ServerInfo(address, port);
         metadata.addServer(range, serverInfo);
 	}
 
@@ -235,8 +235,8 @@ public class KVStore implements KVCommInterface {
         if (connections.containsKey(range)) {
             returnConnection = connections.get(range);
         } else {
-            ServerInfos info = metadata.getServer(range);
-            returnConnection = new ServerConnection(info.getServerIP(), info.getHostPort());
+            ServerInfo info = metadata.getServer(range);
+            returnConnection = new ServerConnection(info.getAddress(), info.getServerPort());
             connections.put(range, returnConnection);
         }
         return returnConnection;
@@ -250,7 +250,7 @@ public class KVStore implements KVCommInterface {
      */
     private KVRange getRange(Integer keyValue) {
         for (KVRange range: ranges) {
-            if (range.isInRange(keyValue)) {
+            if (range.isIndexInRange(keyValue)) {
                 return range;
             }
         }

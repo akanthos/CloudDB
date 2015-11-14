@@ -1,6 +1,6 @@
 package common.messages;
 
-import app_kvEcs.ServerInfos;
+import common.ServerInfo;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 import common.utils.Utilities;
@@ -20,7 +20,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     Integer cacheSize;
     String displacementStrategy;
     KVRange range;
-    ServerInfos serverInfo;
+    ServerInfo serverInfo;
     KVAdminMessage.StatusType status;
 
     private static Logger logger = Logger.getLogger(KVMessageImpl.class);
@@ -69,7 +69,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
 
-    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfos serverInfo) {
+    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfo serverInfo) {
         this.status = status;
         this.range = range;
         this.serverInfo = serverInfo;
@@ -142,7 +142,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
     @Override
-    public ServerInfos getServerInfo() {
+    public ServerInfo getServerInfo() {
         return serverInfo;
     }
 

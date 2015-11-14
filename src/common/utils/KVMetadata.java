@@ -1,6 +1,6 @@
 package common.utils;
 
-import app_kvEcs.ServerInfos;
+import common.ServerInfo;
 
 import java.util.HashMap;
 
@@ -8,13 +8,13 @@ import java.util.HashMap;
  * Created by akanthos on 11.11.15.
  */
 public class KVMetadata {
-    HashMap<KVRange, ServerInfos> map = new HashMap<>();
+    HashMap<KVRange, ServerInfo> map = new HashMap<>();
 
-    public void addServer(KVRange range, ServerInfos serverInfos) {
-        map.put(range, serverInfos);
+    public void addServer(KVRange range, ServerInfo ServerInfo) {
+        map.put(range, ServerInfo);
     }
 
-    public ServerInfos getServer(KVRange range) {
+    public ServerInfo getServer(KVRange range) {
         return map.get(range);
     }
 
@@ -22,11 +22,11 @@ public class KVMetadata {
         return map.containsKey(range);
     }
 
-    public HashMap<KVRange, ServerInfos> getMap() {
+    public HashMap<KVRange, ServerInfo> getMap() {
         return map;
     }
 
-    public void setMap(HashMap<KVRange, ServerInfos> map) {
+    public void setMap(HashMap<KVRange, ServerInfo> map) {
         this.map = map;
     }
 

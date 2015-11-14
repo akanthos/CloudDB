@@ -1,7 +1,7 @@
 package app_kvServer;
 
 
-import app_kvEcs.ServerInfos;
+import common.ServerInfo;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 import helpers.Constants;
@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class KVServer {
 
-    private static ServerInfos info;
+    private static ServerInfo info;
     private static Integer cacheSize;
     private static String displacementStrategy;
     private static final Integer numberOfThreads = 10;
@@ -30,7 +30,7 @@ public class KVServer {
      */
     public KVServer(Integer port) {//, Integer cacheSize, String cacheStrategy) {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
-        this.info = new ServerInfos(null, port);
+        this.info = new ServerInfo(null, port);
         this.server = new SocketServer("localhost", port);
 
         ConnectionHandler handler = new KVConnectionHandler(server, numberOfThreads);//kvCache
@@ -100,7 +100,7 @@ public class KVServer {
     /**
      * Initialize the KVServer with the meta-data, it’s local cache size, and the
      * cache displacement strategy, and block it for client requests, i.e., all client
-     * requests are rejected with an SERVER_STOPPED error message; ECS requests have
+     * requests are rejected with an SERVER_STOPPED error message; ECSImpl requests have
      * to be processed.
      *
      * @param metadata
@@ -113,7 +113,7 @@ public class KVServer {
     }
 
     /**
-     * Starts the KVServer, all client requests and all ECS requests are processed.
+     * Starts the KVServer, all client requests and all ECSImpl requests are processed.
      *
      */
     public void start() {
@@ -121,7 +121,7 @@ public class KVServer {
     }
 
     /**
-     * Stops the KVServer, all client requests are rejected and only ECS requests are processed.
+     * Stops the KVServer, all client requests are rejected and only ECSImpl requests are processed.
      *
      */
     public void stop() {
@@ -155,12 +155,12 @@ public class KVServer {
     /**
      * Transfer a subset (range) of the KVServer’s data to another KVServer
      * (reallocation before removing this server or adding a new KVServer to
-     * the ring); send a notification to the ECS, if data transfer is completed.
+     * the ring); send a notification to the ECSImpl, if data transfer is completed.
      *
      * @param range
      * @param server
      */
-    public void moveData(KVRange range, ServerInfos server) {
+    public void moveData(KVRange range, ServerInfo server) {
 
     }
 
@@ -179,7 +179,7 @@ public class KVServer {
      * @return
      */
     private static boolean isPortValid(Integer hostPort) {
-        return ((info.getHostPort() >= 0) && (info.getHostPort() <= 65535));
+        return ((info.getServerPort() >= 0) && (info.getServerPort() <= 65535));
     }
 
     /**

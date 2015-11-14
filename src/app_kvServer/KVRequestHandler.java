@@ -59,13 +59,14 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             KVAdminMessageImpl kvAdminResponse;
             byte[] byteMessage;
             String stringMessage;
-            while (server.isOpen()) {
+            boolean clientConnected = true;
+            while (clientConnected && server.isOpen()) {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
 
                     if (byteMessage[0] == -1) {
-                        server.setIsOpen(false);
+                        clientConnected = false;
                     } else {
                         stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
                         kvMessage = extractKVMessage(stringMessage);
@@ -87,10 +88,10 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
                     logger.error("Error! Connection lost!");
-                    server.setIsOpen(false);
+                    clientConnected = false;
                 } catch (Exception e) {
                     logger.error("Unable to parse string message from client");
-                    server.setIsOpen(false);
+                    clientConnected = false;
                 }
             }
 

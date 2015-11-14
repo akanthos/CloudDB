@@ -18,13 +18,14 @@ import java.util.HashMap;
  */
 public class KVServer {
 
-    private static ServerInfo info;
-    private static final Integer numberOfThreads = 10;
-    static SocketServer server = null;
+    private ServerInfo info;
+    private final Integer numberOfThreads = 10;
+    SocketServer server = null;
     private static Logger logger = Logger.getLogger(KVServer.class);
 
     /**
      * Constructor of the Server
+     * @param address
      * @param port
      */
     public KVServer(String address, Integer port) {
@@ -32,7 +33,7 @@ public class KVServer {
         this.info = new ServerInfo(address, port);
         this.server = new SocketServer(this.info);
 
-        ConnectionHandler handler = new KVConnectionHandler(server, numberOfThreads);//kvCache
+        ConnectionHandler handler = new KVConnectionHandler(server);
         server.addHandler(handler);
 
         try {
@@ -52,7 +53,7 @@ public class KVServer {
         map.put(this.getInfo(), new KVRange(0, Long.MAX_VALUE));
         KVMetadata metadata = new KVMetadata( map  );
 
-        ConnectionHandler handler = new KVConnectionHandler(server, numberOfThreads);//kvCache
+        ConnectionHandler handler = new KVConnectionHandler(server);
         server.addHandler(handler);
         server.initKVServer(metadata, cacheSize, displacementStrategy);
         server.startServing();
@@ -190,7 +191,7 @@ public class KVServer {
      * @param hostPort Port Server is running on
      * @return
      */
-    private static boolean isPortValid(Integer hostPort) {
+    private boolean isPortValid(Integer hostPort) {
         return ((info.getServerPort() >= 0) && (info.getServerPort() <= 65535));
     }
 

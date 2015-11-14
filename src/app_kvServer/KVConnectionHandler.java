@@ -17,16 +17,12 @@ public class KVConnectionHandler implements ConnectionHandler {
     private SocketServer server;
     private ExecutorService threadpool = null;
 
-    public KVConnectionHandler(SocketServer server) {
-        this.server = server;
-    }
 
     /**
      *
-     * @param server the SocketServre instance that carries this handler
-     * @param connections number of connections/threads
+     * @param server the SocketServer instance that carries this handler
      */
-    public KVConnectionHandler(SocketServer server, int connections) {
+    public KVConnectionHandler(SocketServer server) {
         this.server = server;
         threadpool = Executors.newCachedThreadPool();
     }

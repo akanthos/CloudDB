@@ -106,7 +106,7 @@ public class SocketServer {
             logger.error("Cannot create KVCache", e);
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
         }
-        setMetadata(metadata);
+        this.metadata = metadata;
         state.setInitialized(true);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.INIT_SUCCESS);
     }
@@ -120,17 +120,14 @@ public class SocketServer {
     }
     public synchronized KVAdminMessageImpl writeLock() {
         state.setWriteLock(true);
-//        updateStateToListeners();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.LOCK_WRITE_SUCCESS);
     }
     public synchronized KVAdminMessageImpl writeUnlock() {
         state.setWriteLock(false);
-//        updateStateToListeners();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.UNLOCK_WRITE_SUCCESS);
     }
     public synchronized KVAdminMessageImpl shutDown() {
         state.setIsOpen(false);
-//        updateStateToListeners();
         this.closeSocket();
         this.handler.shutDown();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.SHUT_DOWN_SUCCESS);
@@ -142,8 +139,7 @@ public class SocketServer {
     }
 
     public synchronized KVAdminMessageImpl update(KVMetadata metadata) {
-        setMetadata(metadata);
-//        updateMetadataToListeners();
+        this.metadata = metadata;
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.UPDATE_SUCCESS);
     }
     private void updateStateToListeners() {

@@ -57,7 +57,7 @@ public class AdditionalTest extends TestCase {
 	 */
 	@Test
 	public void testPutResultManyClients() {
-		final Integer NUMBER_OF_CLIENTS = 10;
+		final Integer NUMBER_OF_CLIENTS = 500;
 		List<Callable<KVMessage>> tasks = new ArrayList<>();
 		try {
 			for(int i = 0; i < NUMBER_OF_CLIENTS; i++)

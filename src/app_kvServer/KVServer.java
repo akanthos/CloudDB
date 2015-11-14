@@ -17,10 +17,7 @@ import java.io.IOException;
 public class KVServer {
 
     private static ServerInfo info;
-    private static Integer cacheSize;
-    private static String displacementStrategy;
     private static final Integer numberOfThreads = 10;
-    static KVCache kvCache = null;
     static SocketServer server = null;
     private static Logger logger = Logger.getLogger(KVServer.class);
 

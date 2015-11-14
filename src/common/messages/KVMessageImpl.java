@@ -1,6 +1,7 @@
 package common.messages;
 
 import common.utils.Utilities;
+import hashing.MD5Hash;
 import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -141,11 +142,8 @@ public class KVMessageImpl implements KVMessage, Serializable {
         return Utilities.getBytes(this);
     }
 
-    public String getHash() throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        byte[] bytesOfMessage = key.getBytes("UTF-8");
-        MessageDigest mdEnc = MessageDigest.getInstance("MD5");
-        mdEnc.update(bytesOfMessage, 0, bytesOfMessage.length);
-        String md5 = new BigInteger(1, mdEnc.digest()).toString(16); // Hash value
-        return md5;
+    public long getHash() {
+        MD5Hash md5 = new MD5Hash();
+        return md5.hash(key);
     }
 }

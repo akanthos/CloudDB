@@ -14,7 +14,7 @@ public class MD5Hash {
         }
     }
 
-    long hash(String key) {
+    public long hash(String key) {
         instance.reset();
         instance.update(key.getBytes());
         byte[] digest = instance.digest();

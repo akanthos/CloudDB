@@ -10,8 +10,16 @@ import java.util.HashMap;
 public class KVMetadata {
     HashMap<ServerInfo, KVRange> map;
 
+    public KVMetadata(KVMetadata another) {
+        // Copy constructor
+        this.map = new HashMap<>(another.map);
+    }
+
     public String getString() {
         return null;
+    }
+    public HashMap<ServerInfo, KVRange> getMap() {
+        return this.map;
     }
 
 }

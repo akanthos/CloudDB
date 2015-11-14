@@ -1,7 +1,11 @@
 package testing;
 
 import java.io.IOException;
+import java.util.HashMap;
 
+import common.ServerInfo;
+import common.utils.KVMetadata;
+import common.utils.KVRange;
 import junit.framework.TestResult;
 import org.apache.log4j.Level;
 
@@ -9,6 +13,8 @@ import app_kvServer.KVServer;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import logger.LogSetup;
+
+import static java.lang.Thread.sleep;
 
 
 public class AllTests {
@@ -18,7 +24,7 @@ public class AllTests {
 			new LogSetup("logs/testing/test.log", Level.ERROR);
 			new Thread(new Runnable() {
 				public void run() {
-					/*new KVServer(50000, 20, "FIFO");*/
+					new KVServer("localhost", 50000, 20, "FIFO");
 				}
 			}).start();
 		} catch (IOException e) {

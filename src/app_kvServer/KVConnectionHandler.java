@@ -48,7 +48,7 @@ public class KVConnectionHandler implements ConnectionHandler {
     }
 
     public synchronized void setCache(KVCache kvCache) {
-        this.kv_cache = kv_cache;
+        this.kv_cache = kvCache;
     }
     @Override
     public void shutDown() {

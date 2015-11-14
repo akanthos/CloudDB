@@ -40,6 +40,7 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
         this.clientSocket = clientSocket;
         this.clientNumber = clientNumber;
         this.kvCache = kvCache;
+        this.metadata = server.getMetadata();
 
         try {
             inputStream = clientSocket.getInputStream();
@@ -64,18 +65,7 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             KVAdminMessageImpl kvAdminResponse;
             byte[] byteMessage;
             String stringMessage;
-            boolean isOpen;
-            synchronized (state) {
-                /*
-                 * Checking state in synchronized block.
-                 * No client serving in synchronized block
-                 * because that could block the thread that updates
-                 * the state forever, essentially blocking the response
-                 * to the ECS forever.
-                 */
-                isOpen = state.isOpen();
-            }
-            while (isOpen) {
+            while (checkIfOpen()) {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
@@ -126,6 +116,21 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
         }
     }
 
+    private boolean checkIfOpen() {
+        boolean isOpen;
+        synchronized (state) {
+                /*
+                 * Checking state in synchronized block.
+                 * No client serving in synchronized block
+                 * because that could block the thread that updates
+                 * the state forever, essentially blocking the response
+                 * to the ECS forever.
+                 */
+            isOpen = state.isOpen();
+        }
+        return isOpen;
+    }
+
     /**
      * Admin Message Unmarshaller
      * @param messageString message to be unmarshalled to KVMessage type
@@ -168,19 +173,19 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
         if (kvAdminMessage.getStatus().equals(StatusType.INIT)) {
             return server.initKVServer(kvAdminMessage.getMetadata(), kvAdminMessage.getCacheSize(), kvAdminMessage.getDisplacementStrategy());
         } else if (kvAdminMessage.getStatus().equals(StatusType.START)) {
-            return server.startServing(this);
+            return server.startServing();
         } else if (kvAdminMessage.getStatus().equals(StatusType.STOP)) {
-            return server.stopServing(this);
+            return server.stopServing();
         } else if (kvAdminMessage.getStatus().equals(StatusType.SHUT_DOWN)) {
-            return server.shutDown(this);
+            return server.shutDown();
         } else if (kvAdminMessage.getStatus().equals(StatusType.LOCK_WRITE)) {
-            return server.writeLock(this);
+            return server.writeLock();
         } else if (kvAdminMessage.getStatus().equals(StatusType.UNLOCK_WRITE)) {
-            return server.writeUnlock(this);
+            return server.writeUnlock();
         } else if (kvAdminMessage.getStatus().equals(StatusType.MOVE_DATA)) {
             return server.moveData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
-            return server.update(kvAdminMessage.getMetadata(), this);
+            return server.update(kvAdminMessage.getMetadata());
         } else {
             logger.error(String.format("ECSImpl: Invalid message from ECSImpl: %s", kvAdminMessage.toString()));
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);

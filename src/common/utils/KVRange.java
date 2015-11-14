@@ -17,4 +17,12 @@ public class KVRange {
     public Integer getHigh() {
         return high;
     }
+
+    public boolean isInRange(Integer key) {
+        if (key > low && key <= high) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

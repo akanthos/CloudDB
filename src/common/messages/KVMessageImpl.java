@@ -1,5 +1,6 @@
 package common.messages;
 
+import common.utils.KVMetadata;
 import common.utils.Utilities;
 import helpers.Constants;
 import org.apache.log4j.Logger;
@@ -20,6 +21,8 @@ public class KVMessageImpl implements KVMessage, Serializable {
     String key;
     String value;
     StatusType status;
+    KVMetadata metadata;
+
     private static Logger logger = Logger.getLogger(KVMessageImpl.class);
 
     static {
@@ -36,6 +39,7 @@ public class KVMessageImpl implements KVMessage, Serializable {
         this.key = key;
         this.value = value;
         this.status = status;
+        metadata = new KVMetadata();
     }
 
     /**
@@ -111,6 +115,14 @@ public class KVMessageImpl implements KVMessage, Serializable {
     @Override
     public void setStatus(StatusType status) {
         this.status = status;
+    }
+
+    public KVMetadata getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(KVMetadata metadata) {
+        this.metadata = metadata;
     }
 
     /**

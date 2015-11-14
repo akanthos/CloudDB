@@ -8,29 +8,29 @@ import java.security.NoSuchAlgorithmException;
 
 public class ServerInfos implements java.io.Serializable{
 
-    private String ServerName;
-    private Integer ServerPort;
+    private String host;
+    private Integer port;
 
 
     public ServerInfos( String hostname, Integer port ) {
-        this.ServerName = hostname;
-        this.ServerPort = port;
+        this.host = hostname;
+        this.port = port;
     }
 
     public Integer getHostPort() {
-        return ServerPort;
+        return port;
     }
 
-    public void setServerPort( Integer HostPort ) {
-        this.ServerPort = HostPort;
+    public void setPort(Integer HostPort ) {
+        this.port = HostPort;
     }
 
     public String getServerIP() {
-        return ServerName;
+        return host;
     }
 
     public void setServerIP( String hostname ) {
-        ServerName = hostname;
+        host = hostname;
     }
 
 

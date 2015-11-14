@@ -1,6 +1,6 @@
 package common.messages;
 
-import app_kvEcs.ServerInfos;
+import common.ServerInfo;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 
@@ -22,7 +22,7 @@ public interface KVAdminMessage extends GenericMessage {
         LOCK_WRITE_SUCCESS,
         UNLOCK_WRITE, 	        /* Unlock KVServer for write operations */
         UNLOCK_WRITE_SUCCESS,
-        MOVE_DATA, 		        /* Transfer subrange to another server and notify ECS when complete */
+        MOVE_DATA, 		        /* Transfer subrange to another server and notify ECSImpl when complete */
         MOVE_DATA_SUCCESS,
         UPDATE_METADATA,        /* Update meta-data repository */
         UPDATE_SUCCESS,
@@ -60,7 +60,7 @@ public interface KVAdminMessage extends GenericMessage {
      * @return the information about the target server associated
      *         to this message
      */
-    public ServerInfos getServerInfo();
+    public ServerInfo getServerInfo();
 
     /**
      * @return a status string that is used to identify request types,

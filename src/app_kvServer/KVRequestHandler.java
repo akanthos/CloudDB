@@ -151,7 +151,7 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
 
     /**
      * Process of the KVAdminMessage and communication with the cache
-     * @param kvAdminMessage KVAdminMessage representation of the ECS request
+     * @param kvAdminMessage KVAdminMessage representation of the ECSImpl request
      * @return resulting KVAdminMessageImpl
      */
     private KVAdminMessageImpl processAdminMessage(KVAdminMessage kvAdminMessage) {
@@ -173,7 +173,7 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
             return server.update(kvAdminMessage.getMetadata(), this);
         } else {
-            logger.error(String.format("ECS: Invalid message from ECS: %s", kvAdminMessage.toString()));
+            logger.error(String.format("ECSImpl: Invalid message from ECSImpl: %s", kvAdminMessage.toString()));
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         }
         return response;

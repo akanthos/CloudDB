@@ -1,42 +1,37 @@
-package app_kvEcs;
+package common;
 
+
+import common.utils.KVRange;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class ServerInfos implements java.io.Serializable{
+public class ServerInfo implements java.io.Serializable{
 
     private String ServerName;
     private Integer ServerPort;
+    private String address;
+    private KVRange ServerRange;
 
 
-    public ServerInfos( String hostname, Integer port ) {
-        this.ServerName = hostname;
+    public ServerInfo(String address, Integer port) {
+        this.address = address;
         this.ServerPort = port;
     }
 
-    public Integer getHostPort() {
+    public Integer getServerPort() {
         return ServerPort;
     }
 
-    public void setServerPort( Integer HostPort ) {
-        this.ServerPort = HostPort;
+    public void setServerPort( Integer serverPort ) {
+        this.ServerPort = serverPort;
     }
-
-    public String getServerIP() {
-        return ServerName;
-    }
-
-    public void setServerIP( String hostname ) {
-        ServerName = hostname;
-    }
-
 
     @Override
     public String toString() {
-        return this.getServerIP()+":"+this.getServerIP();
+        return this.getAddress()+":"+this.getServerPort();
     }
 
     public String getHash() throws UnsupportedEncodingException, NoSuchAlgorithmException {
@@ -46,5 +41,15 @@ public class ServerInfos implements java.io.Serializable{
         String md5 = new BigInteger(1, mdEnc.digest()).toString(16); // Hash value
         return md5;
     }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+
 
 }

@@ -4,6 +4,7 @@ package common.utils;
  * Created by akanthos on 11.11.15.
  */
 public class KVRange {
+
     Integer low, high;
 
     public KVRange(Integer low, Integer high){
@@ -14,7 +15,20 @@ public class KVRange {
     public Integer getLow() {
         return low;
     }
+
     public Integer getHigh() {
         return high;
+    }
+
+    public boolean isIndexInRange(Integer index) {
+        // the last node in the ring
+        if ( low > high){
+            if ( index >= low )
+                return true;
+            else
+                return index <= high;
+        }
+        else
+            return ( (index >= low) && (index <= high) );
     }
 }

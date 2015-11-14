@@ -2,6 +2,7 @@ package common;
 
 
 import common.utils.KVRange;
+import hashing.MD5Hash;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -40,12 +41,9 @@ public class ServerInfo implements java.io.Serializable{
         return this.getAddress()+":"+this.getServerPort();
     }
 
-    public String getHash() throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        byte[] bytesOfMessage = this.toString().getBytes("UTF-8");
-        MessageDigest mdEnc = MessageDigest.getInstance("MD5");
-        mdEnc.update(bytesOfMessage, 0, bytesOfMessage.length);
-        String md5 = new BigInteger(1, mdEnc.digest()).toString(16); // Hash value
-        return md5;
+    public long getHash() {
+        MD5Hash md5 = new MD5Hash();
+        return md5.hash(this.toString());
     }
 
     public String getAddress() {

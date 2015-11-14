@@ -30,8 +30,16 @@ public class KVMetadata {
         this.map = map;
     }
 
+    public KVMetadata(KVMetadata another) {
+        // Copy constructor
+        this.map = new HashMap<>(another.map);
+    }
+
     public String getString() {
         return null;
+    }
+    public HashMap<ServerInfo, KVRange> getMap() {
+        return this.map;
     }
 
 

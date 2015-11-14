@@ -1,5 +1,10 @@
 package common.messages;
 
+import hashing.MD5Hash;
+
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
+
 public interface KVMessage extends GenericMessage {
 	
 	public enum StatusType {
@@ -37,6 +42,7 @@ public interface KVMessage extends GenericMessage {
 	public StatusType getStatus();
 
 	public void setStatus(StatusType statusType);
+	public long getHash();
 	
 }
 

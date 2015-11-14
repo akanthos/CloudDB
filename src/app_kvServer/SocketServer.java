@@ -1,7 +1,6 @@
 package app_kvServer;
 
-import app_kvEcs.ServerInfos;
-import com.sun.corba.se.spi.activation.Server;
+import common.ServerInfo;
 import common.messages.KVAdminMessage;
 import common.messages.KVAdminMessageImpl;
 import common.utils.KVMetadata;
@@ -19,6 +18,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * The connection handling lives in a KVRequestHandler
  */
 public class SocketServer {
+    ServerInfo info;
     ServerState state;
     String hostname;
     int port;
@@ -34,7 +34,8 @@ public class SocketServer {
      * @param hostname name of Server host
      * @param port Port Server is running on
      */
-    public SocketServer(String hostname, Integer port) {
+    public SocketServer(String hostname, Integer port, ServerInfo info) {
+        this.info = info;
         this.state = new ServerState();
         state.setInitialized(false);
         state.setStopped(true);
@@ -136,7 +137,7 @@ public class SocketServer {
         this.handler.shutDown();
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.SHUT_DOWN_SUCCESS);
     }
-    public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfos server) {
+    public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
         // TODO:
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
     }

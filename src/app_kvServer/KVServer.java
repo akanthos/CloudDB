@@ -111,6 +111,7 @@ public class KVServer {
      */
     public void initKVServer(KVMetadata metadata, Integer cacheSize, String displacementStrategy){
 
+
     }
 
     /**
@@ -118,7 +119,7 @@ public class KVServer {
      *
      */
     public void start() {
-
+        server.startServing();
     }
 
     /**

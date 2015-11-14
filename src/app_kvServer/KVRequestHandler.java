@@ -5,6 +5,7 @@ import common.messages.KVAdminMessage.StatusType;
 import common.messages.KVAdminMessageImpl;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
+import common.utils.KVMetadata;
 import common.utils.Utilities;
 import helpers.Constants;
 import helpers.StorageException;
@@ -29,22 +30,22 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
     InputStream inputStream;
     OutputStream outputStream;
     private ServerState state;
+    private KVMetadata metadata;
     private static Logger logger = Logger.getLogger(KVRequestHandler.class);
 
     public KVRequestHandler(KVConnectionHandler handler, SocketServer server, Socket clientSocket, int clientNumber, KVCache kvCache) throws IOException {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.myHandler = handler;
         this.server = server;
-        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+        this.state = server.getState();
         this.clientSocket = clientSocket;
         this.clientNumber = clientNumber;
         this.kvCache = kvCache;
-        state = new ServerState();
-        state.setWriteLock(false);
-        state.setStopped(true);
+
         try {
             inputStream = clientSocket.getInputStream();
             outputStream = clientSocket.getOutputStream();
-            state.setIsOpen(true);
+            this.state.setIsOpen(true);
         } catch (IOException e) {
             logger.error(String.format("Client: %d. Unable to initialize streams.", clientNumber), e);
             throw new IOException("Unable to initialize streams from socket");
@@ -156,41 +157,21 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
     private KVAdminMessageImpl processAdminMessage(KVAdminMessage kvAdminMessage) {
         KVAdminMessageImpl response;
         if (kvAdminMessage.getStatus().equals(StatusType.INIT)) {
-            try {
-                myHandler.setCache(new KVCache(kvAdminMessage.getCacheSize(), kvAdminMessage.getDisplacementStrategy()));
-            } catch (StorageException e) {
-                return new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
-            }
-            server.setMetadata(kvAdminMessage.getMetadata());
-            server.setInitialized(true);
-            return new KVAdminMessageImpl(StatusType.INIT_SUCCESS);
-
+            return server.initKVServer(kvAdminMessage.getMetadata(), kvAdminMessage.getCacheSize(), kvAdminMessage.getDisplacementStrategy());
         } else if (kvAdminMessage.getStatus().equals(StatusType.START)) {
-            server.startServing(this);
-            response = new KVAdminMessageImpl(StatusType.START_SUCCESS);
-
+            return server.startServing(this);
         } else if (kvAdminMessage.getStatus().equals(StatusType.STOP)) {
-            server.stopServing(this);
-            response = new KVAdminMessageImpl(StatusType.STOP_SUCCESS);
-
+            return server.stopServing(this);
         } else if (kvAdminMessage.getStatus().equals(StatusType.SHUT_DOWN)) {
-            server.shutDown(this);
-            response = new KVAdminMessageImpl(StatusType.SHUT_DOWN_SUCCESS);
-
+            return server.shutDown(this);
         } else if (kvAdminMessage.getStatus().equals(StatusType.LOCK_WRITE)) {
-            server.writeLock(this);
-            response = new KVAdminMessageImpl(StatusType.LOCK_WRITE_SUCCESS);
-
+            return server.writeLock(this);
         } else if (kvAdminMessage.getStatus().equals(StatusType.UNLOCK_WRITE)) {
-            server.writeUnlock(this);
-            response = new KVAdminMessageImpl(StatusType.UNLOCK_WRITE_SUCCESS);
-
+            return server.writeUnlock(this);
         } else if (kvAdminMessage.getStatus().equals(StatusType.MOVE_DATA)) {
-            // TODO:
-            response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
+            return server.moveData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
-            server.setMetadata(kvAdminMessage.getMetadata());
-            response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
+            return server.update(kvAdminMessage.getMetadata(), this);
         } else {
             logger.error(String.format("ECS: Invalid message from ECS: %s", kvAdminMessage.toString()));
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
@@ -205,20 +186,11 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
      * @return resulting KVMessageImpl
      */
     private KVMessageImpl processMessage(KVMessage kvMessage) {
-//        synchronized (server) {
-//            while (server.isWriteLocked()) {
-//                try {
-//                    server.wait();
-//                    // TODO: Do the work here
-//                } catch (InterruptedException e) {
-//                    logger.error("Client " + clientNumber+ ": Interrupted exception on wait");
-//                }
-//            }
-//        }
         if (state.isStopped()) {
             return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_STOPPED);
         }
         if (server.isInitialized()) {
+            // TODO: Check if responsible
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
                 // Do the GET
                 return kvCache.get(kvMessage.getKey());
@@ -245,6 +217,13 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
     public void updateState(ServerState s) {
         synchronized (state) {
             state = s;
+        }
+    }
+
+    @Override
+    public void updateMetadata(KVMetadata m) {
+        synchronized (metadata) {
+            this.metadata = metadata;
         }
     }
 }

@@ -25,6 +25,7 @@ public interface KVAdminMessage extends GenericMessage {
         MOVE_DATA, 		        /* Transfer subrange to another server and notify ECS when complete */
         MOVE_DATA_SUCCESS,
         UPDATE_METADATA,        /* Update meta-data repository */
+        UPDATE_SUCCESS,
         OPERATION_FAILED,       /* Operation requested by the ECS failed */
         GENERAL_ERROR           /* For other types of errors */
     }

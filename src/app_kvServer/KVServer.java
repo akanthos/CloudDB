@@ -27,8 +27,6 @@ public class KVServer {
     /**
      * Constructor of the Server
      * @param port
-     * @param cacheSize
-     * @param cacheStrategy
      */
     public KVServer(Integer port) {//, Integer cacheSize, String cacheStrategy) {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
@@ -119,7 +117,7 @@ public class KVServer {
      *
      */
     public void start() {
-        server.startServing();
+
     }
 
     /**

@@ -5,22 +5,22 @@ package common.utils;
  */
 public class KVRange {
 
-    Integer low, high;
+    long low, high;
 
-    public KVRange(Integer low, Integer high){
+    public KVRange(long low, long high){
         this.low = low;
         this.high = high;
     }
 
-    public Integer getLow() {
+    public long getLow() {
         return low;
     }
 
-    public Integer getHigh() {
+    public long getHigh() {
         return high;
     }
 
-    public boolean isIndexInRange(Integer index) {
+    public boolean isIndexInRange(long index) {
         // the last node in the ring
         if ( low > high){
             if ( index >= low )
@@ -28,6 +28,7 @@ public class KVRange {
             else
                 return index <= high;
         }
+        // all the other nodes
         else
             return ( (index >= low) && (index <= high) );
     }

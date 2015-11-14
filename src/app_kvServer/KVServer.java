@@ -27,10 +27,10 @@ public class KVServer {
      * Constructor of the Server
      * @param port
      */
-    public KVServer(String address, Integer port) {//, Integer cacheSize, String cacheStrategy) {
+    public KVServer(String address, Integer port) {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.info = new ServerInfo(address, port);
-        this.server = new SocketServer("localhost", port, this.info);
+        this.server = new SocketServer(this.info);
 
         ConnectionHandler handler = new KVConnectionHandler(server, numberOfThreads);//kvCache
         server.addHandler(handler);
@@ -46,7 +46,7 @@ public class KVServer {
     public KVServer(String address, Integer port, Integer cacheSize, String displacementStrategy) {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.info = new ServerInfo(address, port);
-        this.server = new SocketServer("localhost", port, this.info);
+        this.server = new SocketServer(this.info);
 
         HashMap<ServerInfo, KVRange> map = new HashMap<>();
         map.put(this.getInfo(), new KVRange(0, Long.MAX_VALUE));

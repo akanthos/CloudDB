@@ -10,6 +10,5 @@ public interface ConnectionHandler {
 
     public void handle(Socket client, int numOfClients) throws IOException;
     public void shutDown();
-    public void setCache(KVCache cache);
 
 }

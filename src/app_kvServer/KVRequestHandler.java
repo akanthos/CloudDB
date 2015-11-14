@@ -1,5 +1,6 @@
 package app_kvServer;
 
+import common.ServerInfo;
 import common.messages.KVAdminMessage;
 import common.messages.KVAdminMessage.StatusType;
 import common.messages.KVAdminMessageImpl;
@@ -20,32 +21,25 @@ import java.net.Socket;
  * Logic for handling client requests.
  * This is the runnable class that will be running inside the threadpool when assigned to a thread
  */
-public class KVRequestHandler implements Runnable, ServerActionListener {
+public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     KVConnectionHandler myHandler;
     SocketServer server;
     Socket clientSocket;
-    KVCache kvCache;
     int clientNumber;
     InputStream inputStream;
     OutputStream outputStream;
-    private ServerState state;
-    private KVMetadata metadata;
     private static Logger logger = Logger.getLogger(KVRequestHandler.class);
 
-    public KVRequestHandler(KVConnectionHandler handler, SocketServer server, Socket clientSocket, int clientNumber, KVCache kvCache) throws IOException {
+    public KVRequestHandler(KVConnectionHandler handler, SocketServer server, Socket clientSocket, int clientNumber) throws IOException {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.myHandler = handler;
         this.server = server;
-        this.state = server.getState();
         this.clientSocket = clientSocket;
         this.clientNumber = clientNumber;
-        this.kvCache = kvCache;
-        this.metadata = server.getMetadata();
 
         try {
             inputStream = clientSocket.getInputStream();
             outputStream = clientSocket.getOutputStream();
-            this.state.setIsOpen(true);
         } catch (IOException e) {
             logger.error(String.format("Client: %d. Unable to initialize streams.", clientNumber), e);
             throw new IOException("Unable to initialize streams from socket");
@@ -65,13 +59,13 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             KVAdminMessageImpl kvAdminResponse;
             byte[] byteMessage;
             String stringMessage;
-            while (checkIfOpen()) {
+            while (server.isOpen()) {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
 
                     if (byteMessage[0] == -1) {
-                        state.setIsOpen(false);
+                        server.setIsOpen(false);
                     } else {
                         stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
                         kvMessage = extractKVMessage(stringMessage);
@@ -93,10 +87,10 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
                     logger.error("Error! Connection lost!");
-                    state.setIsOpen(false);
+                    server.setIsOpen(false);
                 } catch (Exception e) {
                     logger.error("Unable to parse string message from client");
-                    state.setIsOpen(false);
+                    server.setIsOpen(false);
                 }
             }
 
@@ -114,21 +108,6 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
                 logger.error("Error! Unable to tear down connection!", ioe);
             }
         }
-    }
-
-    private boolean checkIfOpen() {
-        boolean isOpen;
-        synchronized (state) {
-                /*
-                 * Checking state in synchronized block.
-                 * No client serving in synchronized block
-                 * because that could block the thread that updates
-                 * the state forever, essentially blocking the response
-                 * to the ECS forever.
-                 */
-            isOpen = state.isOpen();
-        }
-        return isOpen;
     }
 
     /**
@@ -200,30 +179,29 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
      * @return resulting KVMessageImpl
      */
     private KVMessageImpl processMessage(KVMessage kvMessage) {
-        if (state.isStopped()) {
+        if (server.isStopped()) {
             return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_STOPPED);
         }
         if (server.isInitialized()) {
             KVMetadata meta;
-            synchronized (this.metadata) {
-                meta = new KVMetadata(this.metadata);
-            }
+            meta = new KVMetadata(server.getMetadata());
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
                 // Do the GET
-                if (meta.getMap().get(server.info).isIndexInRange(kvMessage.getHash())) {
-                    return kvCache.get(kvMessage.getKey());
+                if (meta.getMap().get(server.getInfo()).isIndexInRange(kvMessage.getHash())) {
+                    return server.kvCache.get(kvMessage.getKey());
                 }
                 else {
+                    // TODO: Populate with new metadata
                     return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
                 }
             } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
-                if (meta.getMap().get(server.info).isIndexInRange(kvMessage.getHash())) {
-                    if (state.isWriteLock()) {
+                if (meta.getMap().get(server.getInfo()).isIndexInRange(kvMessage.getHash())) {
+                    if (server.isWriteLocked()) {
                         // Cannot proceed PUT request
                         return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_WRITE_LOCK);
                     } else {
                         // Do the PUT
-                        return kvCache.put(kvMessage.getKey(), kvMessage.getValue());
+                        return server.kvCache.put(kvMessage.getKey(), kvMessage.getValue());
                     }
                 }
                 else {
@@ -239,18 +217,14 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
     }
 
 
-    @Override
-    public void updateState(ServerState s) {
-        synchronized (state) {
-            state = s;
-        }
-    }
-
-    @Override
-    public void updateMetadata(KVMetadata m) {
-        synchronized (metadata) {
-            this.metadata = m;
-        }
-    }
+//    @Override
+//    public synchronized void updateState(ServerState s) {
+//        this.state = s;
+//    }
+//
+//    @Override
+//    public synchronized void updateMetadata(KVMetadata m) {
+//        this.metadata = m;
+//    }
 
 }

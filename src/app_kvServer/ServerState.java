@@ -9,8 +9,11 @@ public class ServerState {
     private boolean writeLock;
     private boolean stopped;
 
-    public ServerState() {
-
+    public ServerState(boolean init, boolean open, boolean writeLock, boolean stop) {
+        this.initialized = init;
+        this.isOpen = open;
+        this.writeLock = writeLock;
+        this.stopped = stop;
     }
 
     public synchronized void setInitialized(boolean init) {

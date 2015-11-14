@@ -15,7 +15,6 @@ public class KVConnectionHandler implements ConnectionHandler {
 
 
     private SocketServer server;
-    private KVCache kv_cache = null;
     private ExecutorService threadpool = null;
 
     public KVConnectionHandler(SocketServer server) {
@@ -27,9 +26,8 @@ public class KVConnectionHandler implements ConnectionHandler {
      * @param server the SocketServre instance that carries this handler
      * @param connections number of connections/threads
      */
-    public KVConnectionHandler(/*KVCache kv_cache*/ SocketServer server, int connections) {
+    public KVConnectionHandler(SocketServer server, int connections) {
         this.server = server;
-//        this.kv_cache = kv_cache;
         threadpool = Executors.newCachedThreadPool();
     }
 
@@ -41,15 +39,11 @@ public class KVConnectionHandler implements ConnectionHandler {
      */
     @Override
     public void handle(Socket client, int numOfClient) throws IOException {
-        KVRequestHandler rr = new KVRequestHandler(this, server, client, numOfClient, kv_cache);
-        server.addListener(rr);
-//        new Thread(rr).start();
+        KVRequestHandler rr = new KVRequestHandler(this, server, client, numOfClient);
+//        server.addListener(rr);
         threadpool.submit(rr);
     }
 
-    public synchronized void setCache(KVCache kvCache) {
-        this.kv_cache = kvCache;
-    }
     @Override
     public void shutDown() {
         threadpool.shutdownNow();

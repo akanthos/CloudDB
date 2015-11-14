@@ -21,6 +21,12 @@ public class ServerInfo implements java.io.Serializable{
         this.ServerPort = port;
     }
 
+    public ServerInfo(String address, Integer port, KVRange range) {
+        this.address = address;
+        this.ServerPort = port;
+        this.ServerRange = range;
+    }
+
     public Integer getServerPort() {
         return ServerPort;
     }
@@ -51,5 +57,12 @@ public class ServerInfo implements java.io.Serializable{
     }
 
 
+    public KVRange getServerRange() {
+        return ServerRange;
+    }
+
+    public void setServerRange(KVRange serverRange) {
+        ServerRange = serverRange;
+    }
 
 }

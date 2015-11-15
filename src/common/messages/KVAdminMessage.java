@@ -30,7 +30,7 @@ public interface KVAdminMessage extends GenericMessage {
         GENERAL_ERROR           /* For other types of errors */
     }
 
-    /**
+    /**r
      * @return the metadata that is associated with this message.
      *
      */

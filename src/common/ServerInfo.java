@@ -54,7 +54,6 @@ public class ServerInfo implements java.io.Serializable{
         this.address = address;
     }
 
-
     public KVRange getServerRange() {
         return ServerRange;
     }
@@ -62,5 +61,21 @@ public class ServerInfo implements java.io.Serializable{
     public void setServerRange(KVRange serverRange) {
         ServerRange = serverRange;
     }
+
+    public long getFromIndex() {
+        return ServerRange.getLow();
+    }
+
+    public void setFromIndex(long fromIndex) {
+        this.ServerRange.setLow(fromIndex);    }
+
+    public long getToIndex() {
+        return ServerRange.getHigh();
+    }
+
+    public void setToIndex(long toIndex) {
+        this.ServerRange.setHigh(toIndex);
+    }
+
 
 }

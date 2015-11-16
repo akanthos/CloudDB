@@ -134,7 +134,7 @@ public class KVStore implements KVCommInterface {
         kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.GET);
         try {
             logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-            byte[] response = send(kvMessage/*.toString()*/);
+            byte[] response = send(kvMessage);
             return (KVMessageImpl) Serializer.toObject(response);//new KVMessageImpl(response);
         } catch (CannotConnectException e) {
             kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);

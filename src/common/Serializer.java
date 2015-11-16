@@ -45,7 +45,7 @@ public class Serializer {
 
     public static byte[] toByteArray(KVAdminMessageImpl message) {
         StringBuilder messageStr = null ;
-        // TODO: Make a proper serialization
+        // TODO: Make a proper serialization like in the client case
 //        = new StringBuilder(ECS_MESSAGE + HEAD_DLM +message.getStatus().ordinal() + HEAD_DLM
 //                + message.getKey() + HEAD_DLM + message.getValue());
 //
@@ -96,6 +96,11 @@ public class Serializer {
                     }
                     break;
 
+                case ECS_MESSAGE:
+                    // TODO: Do a proper deserialization like in the client case
+                    retrievedMessage = new KVMessageImpl();
+                    break;
+
                 default:
                     // TODO: Maybe return an error message instead of null??
                     break;
@@ -117,7 +122,7 @@ public class Serializer {
     }
 
     private static List<ServerInfo> getMetaData(String metaDataStr) {
-        List<ServerInfo> KVServerList = new ArrayList<ServerInfo>();
+        List<ServerInfo> KVServerList = new ArrayList<>();
         String[] tokens = metaDataStr.split(SUB_DLM2);
         for (String serverInfoStr : tokens) {
             String[] serverInfoTokens = serverInfoStr.split(SUB_DLM1);

@@ -154,11 +154,6 @@ public class KVMessageImpl implements KVMessage {
      * @return bytes repreentation of Message
      */
     public byte[] getMsgBytes() {
-//        try {
-//            return Utilities.getBytes(this);
-//        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//        }
         return Serializer.toByteArray(this);
     }
 

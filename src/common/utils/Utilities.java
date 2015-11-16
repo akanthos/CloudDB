@@ -1,10 +1,7 @@
 package common.utils;
 
 import common.Serializer;
-import common.messages.AbstractMessage;
-import common.messages.GenericMessage;
-import common.messages.KVMessage;
-import common.messages.KVMessageImpl;
+import common.messages.*;
 import helpers.CannotConnectException;
 import helpers.ErrorMessages;
 import org.apache.log4j.Logger;
@@ -31,15 +28,15 @@ public class Utilities {
 
     /**
      * This function sends a message to the server using the established connection.
-     *
-     * @param msg String Message to be sent over the established connection
+     * @param msg
+     * @param outputStream
      * @throws CannotConnectException
      */
-    public static void send(String msg, OutputStream outputStream) throws CannotConnectException {
-        byte[] bytes = new StringBuilder(msg).append(Character.toString((char) 13)).toString().getBytes(StandardCharsets.US_ASCII);
-        send(bytes, outputStream);
-    }
     public static void send(KVMessageImpl msg, OutputStream outputStream) throws CannotConnectException {
+        send(Serializer.toByteArray(msg), outputStream);
+    }
+
+    public static void send(KVAdminMessageImpl msg, OutputStream outputStream) throws CannotConnectException {
         send(Serializer.toByteArray(msg), outputStream);
     }
 

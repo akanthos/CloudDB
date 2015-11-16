@@ -31,6 +31,10 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
     }
 
+    public KVAdminMessageImpl () {
+
+    }
+
     /**
      * Simple message like START, STOP, START_SUCCESS, ...
      *
@@ -85,33 +89,8 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     public String toString() {
         // TODO: Using Serializer
 
-        StringBuilder msgString = new StringBuilder();
-        msgString.append(status);
-        msgString.append(",");
-
-        if (status.equals(StatusType.INIT)) {
-            msgString.append(metadata.toString());
-            msgString.append(",");
-            msgString.append(cacheSize);
-            msgString.append(",");
-            msgString.append(displacementStrategy);
-        }
-        else if (status.equals(StatusType.MOVE_DATA)) {
-            msgString.append(range.toString());
-            msgString.append(",");
-            msgString.append(serverInfo+"");
-        }
-        else if (status.equals(StatusType.UPDATE_METADATA)) {
-            msgString.append(metadata.toString());
-        }
-        else {
-
-        }
-
-
-//        String delimitedValue = value.replaceAll(",", "\\\\,");
 //        msgString.append(delimitedValue);
-        return msgString.toString();
+        return Serializer.toByteArray(this).toString();
     }
 
     /**

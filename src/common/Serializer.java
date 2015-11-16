@@ -1,10 +1,8 @@
 package common;
 
 
-import common.messages.AbstractMessage;
-import common.messages.KVAdminMessageImpl;
-import common.messages.KVMessage;
-import common.messages.KVMessageImpl;
+import common.messages.*;
+
 import javax.activation.UnsupportedDataTypeException;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +12,7 @@ public class Serializer {
     // message type
     private static final String ECS_MESSAGE = "0";
     private static final String CLIENT_MESSAGE = "1";
+    private static final String SERVER_MESSAGE = "2";
     // delimiters
     private static final String HEAD_DLM = "##";
     private static final String SUB_DLM1 = "&&";
@@ -66,6 +65,26 @@ public class Serializer {
         return tmp;
     }
 
+    public static byte[] toByteArray(KVServerMessageImpl message) {
+
+        StringBuilder messageStr = new StringBuilder(SERVER_MESSAGE + HEAD_DLM + message.getStatus().ordinal());
+        if (message.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
+            messageStr.append(HEAD_DLM + message.getKVPairs().size());
+            for (KVPair pair : message.getKVPairs()) {
+                messageStr.append(HEAD_DLM).append(pair.getKey() + SUB_DLM1 + pair.getValue());
+            }
+        }
+        if (message.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_SUCCESS)) {
+
+        }
+        byte[] bytes = messageStr.toString().getBytes();
+        byte[] ctrBytes = new byte[] { RETURN };
+        byte[] tmp = new byte[bytes.length + ctrBytes.length];
+        System.arraycopy(bytes, 0, tmp, 0, bytes.length);
+        System.arraycopy(ctrBytes, 0, tmp, bytes.length, ctrBytes.length);
+        return tmp;
+    }
+
     public static AbstractMessage toObject(byte[] objectByteStream) throws UnsupportedDataTypeException {
 
         String message = new String(objectByteStream).trim();
@@ -98,7 +117,30 @@ public class Serializer {
 
                 case ECS_MESSAGE:
                     // TODO: Do a proper deserialization like in the client case
-                    retrievedMessage = new KVMessageImpl();
+                    retrievedMessage = new KVAdminMessageImpl();
+                    break;
+
+                case SERVER_MESSAGE:
+                    retrievedMessage = new KVServerMessageImpl();
+                    if (tokens[1] != null) {// status
+                        int statusNum = Integer.parseInt(tokens[1]);
+                        ((KVServerMessage)retrievedMessage).setStatus( KVServerMessage.StatusType.values()[statusNum] );
+                    }
+                    if (tokens[2] != null) { // Data length and data
+                        int dataLength = Integer.parseInt(tokens[1]);
+                        if (tokens.length == dataLength + 3) {
+                            ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
+                            for (int i = 0; i < dataLength; i++) {
+                                String[] kv = tokens[i+3].split(SUB_DLM1);
+                                if (kv.length == 2) {
+                                    kvPairs.add(new KVPair(kv[0], kv[1]));
+                                }
+                            }
+                            if (!kvPairs.isEmpty()) {
+                                ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
+                            }
+                        }
+                    }
                     break;
 
                 default:

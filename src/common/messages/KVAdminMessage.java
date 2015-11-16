@@ -11,7 +11,7 @@ import java.util.List;
  */
 public interface KVAdminMessage extends AbstractMessage {
 
-    public enum StatusType {
+    enum StatusType {
         INIT, 			        /* Server initialization */
         INIT_SUCCESS,
         START, 		            /* Server start, so that he accepts client requests too */
@@ -36,39 +36,39 @@ public interface KVAdminMessage extends AbstractMessage {
      * @return the metadata that is associated with this message.
      *
      */
-    public List<ServerInfo> getMetadata();
+    List<ServerInfo> getMetadata();
 
     /**
      * @return the cache size that is associated with this message.
      *
      */
-    public Integer getCacheSize();
+    Integer getCacheSize();
 
     /**
      *
      * @return the cache displacement strategy that is associated
      *         with this message.
      */
-    public String getDisplacementStrategy();
+    String getDisplacementStrategy();
 
     /**
      *
      * @return the range that is associated to the message
      */
-    public KVRange getRange();
+    KVRange getRange();
 
     /**
      *
      * @return the information about the target server associated
      *         to this message
      */
-    public ServerInfo getServerInfo();
+    ServerInfo getServerInfo();
 
     /**
      * @return a status string that is used to identify request types,
      * response types and error types associated to the message.
      */
-    public StatusType getStatus();
+    StatusType getStatus();
 
-    public void setStatus(StatusType statusType);
+    void setStatus(StatusType statusType);
 }

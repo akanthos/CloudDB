@@ -7,7 +7,7 @@ import common.utils.KVRange;
 /**
  * Created by akanthos on 11.11.15.
  */
-public interface KVAdminMessage extends GenericMessage {
+public interface KVAdminMessage extends AbstractMessage {
 
     public enum StatusType {
         INIT, 			        /* Server initialization */

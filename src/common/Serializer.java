@@ -2,6 +2,7 @@ package common;
 
 
 import common.messages.AbstractMessage;
+import common.messages.KVAdminMessageImpl;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
 import javax.activation.UnsupportedDataTypeException;
@@ -22,19 +23,42 @@ public class Serializer {
 
     public static byte[] toByteArray(KVMessageImpl message) {
 
-        String messageStr = (CLIENT_MESSAGE + HEAD_DLM +message.getStatus().ordinal() + HEAD_DLM
+        StringBuilder messageStr = new StringBuilder(CLIENT_MESSAGE + HEAD_DLM +message.getStatus().ordinal() + HEAD_DLM
                 + message.getKey() + HEAD_DLM + message.getValue());
 
         if (message.getStatus() == KVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
             // add metadata
-            messageStr += HEAD_DLM;
+            messageStr.append(HEAD_DLM);
             for (ServerInfo server : message.getMetadata()) {
-                messageStr += server.getAddress()+SUB_DLM1+server.getServerPort()+SUB_DLM1
-                        +server.getFromIndex()+SUB_DLM1+server.getToIndex();
-                messageStr+=SUB_DLM2;
+                messageStr.append(server.getAddress()+SUB_DLM1+server.getServerPort()+SUB_DLM1
+                        +server.getFromIndex()+SUB_DLM1+server.getToIndex());
+                messageStr.append(SUB_DLM2);
             }
         }
-        byte[] bytes =messageStr.getBytes();
+        byte[] bytes = messageStr.toString().getBytes();
+        byte[] ctrBytes = new byte[] { RETURN };
+        byte[] tmp = new byte[bytes.length + ctrBytes.length];
+        System.arraycopy(bytes, 0, tmp, 0, bytes.length);
+        System.arraycopy(ctrBytes, 0, tmp, bytes.length, ctrBytes.length);
+        return tmp;
+    }
+
+    public static byte[] toByteArray(KVAdminMessageImpl message) {
+        StringBuilder messageStr = null ;
+        // TODO: Make a proper serialization
+//        = new StringBuilder(ECS_MESSAGE + HEAD_DLM +message.getStatus().ordinal() + HEAD_DLM
+//                + message.getKey() + HEAD_DLM + message.getValue());
+//
+//        if (message.getStatus() == KVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
+//            // add metadata
+//            messageStr.append(HEAD_DLM);
+//            for (ServerInfo server : message.getMetadata()) {
+//                messageStr.append(server.getAddress()+SUB_DLM1+server.getServerPort()+SUB_DLM1
+//                        +server.getFromIndex()+SUB_DLM1+server.getToIndex());
+//                messageStr.append(SUB_DLM2);
+//            }
+//        }
+        byte[] bytes = messageStr.toString().getBytes();
         byte[] ctrBytes = new byte[] { RETURN };
         byte[] tmp = new byte[bytes.length + ctrBytes.length];
         System.arraycopy(bytes, 0, tmp, 0, bytes.length);
@@ -70,6 +94,7 @@ public class Serializer {
                     break;
 
                 default:
+                    // TODO: Maybe return an error message instead of null??
                     break;
 
             }
@@ -101,7 +126,6 @@ public class Serializer {
         }
         return KVServerList;
     }
-
 
 
 

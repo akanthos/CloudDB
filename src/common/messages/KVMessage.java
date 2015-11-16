@@ -5,7 +5,7 @@ import hashing.MD5Hash;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
-public interface KVMessage extends GenericMessage {
+public interface KVMessage extends AbstractMessage {
 	
 	public enum StatusType {
 		GET, 			/* Get - request */

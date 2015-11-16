@@ -30,4 +30,7 @@ public class KVMetadata {
         return this.map;
     }
 
+    public KVRange getMyRange(ServerInfo info) {
+        return map.get(info);
+    }
 }

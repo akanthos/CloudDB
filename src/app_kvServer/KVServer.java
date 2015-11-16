@@ -31,6 +31,7 @@ public class KVServer {
     public KVServer(String address, Integer port) {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.info = new ServerInfo(address, port);
+        // TODO: Add info name??
         this.server = new SocketServer(this.info);
 
         ConnectionHandler handler = new KVConnectionHandler(server);

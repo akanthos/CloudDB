@@ -1,5 +1,6 @@
 package common.messages;
 
+import common.Serializer;
 import common.ServerInfo;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
@@ -81,7 +82,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      */
     @Override
     public String toString() {
-        // TODO:
+        // TODO: Using Serializer
 
         StringBuilder msgString = new StringBuilder();
         msgString.append(status);
@@ -117,8 +118,8 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      * @return bytes repreentation of Message
      * @throws UnsupportedEncodingException
      */
-    public byte[] getMsgBytes() throws UnsupportedEncodingException {
-        return Utilities.getBytes(this);
+    public byte[] getMsgBytes() {
+        return Serializer.toByteArray(this);
     }
 
     @Override
@@ -157,4 +158,8 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
 
+    @Override
+    public MessageType getMessageType() {
+        return null;
+    }
 }

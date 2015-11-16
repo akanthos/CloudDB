@@ -1,5 +1,6 @@
 package common.messages;
 
+import common.Serializer;
 import common.ServerInfo;
 import common.utils.Utilities;
 import hashing.MD5Hash;
@@ -18,7 +19,7 @@ import java.util.List;
 /**
  * KVMessage represantion of connection Message
  */
-public class KVMessageImpl implements KVMessage, Serializable ,AbstractMessage {
+public class KVMessageImpl implements KVMessage, Serializable {
 
     String key;
     String value;
@@ -132,26 +133,27 @@ public class KVMessageImpl implements KVMessage, Serializable ,AbstractMessage {
      */
     @Override
     public String toString() {
-        StringBuilder msgString = new StringBuilder();
-        msgString.append(status);
-        msgString.append(":");
-
-
-        String delimitedKey = key.replaceAll(",", "\\\\,");
-        msgString.append(delimitedKey);
-        msgString.append(",");
-        String delimitedValue = value.replaceAll(",", "\\\\,");
-        msgString.append(delimitedValue);
-        return msgString.toString();
+        // TODO: This is obsolete, change it using serializer directly, not from bytes
+        return getMsgBytes().toString();
+//        StringBuilder msgString = new StringBuilder();
+//        msgString.append(status);
+//        msgString.append(":");
+//
+//
+//        String delimitedKey = key.replaceAll(",", "\\\\,");
+//        msgString.append(delimitedKey);
+//        msgString.append(",");
+//        String delimitedValue = value.replaceAll(",", "\\\\,");
+//        msgString.append(delimitedValue);
+//        return msgString.toString();
     }
 
     /**
      *
      * @return bytes repreentation of Message
-     * @throws UnsupportedEncodingException
      */
-    public byte[] getMsgBytes() throws UnsupportedEncodingException {
-        return Utilities.getBytes(this);
+    public byte[] getMsgBytes() {
+        return Serializer.toByteArray(this);
     }
 
     public long getHash() {

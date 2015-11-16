@@ -107,7 +107,9 @@ public class SocketServer {
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
         }
         this.metadata = metadata;
+        this.info.setServerRange(metadata.getMyRange(info));
         state.setInitialized(true);
+        info.setLaunched(true);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.INIT_SUCCESS);
     }
     public synchronized KVAdminMessageImpl startServing() {

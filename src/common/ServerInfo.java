@@ -78,5 +78,7 @@ public class ServerInfo implements java.io.Serializable{
         this.ServerRange.setHigh(toIndex);
     }
 
+    public void setLaunched(boolean isLaunched) { this.isLaunched = isLaunched; }
+
 
 }

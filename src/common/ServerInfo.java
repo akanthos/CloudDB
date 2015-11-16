@@ -15,6 +15,7 @@ public class ServerInfo implements java.io.Serializable{
     private Integer ServerPort;
     private String address;
     private KVRange ServerRange;
+    private boolean isLaunched;
 
 
     public ServerInfo(String address, Integer port) {
@@ -41,7 +42,7 @@ public class ServerInfo implements java.io.Serializable{
         return this.getAddress()+":"+this.getServerPort();
     }
 
-    public long getHash() {
+    public Long getHash() {
         MD5Hash md5 = new MD5Hash();
         return md5.hash(this.toString());
     }
@@ -62,18 +63,18 @@ public class ServerInfo implements java.io.Serializable{
         ServerRange = serverRange;
     }
 
-    public long getFromIndex() {
+    public Long getFromIndex() {
         return ServerRange.getLow();
     }
 
-    public void setFromIndex(long fromIndex) {
+    public void setFromIndex(Long fromIndex) {
         this.ServerRange.setLow(fromIndex);    }
 
-    public long getToIndex() {
+    public Long getToIndex() {
         return ServerRange.getHigh();
     }
 
-    public void setToIndex(long toIndex) {
+    public void setToIndex(Long toIndex) {
         this.ServerRange.setHigh(toIndex);
     }
 

@@ -39,7 +39,7 @@ public class Ring<T> {
      */
     private T getNodeByObjectId(String objectId) {
 
-        long hashValue = hash.hash(objectId);
+        Long hashValue = hash.hash(objectId);
         if (!smap.containsKey(hashValue)) {
             SortedMap<Long, T> tailMap = smap.tailMap(hashValue);
             hashValue = tailMap.isEmpty() ? smap.firstKey() : tailMap.firstKey();

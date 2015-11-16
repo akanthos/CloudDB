@@ -52,17 +52,17 @@ public class Validator {
     public boolean isValidLogLevel ( String [] tokens ) throws IllegalArgumentException  {
         if ( tokens == null ) {
             throw new IllegalArgumentException (
-                    UIInteractMsg.GENERAL_ILLIGAL_ARGUMENT );
+                    UIInteractMsg.GENERAL_ILLEGAL_ARGUMENT );
         }
 
         if ( tokens.length < 2 ) {
             throw new IllegalArgumentException (
-                    UIInteractMsg.ILLIGAL_PARAM_NUMBER );
+                    UIInteractMsg.ILLEGAL_PARAM_NUM );
         }
 
         if ( ! LOG_LEVELS.contains ( tokens [ 1 ].toUpperCase () ) ) {
             throw new IllegalArgumentException ( "LogLevel"
-                    + UIInteractMsg.ILLIGAL_PARAM );
+                    + UIInteractMsg.ILLEGAL_PARAM );
         }
         return true;
     }

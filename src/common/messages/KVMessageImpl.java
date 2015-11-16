@@ -1,5 +1,6 @@
 package common.messages;
 
+import common.ServerInfo;
 import common.utils.Utilities;
 import hashing.MD5Hash;
 import helpers.Constants;
@@ -11,20 +12,31 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
 
 /**
  * KVMessage represantion of connection Message
  */
-public class KVMessageImpl implements KVMessage, Serializable {
+public class KVMessageImpl implements KVMessage, Serializable ,AbstractMessage {
 
     String key;
     String value;
     StatusType status;
+
+    /* represents meta-data of all nodes in the system */
+    private List< ServerInfo > metadata;
+
     private static Logger logger = Logger.getLogger(KVMessageImpl.class);
+
 
     static {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+    }
+
+
+    public KVMessageImpl () {
+
     }
 
     /**
@@ -145,5 +157,18 @@ public class KVMessageImpl implements KVMessage, Serializable {
     public long getHash() {
         MD5Hash md5 = new MD5Hash();
         return md5.hash(key);
+    }
+
+    public List<ServerInfo> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(List<ServerInfo> metadata) {
+        this.metadata = metadata;
+    }
+
+    @Override
+    public MessageType getMessageType() {
+        return null;
     }
 }

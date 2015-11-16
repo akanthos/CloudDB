@@ -1,8 +1,8 @@
 package app_kvEcs;
 
 /**
- * The class contains all the user
- * interacting with the application.
+ * Contains all the user
+ * interacting handling.
  */
 public class UIInteractMsg {
 
@@ -11,9 +11,9 @@ public class UIInteractMsg {
 
     public static final String SPLIT_DLMT = "\\s+";
 
-    public static final String ILLIGAL_PARAM = " is not as expected, Please use the help command to view an example.";
+    public static final String ILLEGAL_PARAM = " is not as expected, Please use the help command to view an example.";
 
-    public static final String ILLIGAL_PARAM_NUMBER = "Illegal number of parameters," +
+    public static final String ILLEGAL_PARAM_NUM = "Illegal number of parameters," +
             " Please use the help command to see an example.";
 
 
@@ -28,7 +28,7 @@ public class UIInteractMsg {
             + "\nHelp: Prints the help guide."
             + "\nquit: Shuts down servers and exit application.";
 
-    public static final String GENERAL_ILLIGAL_ARGUMENT = "Please enter a valid command. \n"+ ECS_HELP_TEXT;
+    public static final String GENERAL_ILLEGAL_ARGUMENT = "Please enter a valid command. \n"+ ECS_HELP_TEXT;
 
     public static final String UNSUPPORTED_COMMAND = "Unknown command.\n"+ ECS_HELP_TEXT;
 }

@@ -22,7 +22,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class SocketServer {
     private ServerInfo info;
-    private ServerState state;
+    private volatile ServerState state;
     private ConnectionHandler handler;
     private KVCache kvCache;
     private ServerSocket server;
@@ -195,7 +195,7 @@ public class SocketServer {
     public void setMetadata(List<ServerInfo> metadata) {
         this.metadata = metadata;
         for (ServerInfo info : metadata) {
-            if (info.getAddress() == this.info.getAddress() && info.getServerPort() == this.info.getServerPort()) {
+            if (info.getAddress().equals(this.info.getAddress()) && info.getServerPort().equals(this.info.getServerPort())) {
                 this.info.setServerRange(info.getServerRange());
             }
         }

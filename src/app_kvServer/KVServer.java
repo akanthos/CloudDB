@@ -10,7 +10,9 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Base class of KVServer including main()
@@ -50,9 +52,8 @@ public class KVServer {
         this.info = new ServerInfo(address, port);
         this.server = new SocketServer(this.info);
 
-        HashMap<ServerInfo, KVRange> map = new HashMap<>();
-        map.put(this.getInfo(), new KVRange(0, Long.MAX_VALUE));
-        KVMetadata metadata = new KVMetadata( map  );
+        ArrayList<ServerInfo> metadata = new ArrayList<>();
+        metadata.add(new ServerInfo(address, port, new KVRange(0, Long.MAX_VALUE)));
 
         ConnectionHandler handler = new KVConnectionHandler(server);
         server.addHandler(handler);
@@ -106,7 +107,7 @@ public class KVServer {
      * @param cacheSize
      * @param displacementStrategy
      */
-    public synchronized void initKVServer(KVMetadata metadata, Integer cacheSize, String displacementStrategy){
+    public synchronized void initKVServer(List<ServerInfo> metadata, Integer cacheSize, String displacementStrategy){
         if ((displacementStrategy.equals("FIFO") || displacementStrategy.equals("LRU") || displacementStrategy.equals("LFU"))
                 && cacheSize > 0 && metadata != null) {
             System.out.println("Binding KVServer:");
@@ -179,7 +180,7 @@ public class KVServer {
      *
      * @param metadata
      */
-    public void update(KVMetadata metadata) {
+    public void update(List<ServerInfo> metadata) {
         server.update(metadata);
     }
 

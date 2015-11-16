@@ -161,6 +161,6 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
 
     @Override
     public MessageType getMessageType() {
-        return null;
+        return MessageType.ECS_MESSAGE;
     }
 }

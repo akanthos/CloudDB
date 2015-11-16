@@ -1,6 +1,7 @@
 package client;
 
 
+import common.Serializer;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
 import common.utils.Utilities;
@@ -50,10 +51,6 @@ public class KVStore implements KVCommInterface {
                 outStream = clientSocket.getOutputStream();
                 logger.info("KVServer connection established");
                 isConnected = true;
-                // Sending messages.
-                /*put("key1", "value1");
-                get("key1");
-                put("key2", "value2");*/
             } catch (NumberFormatException e) {
                 logger.error("Number Format Exception", e);
                 throw new CannotConnectException(ErrorMessages.ERROR_INTERNAL);
@@ -87,9 +84,7 @@ public class KVStore implements KVCommInterface {
             } catch (IOException e) {
                 logger.error(e);
                 System.out.println("Error: " + e.getMessage());
-            } /*catch (CannotConnectException e) {
-                logger.error(e);
-            } */finally {
+            } finally {
                 isConnected = false;
                 host = "";
                 port = 0;
@@ -114,9 +109,8 @@ public class KVStore implements KVCommInterface {
         kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);
         try {
             logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-            String response = send(kvMessage.toString());
-            KVMessageImpl kvMessageFromServer = new KVMessageImpl(response);
-            return kvMessageFromServer;
+            byte[] response = send(kvMessage);
+            return (KVMessageImpl) Serializer.toObject(response);
         } catch (CannotConnectException e) {
             kvMessage.setStatus(KVMessage.StatusType.PUT_ERROR);
             logger.error(e);
@@ -133,13 +127,15 @@ public class KVStore implements KVCommInterface {
      */
 	@Override
 	public KVMessage get(String key) throws Exception {
+        if (!isConnected()) {
+            throw new Exception("Client not Connected to server");
+        }
         KVMessageImpl kvMessage;
         kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.GET);
         try {
             logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-            String response = send(kvMessage.toString());
-            KVMessageImpl kvMessageFromServer = new KVMessageImpl(response);
-            return kvMessageFromServer;
+            byte[] response = send(kvMessage/*.toString()*/);
+            return (KVMessageImpl) Serializer.toObject(response);//new KVMessageImpl(response);
         } catch (CannotConnectException e) {
             kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
             logger.error(e);
@@ -153,18 +149,11 @@ public class KVStore implements KVCommInterface {
      * @param msg
      * @throws CannotConnectException
      */
-    public String send(String msg) throws CannotConnectException, IOException {
+    public byte[] send(KVMessageImpl msg) throws CannotConnectException, IOException {
         Utilities.send(msg, outStream);
         byte[] answer = Utilities.receive(inStream);
         System.out.println("I am the client and received message SIZE: " + answer.length);
-        try {
-            String msgFromServer = new String(answer, "US-ASCII").trim();
-            logger.info("Message received from server: " + msgFromServer);
-            return msgFromServer;
-        } catch (UnsupportedEncodingException e) {
-            logger.error("Unsupported Encoding in message from server", e);
-            throw new CannotConnectException(ErrorMessages.ERROR_INVALID_MESSAGE_FROM_SERVER);
-        }
+        return answer;
     }
 
     /**

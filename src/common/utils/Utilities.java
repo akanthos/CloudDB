@@ -1,6 +1,10 @@
 package common.utils;
 
+import common.Serializer;
+import common.messages.AbstractMessage;
 import common.messages.GenericMessage;
+import common.messages.KVMessage;
+import common.messages.KVMessageImpl;
 import helpers.CannotConnectException;
 import helpers.ErrorMessages;
 import org.apache.log4j.Logger;
@@ -34,6 +38,9 @@ public class Utilities {
     public static void send(String msg, OutputStream outputStream) throws CannotConnectException {
         byte[] bytes = new StringBuilder(msg).append(Character.toString((char) 13)).toString().getBytes(StandardCharsets.US_ASCII);
         send(bytes, outputStream);
+    }
+    public static void send(KVMessageImpl msg, OutputStream outputStream) throws CannotConnectException {
+        send(Serializer.toByteArray(msg), outputStream);
     }
 
     /**
@@ -119,7 +126,7 @@ public class Utilities {
 
     }
 
-    public static byte[] getBytes(GenericMessage message) throws UnsupportedEncodingException {
+    public static byte[] getBytes(AbstractMessage message) throws UnsupportedEncodingException {
         byte[] bytes;
         byte[] ctrBytes;
         byte[] tmp;

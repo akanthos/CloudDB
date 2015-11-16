@@ -13,13 +13,14 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 
 
 /**
  * KVMessage represantion of connection Message
  */
-public class KVMessageImpl implements KVMessage, Serializable {
+public class KVMessageImpl implements KVMessage {
 
     String key;
     String value;
@@ -28,12 +29,12 @@ public class KVMessageImpl implements KVMessage, Serializable {
     /* represents meta-data of all nodes in the system */
     private List< ServerInfo > metadata;
 
-    private static Logger logger = Logger.getLogger(KVMessageImpl.class);
+//    private static Logger logger = Logger.getLogger(KVMessageImpl.class);
 
 
-    static {
-        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
-    }
+//    static {
+//        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+//    }
 
 
     public KVMessageImpl () {
@@ -70,7 +71,7 @@ public class KVMessageImpl implements KVMessage, Serializable {
                 this.value = "";
             }
         } catch (Exception e) {
-            logger.error(String.format("Cannot parse message string"), e);
+            //logger.error(String.format("Cannot parse message string"), e);
             throw new Exception("Unable to parse message string");
         }
     }
@@ -131,10 +132,10 @@ public class KVMessageImpl implements KVMessage, Serializable {
      * toString method for KV Message
      * @return String representation of Message
      */
-    @Override
     public String toString() {
         // TODO: This is obsolete, change it using serializer directly, not from bytes
         return getMsgBytes().toString();
+//        return null;
 //        StringBuilder msgString = new StringBuilder();
 //        msgString.append(status);
 //        msgString.append(":");
@@ -153,6 +154,11 @@ public class KVMessageImpl implements KVMessage, Serializable {
      * @return bytes repreentation of Message
      */
     public byte[] getMsgBytes() {
+//        try {
+//            return Utilities.getBytes(this);
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
         return Serializer.toByteArray(this);
     }
 
@@ -171,6 +177,6 @@ public class KVMessageImpl implements KVMessage, Serializable {
 
     @Override
     public MessageType getMessageType() {
-        return null;
+        return MessageType.CLIENT_MESSAGE;
     }
 }

@@ -3,7 +3,7 @@ package common.messages;
 public interface AbstractMessage {
 
 
-    public enum MessageType {
+    enum MessageType {
         CLIENT_MESSAGE, ECS_MESSAGE;
     }
 
@@ -12,6 +12,6 @@ public interface AbstractMessage {
      * @return MessageType representing
      * Message's type
      */
-    public abstract MessageType getMessageType ();
+    MessageType getMessageType ();
 }
 

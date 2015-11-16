@@ -1,11 +1,9 @@
 package app_kvServer;
 
+import common.Serializer;
 import common.ServerInfo;
-import common.messages.KVAdminMessage;
+import common.messages.*;
 import common.messages.KVAdminMessage.StatusType;
-import common.messages.KVAdminMessageImpl;
-import common.messages.KVMessage;
-import common.messages.KVMessageImpl;
 import common.utils.KVMetadata;
 import common.utils.Utilities;
 import helpers.Constants;
@@ -54,8 +52,8 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     @Override
     public void run() {
         try {
-            KVMessage kvMessage;
-            KVAdminMessage kvAdminMessage;
+            KVMessage kvMessage = null;
+            KVAdminMessage kvAdminMessage = null;
             KVMessageImpl kvResponse;
             KVAdminMessageImpl kvAdminResponse;
             byte[] byteMessage;
@@ -69,21 +67,36 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     if (byteMessage[0] == -1) {
                         clientConnected = false;
                     } else {
-                        stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
-                        kvMessage = extractKVMessage(stringMessage);
-
-                        // If it fails, it returns a GENERAL_ERROR
-                        if (kvMessage.getStatus() == KVMessage.StatusType.GENERAL_ERROR) {
-                            // It may be an admin message
-                            kvAdminMessage = extractKVAdminMessage(stringMessage);
-                            kvAdminResponse = processAdminMessage(kvAdminMessage);
-                            // Send appropriate response according to the above backend actions
-                            Utilities.send(kvAdminResponse.getMsgBytes(), outputStream);
-                        } else {
+//                        stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
+//                        kvMessage = extractKVMessage(stringMessage);
+                        AbstractMessage m = Serializer.toObject(byteMessage);
+                        if (m.getMessageType().equals(AbstractMessage.MessageType.CLIENT_MESSAGE)) {
+                            kvMessage = (KVMessageImpl) m;
                             kvResponse = processMessage(kvMessage);
                             // Send appropriate response according to the above backend actions
                             Utilities.send(kvResponse.getMsgBytes(), outputStream);
+                        } else if (m.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
+                            kvAdminMessage = (KVAdminMessageImpl) m;
+                            kvAdminResponse = processAdminMessage(kvAdminMessage);
+                            Utilities.send(kvAdminResponse.getMsgBytes(), outputStream);
                         }
+                        else {
+                            Utilities.send((new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR)).getMsgBytes(), outputStream);
+                        }
+
+
+                        // If it fails, it returns a GENERAL_ERROR
+//                        if (kvMessage.getStatus() == KVMessage.StatusType.GENERAL_ERROR) {
+//                            // It may be an admin message
+//                            kvAdminMessage = extractKVAdminMessage(stringMessage);
+//                            kvAdminResponse = processAdminMessage(kvAdminMessage);
+//                            // Send appropriate response according to the above backend actions
+//                            Utilities.send(kvAdminResponse.getMsgBytes(), outputStream);
+//                        } else {
+//                            kvResponse = processMessage(kvMessage);
+//                            // Send appropriate response according to the above backend actions
+//                            Utilities.send(kvResponse.getMsgBytes(), outputStream);
+//                        }
                     }
                 } catch (IOException ioe) {
                     /* connection either terminated by the client or lost due to

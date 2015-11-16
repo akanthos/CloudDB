@@ -85,12 +85,15 @@ public class Serializer {
                         ((KVMessageImpl)retrievedMessage).setKey(tokens[2]);
 
                     }
-                    if (tokens[3] != null) { // value
-                        ((KVMessageImpl)retrievedMessage).setValue(tokens[3].trim());
-                    }if (tokens.length>= 5){
-                    List<ServerInfo> metaData = getMetaData(tokens[4].trim());
-                    ((KVMessageImpl)retrievedMessage).setMetadata(metaData);
-                }
+                    if (tokens.length >= 4) {
+                        if (tokens[3] != null) { // value
+                            ((KVMessageImpl) retrievedMessage).setValue(tokens[3].trim());
+                        }
+                    }
+                    if (tokens.length >= 5) {
+                        List<ServerInfo> metaData = getMetaData(tokens[4].trim());
+                        ((KVMessageImpl) retrievedMessage).setMetadata(metaData);
+                    }
                     break;
 
                 default:

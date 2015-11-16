@@ -29,12 +29,12 @@ public class KVMessageImpl implements KVMessage {
     /* represents meta-data of all nodes in the system */
     private List< ServerInfo > metadata;
 
-//    private static Logger logger = Logger.getLogger(KVMessageImpl.class);
+    private static Logger logger = Logger.getLogger(KVMessageImpl.class);
 
 
-//    static {
-//        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
-//    }
+    static {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+    }
 
 
     public KVMessageImpl () {
@@ -58,23 +58,23 @@ public class KVMessageImpl implements KVMessage {
      * @param messageString String representation of the KV Message
      * @throws Exception
      */
-    public KVMessageImpl(String messageString) throws Exception {
-        try {
-            String[] msgParts = messageString.split(":");
-            this.status = StatusType.valueOf(msgParts[0]);
-            String[] keyAndValue = msgParts[1].split("(?<!\\\\),");
-            this.key = keyAndValue[0].replaceAll("\\\\,",",");
-            // For GET requests, value would be null
-            if (keyAndValue.length > 1) {
-                this.value = keyAndValue[1].replaceAll("\\\\,",",");
-            } else {
-                this.value = "";
-            }
-        } catch (Exception e) {
-            //logger.error(String.format("Cannot parse message string"), e);
-            throw new Exception("Unable to parse message string");
-        }
-    }
+//    public KVMessageImpl(String messageString) throws Exception {
+//        try {
+//            String[] msgParts = messageString.split(":");
+//            this.status = StatusType.valueOf(msgParts[0]);
+//            String[] keyAndValue = msgParts[1].split("(?<!\\\\),");
+//            this.key = keyAndValue[0].replaceAll("\\\\,",",");
+//            // For GET requests, value would be null
+//            if (keyAndValue.length > 1) {
+//                this.value = keyAndValue[1].replaceAll("\\\\,",",");
+//            } else {
+//                this.value = "";
+//            }
+//        } catch (Exception e) {
+//            //logger.error(String.format("Cannot parse message string"), e);
+//            throw new Exception("Unable to parse message string");
+//        }
+//    }
 
     /**
      * Key getter

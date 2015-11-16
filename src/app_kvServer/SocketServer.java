@@ -11,6 +11,8 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -22,10 +24,10 @@ public class SocketServer {
     private ServerInfo info;
     private ServerState state;
     private ConnectionHandler handler;
-    private KVMetadata metadata;
-    KVCache kvCache;
+    private KVCache kvCache;
     private ServerSocket server;
     private int numOfClients;
+    private List<ServerInfo> metadata;
     private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
@@ -99,19 +101,19 @@ public class SocketServer {
     /********************************************************************/
     /*                      Administrative Commands                     */
     /********************************************************************/
-    public synchronized KVAdminMessageImpl initKVServer(KVMetadata metadata, Integer cacheSize, String displacementStrategy){
+    public synchronized KVAdminMessageImpl initKVServer(List<ServerInfo> metadata, Integer cacheSize, String displacementStrategy){
         try {
             this.kvCache = new KVCache(cacheSize, displacementStrategy);
         } catch (StorageException e) {
             logger.error("Cannot create KVCache", e);
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
         }
-        this.metadata = metadata;
-        this.info.setServerRange(metadata.getMyRange(info));
+        setMetadata(metadata);
         state.setInitialized(true);
         info.setLaunched(true);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.INIT_SUCCESS);
     }
+
     public synchronized KVAdminMessageImpl startServing() {
         state.setStopped(false);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.START_SUCCESS);
@@ -140,26 +142,26 @@ public class SocketServer {
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
     }
 
-    public synchronized KVAdminMessageImpl update(KVMetadata metadata) {
-        this.metadata = metadata;
+    public synchronized KVAdminMessageImpl update(List<ServerInfo> metadata) {
+        setMetadata(metadata);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.UPDATE_SUCCESS);
     }
-    private void updateStateToListeners() {
-        for (ServerActionListener l : runnableListeners) {
-            // Maybe exclude myself
-//            if (l != handler) {
-            l.updateState(this.state);
-//            }
-        }
-    }
-    private void updateMetadataToListeners() {
-        for (ServerActionListener l : runnableListeners) {
-            // Maybe exclude myself
-//            if (l != handler) {
-            l.updateMetadata(this.metadata);
-//            }
-        }
-    }
+//    private void updateStateToListeners() {
+//        for (ServerActionListener l : runnableListeners) {
+//            // Maybe exclude myself
+////            if (l != handler) {
+//            l.updateState(this.state);
+////            }
+//        }
+//    }
+//    private void updateMetadataToListeners() {
+//        for (ServerActionListener l : runnableListeners) {
+//            // Maybe exclude myself
+////            if (l != handler) {
+//            l.updateMetadata(this.metadata);
+////            }
+//        }
+//    }
 
     /********************************************************************/
     /*                       State Getters                              */
@@ -190,9 +192,16 @@ public class SocketServer {
     /********************************************************************/
     /*                     Metadata Setters/Getters                     */
     /********************************************************************/
-    public void setMetadata(KVMetadata metadata) { this.metadata = metadata; }
+    public void setMetadata(List<ServerInfo> metadata) {
+        this.metadata = metadata;
+        for (ServerInfo info : metadata) {
+            if (info.getAddress() == this.info.getAddress() && info.getServerPort() == this.info.getServerPort()) {
+                this.info.setServerRange(info.getServerRange());
+            }
+        }
+    }
 
-    public synchronized KVMetadata getMetadata() { return metadata; }
+    public synchronized List<ServerInfo> getMetadata() { return metadata; }
 
     /********************************************************************/
     /*                     Add/Remove listeners                         */
@@ -207,5 +216,13 @@ public class SocketServer {
 
     public ServerInfo getInfo() {
         return this.info;
+    }
+
+    public KVCache getKvCache() {
+        return kvCache;
+    }
+
+    public void setKvCache(KVCache kvCache) {
+        this.kvCache = kvCache;
     }
 }

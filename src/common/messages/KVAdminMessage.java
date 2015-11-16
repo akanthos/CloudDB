@@ -4,6 +4,8 @@ import common.ServerInfo;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 
+import java.util.List;
+
 /**
  * Created by akanthos on 11.11.15.
  */
@@ -34,7 +36,7 @@ public interface KVAdminMessage extends AbstractMessage {
      * @return the metadata that is associated with this message.
      *
      */
-    public KVMetadata getMetadata();
+    public List<ServerInfo> getMetadata();
 
     /**
      * @return the cache size that is associated with this message.

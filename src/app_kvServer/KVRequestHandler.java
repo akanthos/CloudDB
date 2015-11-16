@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.List;
 
 
 /**
@@ -184,25 +185,23 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_STOPPED);
         }
         if (server.isInitialized()) {
-            KVMetadata meta;
-            meta = new KVMetadata(server.getMetadata());
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
                 // Do the GET
-                if (meta.getMap().get(server.getInfo()).isIndexInRange(kvMessage.getHash())) {
-                    return server.kvCache.get(kvMessage.getKey());
+                if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
+                    return server.getKvCache().get(kvMessage.getKey());
                 }
                 else {
                     // TODO: Populate with new metadata
                     return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
                 }
             } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
-                if (meta.getMap().get(server.getInfo()).isIndexInRange(kvMessage.getHash())) {
+                if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
                     if (server.isWriteLocked()) {
                         // Cannot proceed PUT request
                         return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_WRITE_LOCK);
                     } else {
                         // Do the PUT
-                        return server.kvCache.put(kvMessage.getKey(), kvMessage.getValue());
+                        return server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
                     }
                 }
                 else {

@@ -20,6 +20,14 @@ public class KVRange {
         return high;
     }
 
+    public void setLow(long low) {
+        this.low = low;
+    }
+
+    public void setHigh(long high) {
+        this.high = high;
+    }
+
     public boolean isIndexInRange(long index) {
         // the last node in the ring
         if ( low > high){

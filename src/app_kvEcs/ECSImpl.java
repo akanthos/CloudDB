@@ -1,19 +1,24 @@
 package app_kvEcs;
 
 import common.ServerInfo;
+import hashing.MD5Hash;
 import org.apache.log4j.Logger;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 public class ECSImpl implements ECS {
 
+    private List<ServerInfo> allServers;
+    private List<ServerInfo> activeServers;
     private ConfigReader confReader;
-    private List<ServerInfo> Servers;
+    private MD5Hash md5Hasher;
     private static Logger logger = Logger.getLogger(ECSImpl.class);
     private int cacheSize;
     private String displacementStrategy;
-
+    private boolean running;
 
     /**
      *
@@ -21,7 +26,7 @@ public class ECSImpl implements ECS {
     public ECSImpl(String fileName) throws IOException {
         try {
             this.confReader = new ConfigReader( fileName );
-            Servers = confReader.getServers();
+            allServers = confReader.getServers();
         } catch (IOException e) {
             throw new IOException("ECSImpl. Cannot access ecs.config");
         }
@@ -38,7 +43,36 @@ public class ECSImpl implements ECS {
      * @param displacementStrategy
      * @return true if succeeded else false
      */
-    public boolean initService(int numberOfNodes, int cacheSize, String displacementStrategy) { return true; }
+    public boolean initService(int numberOfNodes, int cacheSize, String displacementStrategy) {
+
+        running = true;
+        Random rand = new Random();
+        int count = 0;
+
+        ServerInfo tmp;
+        List<ServerInfo> startServers = new ArrayList<ServerInfo>();
+        if (this.activeServers == null)
+            this.activeServers = new ArrayList<ServerInfo>();
+        // Choose random servers to start
+        while (count < numberOfNodes) {
+            int i = rand.nextInt(allServers.size());
+            tmp = allServers.get(i);
+            //neither active nor already randomly selected
+            if ((!startServers.contains(tmp)) && !this.activeServers.contains(tmp)) {
+                startServers.add(tmp);
+                count++;
+            }
+        }
+        logger.info("ECS launching " + numberOfNodes + " servers.");
+
+        launchNodes(startServers);
+        return true;
+    }
+
+
+    private void launchNodes(List<ServerInfo> startServers){
+
+    }
 
     /**x
      * Starts the storage service; By calling start() on all
@@ -110,5 +144,44 @@ public class ECSImpl implements ECS {
     public boolean startNode(ServerInfo node){
         return true;
     }
+    /**
+     * Calculate metaData of the current ECS system
+     *
+     * @param servers servers of the current system
+     * @return the new metaData
+     */
+    private List<ServerInfo> calculateMetaData(List<ServerInfo> servers){
 
+        // calculate each server's MD5 Hash value and sort them based on this
+        // value
+
+        for (ServerInfo server : servers) {
+            long hashKey = md5Hasher.hash(server.getAddress() + ":"
+                    + server.getServerPort());
+            server.setToIndex(hashKey);
+        }
+        Collections.sort(servers, new Comparator<ServerInfo>() {
+            @Override
+            public int compare(ServerInfo o1, ServerInfo o2) {
+                if (o1.getToIndex()>o2.getToIndex())
+                    return 1;
+                else
+                    return 0;
+            }
+        });
+
+        // setting predecessor
+        for (int i = 0; i < servers.size(); i++) {
+            ServerInfo server = servers.get(i);
+            ServerInfo predecessor;
+            if (i == 0) {
+                // first node
+                predecessor = servers.get(servers.size() - 1);
+            } else {
+                predecessor = servers.get(i - 1);
+            }
+            server.setFromIndex(predecessor.getToIndex());
+        }
+        return servers;
+    }
 }

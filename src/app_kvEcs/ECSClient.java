@@ -5,7 +5,6 @@ import helpers.Constants;
 import logger.LogSetup;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -42,60 +41,69 @@ public class ECSClient implements ECSClientListener {
 
     private void handleCommand(String cmdLine) {
         String[] tokens = cmdLine.split("\\s+");
-
-        if(tokens[0].equals("quit")) {
-            stop = true;
-            ECServer.shutdown();
-            System.out.println(PROMPT + "ECSImpl Client Application exit!");
-        }
-        /*
-          initService command takes 3 arguments: <numberOfNodes> <cacheSize> <displacementStrategy>
-         */
-        else if (tokens[0].equals("initService")){
-            if(tokens.length == 4) {
-                if ( isValidPolicy(tokens[3]) )
-                        this.ECSinit(tokens[1], tokens[2], tokens[3]);
-            } else {
-                printError("Invalid number of parameters.");
-            }
-
-        } else  if (tokens[0].equals("start")) {
+        ECSCommand command = ECSCommand.fromString(tokens[0]);
+        Validator validator = Validator.getInstance();
+        switch (command) {
+            case START:
                 this.ECSStart();
-        } else if( tokens[0].equals("stop") ) {
+                break;
+            case INIT:
+                if(tokens.length == 4) {
+                    if ( validator.isValidPolicy(tokens[3]) )
+                        this.ECSinit(tokens[1], tokens[2], tokens[3]);
+                } else {
+                    printError("Invalid number of parameters.");
+                }
+                break;
+            case STOP:
                 this.ECSStop();
-        } else if
-                ( tokens[0].equals("addNode") ) {
+                break;
+            case ADD:
                 if(tokens.length == 3) {
-                    if ( isValidPolicy(tokens[2]) )
+                    if ( validator.isValidPolicy(tokens[2]) )
                         this.ECSAddServer(tokens[1], tokens[2]);
                 }
                 else{
                     printError("Invalid number of parameters.");
                 }
-        }
-        else if ( tokens[0].equals("removeNode") ) {
-            this.ECSRemoveServer();
-        }
-        else if(tokens[0].equals("logLevel")) {
-            if(tokens.length == 2) {
-                String level = "";
-                if(level.equals(LogSetup.UNKNOWN_LEVEL)) {
-                    printError("No valid log level!");
-                    printPossibleLogLevels();
-                } else {
-                    System.out.println(PROMPT +
-                            "Log level changed to level " + level);
-                }
-            } else {
-                printError("Invalid number of parameters!");
-            }
+                break;
 
-        } else if(tokens[0].equals("help")) {
-            printHelp();
-        } else {
-            //printError("Unknown command");
-            printHelp();
+            case REMOVE:
+                this.ECSRemoveServer();
+                break;
+
+            case SHUT_DOWN:{
+                this.ECSShutDown();
+            }
+            break;
+            case LOG_LEVEL:
+                try {
+                    if (validator.isValidLogLevel(tokens)) {
+                        logger.info("Log Level Set to: " + tokens[1]);
+                        System.out.println("Log Level Set to: " + tokens[1]);
+                    }
+                }
+                catch (IllegalArgumentException e){
+                    System.out.println(PROMPT + e.getMessage());
+                }
+                break;
+            case HELP:
+                System.out.println(UIInteractMsg.ECS_HELP_TEXT);
+                logger.info("Help Text provided to user.");
+                break;
+            case QUIT:
+                stop = true;
+                this.ECSShutDown();
+                System.out.println("Quit program based on user request.");
+                logger.info("Quit program based on user request.");
+                System.exit(1);
+                break;
+
+            default:
+                System.out.println(UIInteractMsg.UNSUPPORTED_COMMAND);
+                break;
         }
+
     }
 
     /**
@@ -106,7 +114,7 @@ public class ECSClient implements ECSClientListener {
      */
     private void ECSinit(String numNodes,String cacheSize, String displacementStrategy) {
         try {
-            ECServer = new ECSImpl( fileName );
+            ECServer = new ECSImpl(fileName);
         } catch (IOException e) {
             logger.error("Could not initialize ECSImpl Service. Problem accessing ecs.config file");
             System.out.println("Could not initialize ECSImpl Service");
@@ -118,8 +126,10 @@ public class ECSClient implements ECSClientListener {
      * Start the ECSImpl service
      */
     private void ECSStart() {
-        if ( ECServer == null )
+        if ( ECServer == null ) {
             System.out.println(PROMPT + "ECSImpl Service is not initialized. First initialize the server.");
+            return;
+        }
         if ( ECServer.start() ) {
             logger.info( "ECSImpl Service started." );
             System.out.println(PROMPT + "ECSImpl Service started.");
@@ -151,8 +161,10 @@ public class ECSClient implements ECSClientListener {
      * Shutdown ECSImpl
      */
     private void ECSShutDown() {
-        if ( ECServer == null )
+        if ( ECServer == null ) {
             System.out.println(PROMPT + "ECSImpl Service is not initialized. First initialize the server.");
+            return;
+        }
         if ( ECServer.shutdown() ) {
             logger.info( "ECSImpl Service shutdown." );
             System.out.println(PROMPT + "ECSImpl Service shutdown.");
@@ -194,51 +206,10 @@ public class ECSClient implements ECSClientListener {
         }
     }
 
-    private void printHelp() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(PROMPT).append("ECSImpl CLIENT HELP (Usage):\n");
-        sb.append(PROMPT);
-        sb.append("::::::::::::::::::::::::::::::::");
-        sb.append("::::::::::::::::::::::::::::::::\n");
-        sb.append(PROMPT).append("initService <numNodes> <cacheSize> <displacementStrategy>");
-        sb.append("\t Initializes the ECSImpl Service. Available Displacement strategis: LRU | LFU | FIFO \n");
-        sb.append(PROMPT).append("start");
-        sb.append("\t\t Starts the ECSImpl Service \n");
-        sb.append(PROMPT).append("stop");
-        sb.append("\t\t\t Stops the ECSImpl Service \n");
-        sb.append(PROMPT).append("addNode <cacheSize> <displacementStrategy>");
-        sb.append("\t Add new StoreServer. Available Displacement strategis: LRU | LFU | FIFO  \n");
-        sb.append(PROMPT).append("removeNode");
-        sb.append("\t\t Remove randomly selected StoreServer \n");
-        sb.append(PROMPT).append("logLevel");
-        sb.append("\t\t\t Changes the logLevel \n");
-        sb.append(PROMPT).append("\t\t\t\t ");
-        sb.append("ALL | DEBUG | INFO | WARN | ERROR | FATAL | OFF \n");
-        sb.append(PROMPT).append("quit ");
-        sb.append("\t\t\t Exits the program");
-        System.out.println(sb.toString());
-    }
-
-    private void printPossibleLogLevels() {
-        System.out.println(PROMPT
-                + "Possible log levels are:");
-        System.out.println(PROMPT
-                + "ALL | DEBUG | INFO | WARN | ERROR | FATAL | OFF");
-    }
-
     public static void main(String[] args) {
         new ECSClient().run();
     }
 
-    /**
-     * check if give valid policy
-     * @param policy
-     * @return
-     */
-    private boolean isValidPolicy( String policy ){
-        String Dpolicy = policy.toUpperCase();
-        return ( Dpolicy.equals("FIFO") || Dpolicy.equals("LRU") || Dpolicy.equals("LFU") );
-    }
 
     private void printError(String error){
         System.out.println(PROMPT + "Error! " +  error);

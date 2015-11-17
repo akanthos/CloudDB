@@ -34,11 +34,16 @@ public class AllTests {
 	
 	
 	public static Test suite() {
+		try {
+			sleep(3000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		TestSuite clientSuite = new TestSuite("Basic Storage ServerTest-Suite");
 		clientSuite.addTestSuite(ConnectionTest.class);
 		clientSuite.addTestSuite(InteractionTest.class);
 		clientSuite.addTestSuite(AdditionalTest.class);
-		clientSuite.addTestSuite(KVCacheTest.class);
+//		clientSuite.addTestSuite(KVCacheTest.class);
 		return clientSuite;
 	}
 	

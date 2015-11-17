@@ -1,5 +1,6 @@
 package common.messages;
 
+import common.Serializer;
 import common.ServerInfo;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
@@ -10,13 +11,14 @@ import org.apache.log4j.PropertyConfigurator;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 /**
  * Created by akanthos on 11.11.15.
  */
 public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
 
-    KVMetadata metadata;
+    List<ServerInfo> metadata;
     Integer cacheSize;
     String displacementStrategy;
     KVRange range;
@@ -27,6 +29,10 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
 
     static {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+    }
+
+    public KVAdminMessageImpl () {
+
     }
 
     /**
@@ -61,7 +67,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      * @param cacheSize
      * @param displacementStrategy
      */
-    public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVMetadata metadata, Integer cacheSize, String displacementStrategy) {
+    public KVAdminMessageImpl(KVAdminMessage.StatusType status, List<ServerInfo> metadata, Integer cacheSize, String displacementStrategy) {
         this.status = status;
         this.metadata = metadata;
         this.cacheSize = cacheSize;
@@ -81,35 +87,10 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      */
     @Override
     public String toString() {
-        // TODO:
+        // TODO: Using Serializer
 
-        StringBuilder msgString = new StringBuilder();
-        msgString.append(status);
-        msgString.append(",");
-
-        if (status.equals(StatusType.INIT)) {
-            msgString.append(metadata.toString());
-            msgString.append(",");
-            msgString.append(cacheSize);
-            msgString.append(",");
-            msgString.append(displacementStrategy);
-        }
-        else if (status.equals(StatusType.MOVE_DATA)) {
-            msgString.append(range.toString());
-            msgString.append(",");
-            msgString.append(serverInfo+"");
-        }
-        else if (status.equals(StatusType.UPDATE_METADATA)) {
-            msgString.append(metadata.toString());
-        }
-        else {
-
-        }
-
-
-//        String delimitedValue = value.replaceAll(",", "\\\\,");
 //        msgString.append(delimitedValue);
-        return msgString.toString();
+        return Serializer.toByteArray(this).toString();
     }
 
     /**
@@ -117,12 +98,12 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      * @return bytes repreentation of Message
      * @throws UnsupportedEncodingException
      */
-    public byte[] getMsgBytes() throws UnsupportedEncodingException {
-        return Utilities.getBytes(this);
+    public byte[] getMsgBytes() {
+        return Serializer.toByteArray(this);
     }
 
     @Override
-    public KVMetadata getMetadata() {
+    public List<ServerInfo> getMetadata() {
         return metadata;
     }
 
@@ -157,4 +138,8 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
 
+    @Override
+    public MessageType getMessageType() {
+        return MessageType.ECS_MESSAGE;
+    }
 }

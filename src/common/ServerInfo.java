@@ -1,6 +1,7 @@
 package common;
 
 
+import com.sun.corba.se.spi.activation.Server;
 import common.utils.KVRange;
 import hashing.MD5Hash;
 
@@ -8,6 +9,8 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServerInfo implements java.io.Serializable{
 
@@ -15,6 +18,8 @@ public class ServerInfo implements java.io.Serializable{
     private Integer ServerPort;
     private String address;
     private KVRange ServerRange;
+    private boolean isLaunched;
+
 
 
     public ServerInfo(String address, Integer port) {
@@ -41,7 +46,7 @@ public class ServerInfo implements java.io.Serializable{
         return this.getAddress()+":"+this.getServerPort();
     }
 
-    public long getHash() {
+    public Long getHash() {
         MD5Hash md5 = new MD5Hash();
         return md5.hash(this.toString());
     }
@@ -54,7 +59,6 @@ public class ServerInfo implements java.io.Serializable{
         this.address = address;
     }
 
-
     public KVRange getServerRange() {
         return ServerRange;
     }
@@ -62,5 +66,25 @@ public class ServerInfo implements java.io.Serializable{
     public void setServerRange(KVRange serverRange) {
         ServerRange = serverRange;
     }
+
+    public Long getFromIndex() {
+        return ServerRange.getLow();
+    }
+
+    public void setFromIndex(Long fromIndex) {
+        this.ServerRange.setLow(fromIndex);    }
+
+    public Long getToIndex() {
+        return ServerRange.getHigh();
+    }
+
+    public void setToIndex(Long toIndex) {
+        this.ServerRange.setHigh(toIndex);
+    }
+
+    public void setLaunched(boolean isLaunched) { this.isLaunched = isLaunched; }
+
+
+
 
 }

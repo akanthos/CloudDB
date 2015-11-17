@@ -1,10 +1,9 @@
 package app_kvServer;
 
-import common.messages.KVAdminMessage;
+import common.Serializer;
+import common.ServerInfo;
+import common.messages.*;
 import common.messages.KVAdminMessage.StatusType;
-import common.messages.KVAdminMessageImpl;
-import common.messages.KVMessage;
-import common.messages.KVMessageImpl;
 import common.utils.KVMetadata;
 import common.utils.Utilities;
 import helpers.Constants;
@@ -14,38 +13,32 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.List;
 
 
 /**
  * Logic for handling client requests.
  * This is the runnable class that will be running inside the threadpool when assigned to a thread
  */
-public class KVRequestHandler implements Runnable, ServerActionListener {
+public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     KVConnectionHandler myHandler;
     SocketServer server;
     Socket clientSocket;
-    KVCache kvCache;
     int clientNumber;
     InputStream inputStream;
     OutputStream outputStream;
-    private ServerState state;
-    private KVMetadata metadata;
     private static Logger logger = Logger.getLogger(KVRequestHandler.class);
 
-    public KVRequestHandler(KVConnectionHandler handler, SocketServer server, Socket clientSocket, int clientNumber, KVCache kvCache) throws IOException {
+    public KVRequestHandler(KVConnectionHandler handler, SocketServer server, Socket clientSocket, int clientNumber) throws IOException {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.myHandler = handler;
         this.server = server;
-        this.state = server.getState();
         this.clientSocket = clientSocket;
         this.clientNumber = clientNumber;
-        this.kvCache = kvCache;
-        this.metadata = server.getMetadata();
 
         try {
             inputStream = clientSocket.getInputStream();
             outputStream = clientSocket.getOutputStream();
-            this.state.setIsOpen(true);
         } catch (IOException e) {
             logger.error(String.format("Client: %d. Unable to initialize streams.", clientNumber), e);
             throw new IOException("Unable to initialize streams from socket");
@@ -64,39 +57,37 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             KVMessageImpl kvResponse;
             KVAdminMessageImpl kvAdminResponse;
             byte[] byteMessage;
-            String stringMessage;
-            while (checkIfOpen()) {
+            boolean clientConnected = true;
+            while (clientConnected && server.isOpen()) {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
 
                     if (byteMessage[0] == -1) {
-                        state.setIsOpen(false);
+                        clientConnected = false;
                     } else {
-                        stringMessage = new String(byteMessage, Constants.DEFAULT_ENCODING).trim();
-                        kvMessage = extractKVMessage(stringMessage);
-
-                        // If it fails, it returns a GENERAL_ERROR
-                        if (kvMessage.getStatus() == KVMessage.StatusType.GENERAL_ERROR) {
-                            // It may be an admin message
-                            kvAdminMessage = extractKVAdminMessage(stringMessage);
-                            kvAdminResponse = processAdminMessage(kvAdminMessage);
-                            // Send appropriate response according to the above backend actions
-                            Utilities.send(kvAdminResponse.getMsgBytes(), outputStream);
-                        } else {
+                        AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
+                        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.CLIENT_MESSAGE)) {
+                            kvMessage = (KVMessageImpl) abstractMessage;
                             kvResponse = processMessage(kvMessage);
-                            // Send appropriate response according to the above backend actions
-                            Utilities.send(kvResponse.getMsgBytes(), outputStream);
+                            Utilities.send(kvResponse, outputStream);
+                        } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
+                            kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
+                            kvAdminResponse = processAdminMessage(kvAdminMessage);
+                            Utilities.send(kvAdminResponse, outputStream);
+                        }
+                        else {
+                            Utilities.send(new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR), outputStream);
                         }
                     }
                 } catch (IOException ioe) {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
                     logger.error("Error! Connection lost!");
-                    state.setIsOpen(false);
+                    clientConnected = false;
                 } catch (Exception e) {
                     logger.error("Unable to parse string message from client");
-                    state.setIsOpen(false);
+                    clientConnected = false;
                 }
             }
 
@@ -129,38 +120,6 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             isOpen = state.isOpen();
         }
         return isOpen;
-    }
-
-    /**
-     * Admin Message Unmarshaller
-     * @param messageString message to be unmarshalled to KVMessage type
-     * @return resulting KVMessage
-     */
-    private KVAdminMessage extractKVAdminMessage(String messageString) {
-        KVAdminMessage kvAdminMessage = null;
-        try {
-            kvAdminMessage = new KVAdminMessageImpl(messageString);
-        } catch (Exception e) {
-            logger.error(String.format("Unable to process message from client %d.", clientNumber), e);
-            kvAdminMessage = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
-        }
-        return kvAdminMessage;
-    }
-
-    /**
-     * Client Message Unmarshaller
-     * @param messageString message to be unmarshalled to KVMessage type
-     * @return resulting KVMessage
-     */
-    private KVMessage extractKVMessage(String messageString) {
-        KVMessage kvMessage = null;
-        try {
-            kvMessage = new KVMessageImpl(messageString);
-        } catch (Exception e) {
-            logger.error(String.format("Unable to process message from client %d.", clientNumber), e);
-            kvMessage = new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
-        }
-        return kvMessage;
     }
 
     /**
@@ -200,7 +159,7 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
      * @return resulting KVMessageImpl
      */
     private KVMessageImpl processMessage(KVMessage kvMessage) {
-        if (state.isStopped()) {
+        if (server.isStopped()) {
             return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_STOPPED);
         }
         if (server.isInitialized()) {
@@ -210,20 +169,20 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             }
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
                 // Do the GET
-                if (meta.getMap().get(server.info).isIndexInRange(kvMessage.getHash())) {
-                    return kvCache.get(kvMessage.getKey());
+                if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
+                    return server.getKvCache().get(kvMessage.getKey());
                 }
                 else {
+                    // TODO: Populate with new metadata
                     return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
                 }
             } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
-                if (meta.getMap().get(server.info).isIndexInRange(kvMessage.getHash())) {
-                    if (state.isWriteLock()) {
+                if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
+                    if (server.isWriteLocked()) {
                         // Cannot proceed PUT request
                         return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_WRITE_LOCK);
                     } else {
-                        // Do the PUT
-                        return kvCache.put(kvMessage.getKey(), kvMessage.getValue());
+                        return server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
                     }
                 }
                 else {
@@ -237,20 +196,4 @@ public class KVRequestHandler implements Runnable, ServerActionListener {
             return new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
         }
     }
-
-
-    @Override
-    public void updateState(ServerState s) {
-        synchronized (state) {
-            state = s;
-        }
-    }
-
-    @Override
-    public void updateMetadata(KVMetadata m) {
-        synchronized (metadata) {
-            this.metadata = m;
-        }
-    }
-
 }

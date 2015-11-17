@@ -129,18 +129,17 @@ public class Serializer {
                     if (tokens.length >= 3) {
                         if (tokens[2] != null) { // Data length and data
                             int dataLength = Integer.parseInt(tokens[2]);
+                            ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
                             if (tokens.length == dataLength + 3) {
-                                ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
                                 for (int i = 0; i < dataLength; i++) {
                                     String[] kv = tokens[i + 3].split(SUB_DLM1);
                                     if (kv.length == 2) {
                                         kvPairs.add(new KVPair(kv[0], kv[1]));
                                     }
                                 }
-                                if (!kvPairs.isEmpty()) {
-                                    ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
-                                }
+
                             }
+                            ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
                         }
                     }
                     break;

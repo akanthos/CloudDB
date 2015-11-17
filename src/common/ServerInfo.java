@@ -1,9 +1,16 @@
 package common;
 
 
+<<<<<<< HEAD
 import com.sun.corba.se.spi.activation.Server;
+=======
+import common.messages.KVMessageImpl;
+>>>>>>> 16a7e542787e5249be1b491de5f47db2a9e9c3ca
 import common.utils.KVRange;
 import hashing.MD5Hash;
+import helpers.Constants;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -20,6 +27,23 @@ public class ServerInfo implements java.io.Serializable{
     private KVRange ServerRange;
     private boolean isLaunched;
 
+
+    private static Logger logger = Logger.getLogger(KVMessageImpl.class);
+
+    static {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+    }
+
+    public ServerInfo(String messageString) throws Exception {
+        try {
+            String[] msgParts = messageString.split(",");
+            address = msgParts[0];
+            ServerPort = Integer.parseInt(msgParts[1]);
+        } catch (Exception e) {
+            logger.error(String.format("Unable to construct ServerInfo from message: %s", messageString), e);
+            throw new Exception("Unknown message format");
+        }
+    }
 
 
     public ServerInfo(String address, Integer port) {
@@ -43,7 +67,7 @@ public class ServerInfo implements java.io.Serializable{
 
     @Override
     public String toString() {
-        return this.getAddress()+":"+this.getServerPort();
+        return this.getAddress()+","+this.getServerPort();
     }
 
     public Long getHash() {

@@ -41,22 +41,10 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      * @param status
      */
     public KVAdminMessageImpl(KVAdminMessage.StatusType status) {
+        // This constructor is about simple acknowledge returns to messages like
+        // START, STOP, WRITE_LOCK, WRITE_UNLOCK, SHUTDOWN
+        // It returns usually a SUCCESS or OPERATION_FAILED
         this.status = status;
-    }
-
-    /**
-     * Contructor using String represantion of connection message
-     * @param messageString String representation of the KV Message
-     * @throws Exception
-     */
-    public KVAdminMessageImpl(String messageString) throws Exception {
-        try {
-            // TODO: Unmarshalling
-            throw new Exception();
-        } catch (Exception e) {
-            logger.error(String.format("Cannot parse message string"), e);
-            throw new Exception("Unable to parse message string");
-        }
     }
 
     /**
@@ -68,6 +56,8 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      * @param displacementStrategy
      */
     public KVAdminMessageImpl(KVAdminMessage.StatusType status, List<ServerInfo> metadata, Integer cacheSize, String displacementStrategy) {
+        // This constructor is used in the INIT message
+        // where only the following attributes are needed
         this.status = status;
         this.metadata = metadata;
         this.cacheSize = cacheSize;
@@ -76,6 +66,8 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
 
 
     public KVAdminMessageImpl(KVAdminMessage.StatusType status, KVRange range, ServerInfo serverInfo) {
+        // This constructor is used in the MOVE_DATA command
+        // where only the following attributes are needed
         this.status = status;
         this.range = range;
         this.serverInfo = serverInfo;

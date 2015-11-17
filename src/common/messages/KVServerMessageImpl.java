@@ -15,6 +15,10 @@ public class KVServerMessageImpl implements KVServerMessage {
 
     public KVServerMessageImpl() {}
 
+    public KVServerMessageImpl(StatusType status) {
+        this.status = status;
+    }
+
     public KVServerMessageImpl(ArrayList<KVPair> kvPairs) {
         this.kvPairs = kvPairs;
     }

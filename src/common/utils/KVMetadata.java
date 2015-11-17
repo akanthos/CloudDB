@@ -10,6 +10,10 @@ import java.util.HashMap;
 public class KVMetadata {
     HashMap<KVRange, ServerInfo> map = new HashMap<>();
 
+    public KVMetadata(String messageString) {
+        this.map = new HashMap<>();
+    }
+
     public void addServer(KVRange range, ServerInfo ServerInfo) {
         map.put(range, ServerInfo);
     }

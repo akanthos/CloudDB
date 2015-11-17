@@ -45,8 +45,23 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      */
     public KVAdminMessageImpl(String messageString) throws Exception {
         try {
-            // TODO: Unmarshalling
-            throw new Exception();
+            String[] msgParts = messageString.split(":");
+            this.status = KVAdminMessage.StatusType.valueOf(msgParts[0]);
+            if (this.status.equals(StatusType.INIT)) {
+                String[] initMessageParts = msgParts[1].split(",");
+                this.metadata = new KVMetadata(initMessageParts[0]);
+                this.cacheSize = Integer.valueOf(initMessageParts[1]);
+                this.displacementStrategy = initMessageParts[2];
+            } else if (this.status.equals(StatusType.MOVE_DATA)) {
+                String[] moveMsgParts = msgParts[1].split(",");
+                this.range = new KVRange(moveMsgParts[0]);
+                this.serverInfo = new ServerInfo(moveMsgParts[1]);
+            } else if (this.status.equals(StatusType.UPDATE_METADATA)) {
+                this.metadata = new KVMetadata(msgParts[1]);
+            } else {
+                logger.error(String.format("Unable to instantiate KVAdminMessageImpl. Unknown message format: %s", messageString));
+                throw new Exception("Unknown message format");
+            }
         } catch (Exception e) {
             logger.error(String.format("Cannot parse message string"), e);
             throw new Exception("Unable to parse message string");
@@ -81,12 +96,9 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      */
     @Override
     public String toString() {
-        // TODO:
-
         StringBuilder msgString = new StringBuilder();
         msgString.append(status);
-        msgString.append(",");
-
+        msgString.append(":");
         if (status.equals(StatusType.INIT)) {
             msgString.append(metadata.toString());
             msgString.append(",");

@@ -79,12 +79,37 @@ public class KVServer {
 //        if( args.length == 1 ) {
 //            try {
 //                Integer port = Integer.parseInt(args[0]);
+            try {
                 new Thread(new Runnable() {
                     public void run() {
                         new KVServer("localhost", 50000, 10, "FIFO");
                     }
                 }).start();
 
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                if (true) {
+                            /*
+                             * informing the ProcessInvoker of the ECS Machine that the
+                             * KVServer process started successfully
+                             */
+                    System.out.write("SUCCESS".getBytes());
+                    System.out.flush();
+                } else {
+                    System.out.write("ERROR".getBytes());
+                    System.out.flush();
+                    System.exit(-1);
+                }
+            }
+            catch (IOException e) {
+
+                e.printStackTrace();
+
+            }
 //            } catch (NumberFormatException e) {
 //                logger.error("Cannot parse port number or cache size", e);
 //                printHelp();

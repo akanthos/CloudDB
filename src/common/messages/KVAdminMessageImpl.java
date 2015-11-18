@@ -108,6 +108,11 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
     @Override
+    public void setMetadata(List<ServerInfo> metadata) {
+        this.metadata = metadata;
+    }
+
+    @Override
     public Integer getCacheSize() {
         return cacheSize;
     }
@@ -123,8 +128,26 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     }
 
     @Override
+    public void setRange(Long low, Long high) {
+
+    }
+
+    public void setLow(Long low){
+        range.setLow(low);
+    }
+
+    public void setHigh(Long high){
+        range.setHigh(high);
+    }
+
+    @Override
     public ServerInfo getServerInfo() {
         return serverInfo;
+    }
+
+    @Override
+    public void setServerInfo(ServerInfo server) {
+        this.serverInfo = server;
     }
 
     @Override

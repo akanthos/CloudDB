@@ -34,7 +34,7 @@ public class KVPersistenceEngine {
             prop = new Properties();
             if(!storeFile.exists()) {
                 storeFile.createNewFile();
-                System.out.println("Created file!");
+                //System.out.println("Created file!");
             }
             input = new FileInputStream(fileName);
             output = new FileOutputStream(fileName);

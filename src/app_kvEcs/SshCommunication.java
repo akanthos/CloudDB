@@ -32,7 +32,7 @@ public interface SshCommunication {
      * @paramm ecsPort : Port for communication with ECS
      @return: 0 in case of Success and -1 in case of Failure
      */
-    public int invokeRemoteProcess(String host,String command,String[]arguments);
+    public int invokeProcessRemotely(String host,String command,String[]arguments);
 
     public int invokeProcessLocally(String command,String[]arguments);
 

@@ -38,6 +38,8 @@ public interface KVAdminMessage extends AbstractMessage {
      */
     List<ServerInfo> getMetadata();
 
+    void setMetadata(List<ServerInfo> metadata);
+
     /**
      * @return the cache size that is associated with this message.
      *
@@ -59,10 +61,18 @@ public interface KVAdminMessage extends AbstractMessage {
 
     /**
      *
+     * @return the range that is associated to the message
+     */
+    void setRange(Long low, Long high);
+
+    /**
+     *
      * @return the information about the target server associated
      *         to this message
      */
     ServerInfo getServerInfo();
+
+    void setServerInfo(ServerInfo server);
 
     /**
      * @return a status string that is used to identify request types,

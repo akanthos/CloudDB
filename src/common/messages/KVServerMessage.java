@@ -2,7 +2,6 @@ package common.messages;
 
 import common.ServerInfo;
 import common.utils.KVRange;
-import jdk.internal.util.xml.impl.Pair;
 
 import java.util.List;
 

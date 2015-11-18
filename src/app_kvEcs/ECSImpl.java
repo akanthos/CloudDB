@@ -1,6 +1,10 @@
 package app_kvEcs;
 
+import com.sun.corba.se.spi.activation.Server;
 import common.ServerInfo;
+import common.messages.KVAdminMessage;
+import common.messages.KVAdminMessageImpl;
+import common.messages.KVMessage;
 import hashing.MD5Hash;
 import org.apache.log4j.Logger;
 
@@ -19,6 +23,10 @@ public class ECSImpl implements ECS {
     private int cacheSize;
     private String displacementStrategy;
     private boolean running;
+    private boolean local=true;
+    private SshCommunication processInv;
+    //map handling storing <ServerInfo>--<SocketConnection>
+    private Map<ServerInfo, KVConnection> KVConnections;
 
     /**
      *
@@ -48,6 +56,7 @@ public class ECSImpl implements ECS {
         running = true;
         Random rand = new Random();
         int count = 0;
+        processInv = new SshCaller();
 
         ServerInfo tmp;
         List<ServerInfo> startServers = new ArrayList<ServerInfo>();
@@ -65,13 +74,89 @@ public class ECSImpl implements ECS {
         }
         logger.info("ECS launching " + numberOfNodes + " servers.");
 
-        launchNodes(startServers);
+        //start the store servers
+        startServers = launchNodes(startServers, cacheSize, displacementStrategy);
+        //calculate the meta-data => List <ServerInfo>
+        startServers = calculateMetaData(startServers);
+        // communicate with servers and send call initialize command
+        KVAdminMessageImpl initMsg = (KVAdminMessageImpl) InitMsg(startServers);
+
+        // create server connection for further communication with the servers
+        for (ServerInfo server : this.activeServers) {
+            KVConnection kvconnection = new KVConnection(server);
+            try {
+                kvconnection.connect();
+                kvconnection.sendMessage(initMsg);
+                KVConnections.put(server, kvconnection);
+                kvconnection.disconnect();
+            } catch (IOException e) {
+                logger.error("One server node couldn't be initiated" + server);
+            }
+        }
+
+
+
         return true;
     }
 
+    /**
+     * Create an INIT KVAdminMessage
+     * @param startServers
+     * @return
+     */
+    private KVAdminMessage InitMsg(List<ServerInfo> startServers) {
+        KVAdminMessageImpl initMsg = new KVAdminMessageImpl();
+        initMsg.setStatus(KVAdminMessage.StatusType.INIT);
+        initMsg.setMetadata(startServers);
+        return initMsg;
+    }
 
-    private void launchNodes(List<ServerInfo> startServers){
 
+    /**
+     *
+     * @param startServers
+     * @param cacheSize
+     * @param displacementStrategy
+     * @return
+     */
+    private List<ServerInfo> launchNodes(List<ServerInfo> startServers, int cacheSize, String displacementStrategy) {
+		/*
+		 * it is considered that the invoker and invoked processes are in the
+		 * same folder and machine
+		 */
+        String path = System.getProperty("user.dir");
+        String command = "nohup java -jar " + path + "/ms3-server.jar ";
+        String arguments[] = new String[4];
+        arguments[1] = String.valueOf(cacheSize);
+        arguments[2] = displacementStrategy;
+        arguments[3] = " ERROR &";
+        int result;
+
+        Iterator<ServerInfo> iterator = startServers.iterator();
+        while (iterator.hasNext()) {
+            ServerInfo item = iterator.next();
+            arguments[0] = String.valueOf(item.getServerPort());
+
+            // for ssh calls
+            if (!local)
+                result = processInv.invokeProcessRemotely(item.getAddress(),
+                        command, arguments);
+
+                // for local calls (for local testing, calls are made without SSH)
+            else
+                result = processInv.invokeProcessLocally(command, arguments);
+
+            // the server started successfully
+            if (result == 0) {
+                this.activeServers.add(item);
+                item.setLaunched(true);
+
+            }
+            // could not start the server
+            else
+                iterator.remove();
+        }
+        return startServers;
     }
 
     /**x

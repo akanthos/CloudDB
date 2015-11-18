@@ -9,7 +9,7 @@ import common.messages.AbstractMessage;
  * The Class of ECS Commands.
  * Sent to servers.
  */
-public class ECSMessage implements AbstractMessage {
+public class ECSMsg implements AbstractMessage {
 
     private ECSCommand actionType;
     private List<ServerInfo> metaData;

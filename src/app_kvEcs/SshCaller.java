@@ -5,6 +5,8 @@ import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
+
+import java.io.File;
 import java.io.InputStream;
 
 
@@ -42,7 +44,7 @@ public class SshCaller implements SshCommunication {
      * @return
      */
     @Override
-    public int invokeRemoteProcess(String host, String command, String[] arguments) {
+    public int invokeProcessRemotely(String host, String command, String[] arguments) {
 
         boolean waiting;
         String tmpResponse = "";
@@ -110,6 +112,52 @@ public class SshCaller implements SshCommunication {
      */
     @Override
     public int invokeProcessLocally(String command, String[] arguments) {
-        return 0;
+
+        //ERROR & -> dont write standard error in nohup.out
+        try {
+            // adding the arguments to the command
+            for (String argument : arguments)
+                command += " " + argument;
+            // logger.debug("<<<<<<" + command + ">>>>>");
+            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar",
+                    "ms3-server.jar", arguments[0], arguments[1], arguments[2], "&");
+            String path = System.getProperty("user.dir");
+
+            processb.directory(new File(path));
+            Process p = processb.start();
+            InputStream in = p.getInputStream();
+            long begin = System.currentTimeMillis();
+            long end = begin + timeOut;
+            String s = "";
+            char c;
+            boolean waiting = true;
+            while (System.currentTimeMillis() < end && waiting) {
+                while (in.available() > 0) {
+                    c = (char) in.read();
+                    s += c;
+                    if (s.contains("SUCCESS")) {
+                        waiting = false;
+                        break;
+                    }
+                    // the process did not start successfully
+                    if (s.contains("ERROR"))
+                        return -1;
+                    // no more input to read
+                    if ((int) c < 0)
+                        break;
+                }
+
+            }
+            logger.info("Local Server" + " has started! Listening on Port "
+                    + arguments[0]);
+
+            return 0;
+        } catch (Exception e) {
+            System.out.println(e);
+            logger.error(e);
+            return -1;
+        }
+
     }
+
 }

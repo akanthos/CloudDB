@@ -1,6 +1,7 @@
 package common;
 
 
+import app_kvEcs.ECSCommand;
 import common.messages.*;
 
 import javax.activation.UnsupportedDataTypeException;
@@ -42,7 +43,7 @@ public class Serializer {
         return tmp;
     }
 
-    public static byte[] toByteArray(KVAdminMessageImpl message) {
+    public static byte[] toByteArray1(KVAdminMessageImpl message) {
         StringBuilder messageStr = null ;
         // TODO: Make a proper serialization like in the client case
 //        = new StringBuilder(ECS_MESSAGE + HEAD_DLM +message.getStatus().ordinal() + HEAD_DLM
@@ -65,6 +66,12 @@ public class Serializer {
         return tmp;
     }
 
+    /**
+     * Convert a ECS Message Object (KVAdminMessageImpl)
+     *
+     * @param message message to be sent
+     * @return
+     */
     public static byte[] toByteArray(KVServerMessageImpl message) {
 
         StringBuilder messageStr = new StringBuilder(SERVER_MESSAGE + HEAD_DLM + message.getStatus().ordinal());
@@ -84,6 +91,44 @@ public class Serializer {
         System.arraycopy(ctrBytes, 0, tmp, bytes.length, ctrBytes.length);
         return tmp;
     }
+
+    public static byte[] toByteArray(KVAdminMessageImpl message) {
+        // message : <TypeOfMessage>(int)-- <StatusType>(number)--list of metadata
+        // data/fromindex--toindex-- to_serverInfo
+        String msg = (ECS_MESSAGE + HEAD_DLM + message.getStatus()
+                .ordinal());
+        // Extra MetaData information for the cases of INIT && MOVE_DATA.
+        if (message.getStatus() == KVAdminMessage.StatusType.INIT
+                || message.getStatus() == KVAdminMessage.StatusType.UPDATE_METADATA) {
+            // add metadata (List)
+            msg += HEAD_DLM;
+            //Message_Data => MetaData(List)
+            for (ServerInfo server : message.getMetadata()) {
+                msg += server.getAddress() + SUB_DLM1 + server.getServerPort() + SUB_DLM1
+                        + server.getFromIndex() + SUB_DLM1 + server.getToIndex() + SUB_DLM1 + SUB_DLM1;
+                msg += SUB_DLM2;
+            }
+
+        } else if (message.getStatus() == KVAdminMessage.StatusType.MOVE_DATA) {
+            // add the from and to and the server info
+            ServerInfo server = message.getServerInfo();
+            //Message_Data = Information for the move server
+            msg += HEAD_DLM + message.getRange().getLow() + HEAD_DLM
+                    + message.getRange().getHigh() + HEAD_DLM
+                    + server.getAddress() + HEAD_DLM + server.getServerPort();
+
+        }
+        // in the case of start|stop| etc. messages we just have
+        // a message : <TypeOfMessage>(int)-- <StatusType>(number)
+        // convert String to bytes
+        byte[] bytes = msg.getBytes();
+        byte[] ctrBytes = new byte[] { RETURN };
+        byte[] tmp = new byte[bytes.length + ctrBytes.length];
+        System.arraycopy(bytes, 0, tmp, 0, bytes.length);
+        System.arraycopy(ctrBytes, 0, tmp, bytes.length, ctrBytes.length);
+        return tmp;
+    }
+
 
     public static AbstractMessage toObject(byte[] objectByteStream) throws UnsupportedDataTypeException {
 
@@ -116,10 +161,29 @@ public class Serializer {
                     break;
 
                 case ECS_MESSAGE:
-                    // TODO: Do a proper deserialization like in the client case
                     retrievedMessage = new KVAdminMessageImpl();
-                    break;
+                    if (tokens.length>= 2 && tokens[1] != null) {
+                        int statusNum = Integer.parseInt(tokens[1]);
+                        ((KVAdminMessageImpl)retrievedMessage).setStatus(KVAdminMessage.StatusType.values()[statusNum]);
+                    }
+                    if (tokens.length>= 3 && tokens[2] != null) {// is always the key
+                        if(((KVAdminMessageImpl)retrievedMessage).getStatus()== (KVAdminMessage.StatusType.INIT) ||
+                                ((KVAdminMessageImpl)retrievedMessage).getStatus()== (KVAdminMessage.StatusType.UPDATE_METADATA)){
+                            List<ServerInfo> metaData = getMetaData(tokens[2].trim());
+                            ((KVAdminMessageImpl)retrievedMessage).setMetadata(metaData);
+                        }else  if(((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)){
+                            ((KVAdminMessageImpl)retrievedMessage).setLow(Long.valueOf(tokens[2].trim()));
+                        }
 
+                    }
+                    if (tokens.length>= 4 && tokens[3] != null) {
+                        ((KVAdminMessageImpl)retrievedMessage).setHigh(Long.valueOf(tokens[3].trim()));
+                    }
+                    if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
+                        ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
+                        ((KVAdminMessageImpl)retrievedMessage).setServerInfo(toNode);
+                    }
+                    break;
                 case SERVER_MESSAGE:
                     retrievedMessage = new KVServerMessageImpl();
                     if (tokens[1] != null) {// status
@@ -142,6 +206,7 @@ public class Serializer {
                         }
                     }
                     break;
+
 
                 default:
                     // TODO: Maybe return an error message instead of null??

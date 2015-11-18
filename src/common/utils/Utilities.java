@@ -1,5 +1,6 @@
 package common.utils;
 
+import app_kvServer.KVServer;
 import common.Serializer;
 import common.messages.*;
 import helpers.CannotConnectException;
@@ -37,6 +38,9 @@ public class Utilities {
     }
 
     public static void send(KVAdminMessageImpl msg, OutputStream outputStream) throws CannotConnectException {
+        send(Serializer.toByteArray(msg), outputStream);
+    }
+    public static void send(KVServerMessageImpl msg, OutputStream outputStream) throws CannotConnectException {
         send(Serializer.toByteArray(msg), outputStream);
     }
 

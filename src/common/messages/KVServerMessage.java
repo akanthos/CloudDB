@@ -12,6 +12,8 @@ public interface KVServerMessage extends AbstractMessage {
     enum StatusType {
         MOVE_DATA, 			        /* Move data message */
         MOVE_DATA_SUCCESS,
+        MOVE_DATA_FAILURE,
+        GENERAL_ERROR
     }
 
     /**

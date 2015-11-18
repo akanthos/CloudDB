@@ -1,8 +1,7 @@
 package app_kvServer;
 
 import common.ServerInfo;
-import common.messages.KVAdminMessage;
-import common.messages.KVAdminMessageImpl;
+import common.messages.*;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
 import helpers.StorageException;
@@ -28,7 +27,7 @@ public class SocketServer {
     private ServerSocket server;
     private int numOfClients;
     private List<ServerInfo> metadata;
-    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
+//    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
 
@@ -44,7 +43,7 @@ public class SocketServer {
                 /*writeLock*/ false,
                 /*stop*/ true
         );
-        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
+//        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
 
     /**
@@ -138,33 +137,30 @@ public class SocketServer {
     }
 
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
-        // TODO:
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
+        // TODO: Gather k-v pairs that belong in range and send ServerMessage "MOVE_DATA" message to "server"
+        // TODO: and wait for answer from that server
+        // TODO: If it's MOVE_DATA_SUCCESS => send back OPERATION_SUCCESS
+        // TODO: If it's MOVE_DATA_FAILURE => send back OPERATION_FAILED
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
     public synchronized KVAdminMessageImpl update(List<ServerInfo> metadata) {
         setMetadata(metadata);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
-//    private void updateStateToListeners() {
-//        for (ServerActionListener l : runnableListeners) {
-//            // Maybe exclude myself
-////            if (l != handler) {
-//            l.updateState(this.state);
-////            }
-//        }
-//    }
-//    private void updateMetadataToListeners() {
-//        for (ServerActionListener l : runnableListeners) {
-//            // Maybe exclude myself
-////            if (l != handler) {
-//            l.updateMetadata(this.metadata);
-////            }
-//        }
-//    }
 
     /********************************************************************/
-    /*                       State Getters                              */
+    /*                          Server Requests                         */
+    /********************************************************************/
+    public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs) {
+        // TODO: Insert new key-value pairs to kvCache and respond with MOVE_SUCCESS
+        // TODO: If it fails, respond with MOVE_FAILURE
+        return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_SUCCESS);
+    }
+
+
+    /********************************************************************/
+    /*                          State Getters                           */
     /********************************************************************/
     public synchronized ServerState getState() {
         return state;
@@ -206,13 +202,13 @@ public class SocketServer {
     /********************************************************************/
     /*                     Add/Remove listeners                         */
     /********************************************************************/
-    public void addListener(ServerActionListener l) {
-        runnableListeners.add(l);
-    }
+//    public void addListener(ServerActionListener l) {
+//        runnableListeners.add(l);
+//    }
 
-    public void removeListener(KVRequestHandler kvRequestHandler) {
-        runnableListeners.remove(kvRequestHandler);
-    }
+//    public void removeListener(KVRequestHandler kvRequestHandler) {
+//        runnableListeners.remove(kvRequestHandler);
+//    }
 
     public ServerInfo getInfo() {
         return this.info;
@@ -225,4 +221,6 @@ public class SocketServer {
     public void setKvCache(KVCache kvCache) {
         this.kvCache = kvCache;
     }
+
+
 }

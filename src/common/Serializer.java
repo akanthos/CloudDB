@@ -43,29 +43,6 @@ public class Serializer {
         return tmp;
     }
 
-    public static byte[] toByteArray1(KVAdminMessageImpl message) {
-        StringBuilder messageStr = null ;
-        // TODO: Make a proper serialization like in the client case
-//        = new StringBuilder(ECS_MESSAGE + HEAD_DLM +message.getStatus().ordinal() + HEAD_DLM
-//                + message.getKey() + HEAD_DLM + message.getValue());
-//
-//        if (message.getStatus() == KVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
-//            // add metadata
-//            messageStr.append(HEAD_DLM);
-//            for (ServerInfo server : message.getMetadata()) {
-//                messageStr.append(server.getAddress()+SUB_DLM1+server.getServerPort()+SUB_DLM1
-//                        +server.getFromIndex()+SUB_DLM1+server.getToIndex());
-//                messageStr.append(SUB_DLM2);
-//            }
-//        }
-        byte[] bytes = messageStr.toString().getBytes();
-        byte[] ctrBytes = new byte[] { RETURN };
-        byte[] tmp = new byte[bytes.length + ctrBytes.length];
-        System.arraycopy(bytes, 0, tmp, 0, bytes.length);
-        System.arraycopy(ctrBytes, 0, tmp, bytes.length, ctrBytes.length);
-        return tmp;
-    }
-
     /**
      * Convert a ECS Message Object (KVAdminMessageImpl)
      *

@@ -1,10 +1,8 @@
 package app_kvServer;
 
 import common.Serializer;
-import common.ServerInfo;
 import common.messages.*;
 import common.messages.KVAdminMessage.StatusType;
-import common.utils.KVMetadata;
 import common.utils.Utilities;
 import helpers.Constants;
 import org.apache.log4j.Logger;
@@ -13,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.List;
 
 
 /**
@@ -54,8 +51,10 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         try {
             KVMessage kvMessage;
             KVAdminMessage kvAdminMessage;
+            KVServerMessage kvServerMessage;
             KVMessageImpl kvResponse;
             KVAdminMessageImpl kvAdminResponse;
+            KVServerMessageImpl kvServerResponse;
             byte[] byteMessage;
             boolean clientConnected = true;
             while (clientConnected && server.isOpen()) {
@@ -75,6 +74,10 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                             kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
                             kvAdminResponse = processAdminMessage(kvAdminMessage);
                             Utilities.send(kvAdminResponse, outputStream);
+                        } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
+                            kvServerMessage = (KVServerMessageImpl) abstractMessage;
+                            kvServerResponse = processServerMessage(kvServerMessage);
+                            Utilities.send(kvServerResponse, outputStream);
                         }
                         else {
                             Utilities.send(new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR), outputStream);
@@ -99,7 +102,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     inputStream.close();
                     outputStream.close();
                     clientSocket.close();
-                    server.removeListener(this);
+//                    server.removeListener(this);
                 }
             }catch(IOException ioe){
                 logger.error("Error! Unable to tear down connection!", ioe);
@@ -133,6 +136,24 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } else {
             logger.error(String.format("ECSImpl: Invalid message from ECSImpl: %s", kvAdminMessage.toString()));
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
+        }
+        return response;
+    }
+
+    /**
+     *
+     * @param kvServerMessage
+     * @return
+     */
+    private KVServerMessageImpl processServerMessage(KVServerMessage kvServerMessage) {
+        KVServerMessageImpl response;
+        if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
+            return server.insertNewDataToCache(kvServerMessage.getKVPairs());
+        } /*else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_SUCCESS)) {
+            return server.insertNewDataToCache(kvServerMessage.getKVPairs());
+        } */else {
+            logger.error(String.format("Server: Invalid message from ECSImpl: %s", kvServerMessage.toString()));
+            response = new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_FAILURE);
         }
         return response;
     }

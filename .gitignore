@@ -9,12 +9,12 @@
 .classpath
 
 # Class files
-out/
-classes/
-bin/
+out/*
+classes/*
+bin/*
 
 # Project specific
-logs/
+logs/*
 logs/*.log
 data.store
 

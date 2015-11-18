@@ -69,9 +69,7 @@ public class KVPersistenceEngine {
      *            respective Status.
      */
     public KVMessageImpl put (String key, String value){
-
         try {
-
             String oldValue = prop.getProperty(key);
             prop.setProperty(key, value);
             prop.put(key, value);

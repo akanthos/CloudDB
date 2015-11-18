@@ -107,6 +107,21 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         }
     }
 
+    private boolean checkIfOpen() {
+        boolean isOpen;
+        synchronized (state) {
+                /*
+                 * Checking state in synchronized block.
+                 * No client serving in synchronized block
+                 * because that could block the thread that updates
+                 * the state forever, essentially blocking the response
+                 * to the ECS forever.
+                 */
+            isOpen = state.isOpen();
+        }
+        return isOpen;
+    }
+
     /**
      * Process of the KVAdminMessage and communication with the cache
      * @param kvAdminMessage KVAdminMessage representation of the ECSImpl request
@@ -148,6 +163,10 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_STOPPED);
         }
         if (server.isInitialized()) {
+            KVMetadata meta;
+            synchronized (this.metadata) {
+                meta = new KVMetadata(this.metadata);
+            }
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
                 // Do the GET
                 if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
@@ -163,7 +182,6 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                         // Cannot proceed PUT request
                         return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_WRITE_LOCK);
                     } else {
-                        // Do the PUT
                         return server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
                     }
                 }

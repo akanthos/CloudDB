@@ -8,8 +8,12 @@ import java.util.HashMap;
  * Created by akanthos on 11.11.15.
  */
 public class KVMetadata {
+
     HashMap<ServerInfo, KVRange> map;
 
+    public KVMetadata(String messageString) {
+        this.map = new HashMap<>();
+    }
     public KVMetadata() {
         this.map = new HashMap<>();
     }
@@ -22,6 +26,31 @@ public class KVMetadata {
         // Copy constructor
         this.map = new HashMap<>(another.map);
     }
+
+
+
+//    public void addServer(KVRange range, ServerInfo ServerInfo) {
+//        map.put(range, ServerInfo);
+//    }
+//
+//    public ServerInfo getServer(KVRange range) {
+//        return map.get(range);
+//    }
+//
+//    public boolean doesServerExist(KVRange range) {
+//        return map.containsKey(range);
+//    }
+//
+//    public HashMap<KVRange, ServerInfo> getMap() {
+//        return map;
+//    }
+//
+//    public void setMap(HashMap<KVRange, ServerInfo> map) {
+//        this.map = map;
+//    }
+
+
+
 
     public String getString() {
         return null;

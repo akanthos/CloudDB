@@ -40,11 +40,9 @@ public class ECSClient implements ECSClientListener {
     }
 
     private void handleCommand(String cmdLine) {
-
         String[] tokens = cmdLine.split("\\s+");
         ECSCommand command = ECSCommand.fromString(tokens[0]);
         Validator validator = Validator.getInstance();
-
         switch (command) {
             case START:
                 this.ECSStart();
@@ -116,7 +114,7 @@ public class ECSClient implements ECSClientListener {
      */
     private void ECSinit(String numNodes,String cacheSize, String displacementStrategy) {
         try {
-            ECServer = new ECSImpl( fileName );
+            ECServer = new ECSImpl(fileName);
         } catch (IOException e) {
             logger.error("Could not initialize ECSImpl Service. Problem accessing ecs.config file");
             System.out.println("Could not initialize ECSImpl Service");

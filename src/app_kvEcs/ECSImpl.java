@@ -229,7 +229,6 @@ public class ECSImpl implements ECS {
     public boolean startNode(ServerInfo node){
         return true;
     }
-
     /**
      * Calculate metaData of the current ECS system
      *
@@ -270,6 +269,4 @@ public class ECSImpl implements ECS {
         }
         return servers;
     }
-
-
 }

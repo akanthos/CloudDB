@@ -2,7 +2,6 @@ package app_kvEcs;
 
 
 public interface SshCommunication {
-
     /**
      * Sets UserName for the ssh communication
      * @param s Username

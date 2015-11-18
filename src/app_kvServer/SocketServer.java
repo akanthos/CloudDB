@@ -111,30 +111,30 @@ public class SocketServer {
         setMetadata(metadata);
         state.setInitialized(true);
         info.setLaunched(true);
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.INIT_SUCCESS);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
     public synchronized KVAdminMessageImpl startServing() {
         state.setStopped(false);
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.START_SUCCESS);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
     public synchronized KVAdminMessageImpl stopServing() {
         state.setStopped(true);
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.STOP_SUCCESS);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
     public synchronized KVAdminMessageImpl writeLock() {
         state.setWriteLock(true);
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.LOCK_WRITE_SUCCESS);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
     public synchronized KVAdminMessageImpl writeUnlock() {
         state.setWriteLock(false);
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.UNLOCK_WRITE_SUCCESS);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
     public synchronized KVAdminMessageImpl shutDown() {
         state.setIsOpen(false);
         this.closeSocket();
         this.handler.shutDown();
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.SHUT_DOWN_SUCCESS);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
@@ -144,7 +144,7 @@ public class SocketServer {
 
     public synchronized KVAdminMessageImpl update(List<ServerInfo> metadata) {
         setMetadata(metadata);
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.UPDATE_SUCCESS);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 //    private void updateStateToListeners() {
 //        for (ServerActionListener l : runnableListeners) {

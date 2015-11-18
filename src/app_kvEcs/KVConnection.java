@@ -51,7 +51,7 @@ public class KVConnection extends Thread {
             while (isConnected()) {
                 KVAdminMessageImpl e = (KVAdminMessageImpl)receiveMessage();
                 if (e != null) {
-                    if (e.getStatus() == KVAdminMessage.StatusType.INIT_SUCCESS) {
+                    if (e.getStatus() == KVAdminMessage.StatusType.OPERATION_SUCCESS) {
                         synchronized (this) {
                             setreply(true);
                             notify();

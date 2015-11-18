@@ -1,23 +1,15 @@
 package common;
 
 
-<<<<<<< HEAD
-import com.sun.corba.se.spi.activation.Server;
-=======
-import common.messages.KVMessageImpl;
->>>>>>> 16a7e542787e5249be1b491de5f47db2a9e9c3ca
 import common.utils.KVRange;
+
+import common.messages.KVMessageImpl;
+
 import hashing.MD5Hash;
 import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ServerInfo implements java.io.Serializable{
 

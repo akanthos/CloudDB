@@ -39,6 +39,17 @@ public class KVStore implements KVCommInterface {
         searchComparator = new SearchComparator();
 	}
 
+    // TODO: Do we need these methods now?
+    @Override
+    public void connect() throws Exception {
+
+    }
+
+    @Override
+    public void disconnect() {
+
+    }
+
     /**
      * Puts an entry into the server.
      *

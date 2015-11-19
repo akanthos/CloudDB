@@ -8,11 +8,13 @@ import java.util.regex.Pattern;
 
 import client.KVStore;
 import common.messages.KVMessage;
+import helpers.Constants;
 import helpers.ErrorMessages;
 import helpers.CannotConnectException;
 import helpers.Commands;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.pattern.IntegerPatternConverter;
 
 /**
  * Main Client class
@@ -28,7 +30,17 @@ public class KVClient {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		engine = new KVStore("", 0); // Initializing with default values
+		if (args.length < 2) {
+			System.out.println("Provide valid host and port. Usage java <application> <host> <port>");
+			return;
+		}
+		String hostName = args[0];
+		String port = args[1];
+		if (!isHostValid(hostName, port)) {
+			System.out.println("Provide valid host and port. Usage java <application> <host> <port>");
+			return;
+		}
+		engine = new KVStore(hostName, Integer.parseInt(port));
 		BufferedReader consoleReader;
 		// Reader for input from stdIn
 		consoleReader = new BufferedReader(new InputStreamReader(System.in));
@@ -36,7 +48,7 @@ public class KVClient {
 		while (!quit) {
 			try {
 				// Take and parse the user input
-				System.out.print("EchoClient> ");
+				System.out.print(Constants.CLIENT_PROMPT);
 				String input = consoleReader.readLine();
 				String[] tokens = input.trim().split("\\s+");
 				if (tokens != null) {
@@ -59,45 +71,6 @@ public class KVClient {
 							break;
 						default:
 							printHelp("quit");
-							break;
-						}
-					} else if (tokens[0].equals("disconnect")) {
-						switch (tokens.length) {
-						case 1:
-							engine.disconnect();
-							System.out.println("Connection to the server has been terminated. Please connect again.");
-							break;
-						default:
-							printHelp("disconnect");
-							break;
-						}
-					} else if (tokens[0].equals("connect")) {
-						switch (tokens.length) {
-						case 3:
-							// Perform the connection
-							if (!engine.isConnected()) {
-								if (isHostValid(tokens[1], tokens[2])) {
-									try {
-                                        engine.setHost(tokens[1]);
-                                        engine.setPort(Integer.parseInt(tokens[2]));
-										engine.connect();
-									} catch (CannotConnectException e) {
-										System.out.println("Connection failed: " + "\nError Message: " + e.getErrorMessage());
-									} catch (Exception e) {
-                                        logger.error("Could not establish connection to the server", e);
-                                        System.out.println("Connection failed: " + "\nError Message: " + e.getMessage());
-                                    }
-                                } else {
-									logger.debug(String.format("Invalid host and port entry. Host: %s, Port: %s", tokens[1], tokens[2]));
-									System.out.println("Please insert valid IP or Port");
-									printHelp("connect");
-								}
-							} else {
-								System.out.println("There is already a connection open, please run disconnect first");
-							}
-							break;
-						default:
-							printHelp("connect");
 							break;
 						}
 					} else if (tokens[0].equals("get")) {
@@ -146,11 +119,6 @@ public class KVClient {
 				System.out.println(ErrorMessages.ERROR_INTERNAL);
 			}
 		}
-
-		// Got the quit command. Close connections and gracefully exit
-		if (engine.isConnected()) {
-			engine.disconnect();
-		}
 		System.out.println("KVClient exit!");
 	}
 
@@ -165,6 +133,8 @@ public class KVClient {
 			System.out.println("Put operation failed");
 		} else if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
 			System.out.println("Delete operation failed");
+		} else {
+			System.out.println("Unknown error occurred. Please try again.");
 		}
 	}
 
@@ -176,9 +146,10 @@ public class KVClient {
 	private static void printGetResponse(KVMessage response) {
 		if (response.getStatus().equals(KVMessage.StatusType.GET_SUCCESS) && response.getValue() != null) {
 			System.out.println(response.getValue());
-		}
-		else if (response.getStatus().equals(KVMessage.StatusType.GET_ERROR)) {
+		} else if (response.getStatus().equals(KVMessage.StatusType.GET_ERROR)) {
 			System.out.println("Value could not be retrieved");
+		} else {
+			System.out.println("Unknown error occurred. Please try again.");
 		}
 	}
 
@@ -217,12 +188,7 @@ public class KVClient {
 	 * Helper function for printing the general help to the user.
 	 */
 	private static void printHelp() {
-		System.out.println("This program is a simple client that is able to establish a TCP connection\n"
-				+ " to a given echo server and exchange text messages with it.");
-		System.out.println("\nconnect:");
-		printHelp("connect");
-		System.out.println("\ndisconnect:");
-		printHelp("disconnect");
+		System.out.println("This program is a simple client application to a set of data servers.\n");
 		System.out.println("\nget:");
 		printHelp("get");
 		System.out.println("\nput:");
@@ -244,16 +210,8 @@ public class KVClient {
 		try {
 			Commands currentCommand = Commands.valueOf(command.toUpperCase());
 			switch (currentCommand) {
-			case CONNECT:
-				System.out.println("Syntax: connect <hostname or IP address> <port>\n "
-						+ "Tries to create a TCP connection with the echo server");
-				break;
-			case DISCONNECT:
-				System.out.println("Syntax: disconnect\n " + "Tries to disconnect from the connected server");
-				break;
 			case GET:
-				System.out.println("Syntax: get <key>\n " + "Retrieves the value for the given key from the " +
-						"currently connected storage server");
+				System.out.println("Syntax: get <key>\n " + "Retrieves the value for the given key from the server");
 				break;
 			case PUT:
 				System.out.println("Syntax: put <key> <value>\n " +

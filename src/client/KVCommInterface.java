@@ -10,12 +10,12 @@ public interface KVCommInterface {
 	 * @throws Exception
 	 *             if connection could not be established.
 	 */
-	// public void connect() throws Exception;
+	public void connect() throws Exception;
 
 	/**
 	 * disconnects the client from the currently connected server.
 	 */
-	// public void disconnect();
+	public void disconnect();
 
 	/**
 	 * Inserts a key-value pair into the KVServer.

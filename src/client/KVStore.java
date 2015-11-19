@@ -13,9 +13,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class KVStore implements KVCommInterface {
 
@@ -23,6 +21,7 @@ public class KVStore implements KVCommInterface {
     private HashMap<ServerInfo, ServerConnection> connections;
     private List<ServerInfo> metadataFromServer;
     private MD5Hash hash;
+    private SearchComparator searchComparator;
 
 	/**
 	 * Initialize KVStore with address and port of KVServer
@@ -37,6 +36,7 @@ public class KVStore implements KVCommInterface {
         // All key requests going to a single server initially.
         ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
         metadataFromServer.add(serverInfo);
+        searchComparator = new SearchComparator();
 	}
 
     /**
@@ -61,9 +61,9 @@ public class KVStore implements KVCommInterface {
                 if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)) {
                     resendRequest = false;
                     kvMessage = kvMessageFromServer;
-                } else if (retryRequest(kvMessageFromServer)) {
-                    // Message needs to be retried with new metadata
-                    continue;
+                } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
+                    retryRequest(kvMessageFromServer);
+                    resendRequest = true;
                 } else {
                     logger.error(String.format("Server not able to service the request. Status: %s. Request: PUT <%s, %s>", kvMessageFromServer.getStatus(), kvMessageFromServer.getKey(), kvMessageFromServer.getValue()));
                     kvMessage.setStatus(KVMessage.StatusType.PUT_ERROR);
@@ -99,8 +99,9 @@ public class KVStore implements KVCommInterface {
                 if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)) {
                     resendRequest = false;
                     kvMessage = kvMessageFromServer;
-                } else if (retryRequest(kvMessageFromServer)) {
-                    continue;
+                } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
+                    retryRequest(kvMessageFromServer);
+                    resendRequest = true;
                 } else {
                     logger.error(String.format("Server not able to service the request. Status: %s. Request: GET <%s>", kvMessageFromServer.getStatus(), kvMessageFromServer.getKey()));
                     kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
@@ -183,22 +184,16 @@ public class KVStore implements KVCommInterface {
     }
 
     /**
-     * This function decides whether to retry a request or not.
-     * If the server is not responsible for that request, the new metadata obtained is updated.
+     * This function re provisions the data structures based on the new metadata
      *
      * @param messageFromServer
      * @return
      */
-    private boolean retryRequest(KVMessageImpl messageFromServer) {
-        if (messageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
-            metadataFromServer = messageFromServer.getMetadata();
-            closeConnections();
-            connections = new HashMap<>();
-            return true;
-        } else {
-            // All other errors, request should not be retried and response send to client.
-            return false;
-        }
+    private void retryRequest(KVMessageImpl messageFromServer) {
+        closeConnections();
+        connections = new HashMap<>();
+        metadataFromServer = messageFromServer.getMetadata();
+        Collections.sort(metadataFromServer);
     }
 
     /**
@@ -219,7 +214,10 @@ public class KVStore implements KVCommInterface {
      */
     private ServerConnection getServerConnection(String key) throws CannotConnectException {
         Long keyValue = hash.hash(key);
-        ServerInfo serverInfo = getRange(keyValue);
+        // Passing the key in the form of a dummy object
+        // TODO: Is there a cleaner way to do this?
+        int index = Collections.binarySearch(metadataFromServer, new ServerInfo("", 0, new KVRange(keyValue, 0L)), searchComparator);
+        ServerInfo serverInfo = metadataFromServer.get(index);
         if (connections.containsKey(serverInfo)) {
             return connections.get(serverInfo);
         } else {
@@ -229,19 +227,30 @@ public class KVStore implements KVCommInterface {
         }
     }
 
-    /**
-     * For a given key, get the server range
-     * TODO: Change this to bubble sort
-     *
-     * @param keyValue
-     * @return
-     */
-    private ServerInfo getRange(Long keyValue) {
-        for (ServerInfo serverInfo: metadataFromServer) {
-            if (serverInfo.getServerRange().isIndexInRange(keyValue)) {
-                return serverInfo;
+    class SearchComparator implements Comparator<ServerInfo> {
+
+        @Override
+        public int compare(ServerInfo serverInfo, ServerInfo t1) {
+            // t1 is a dummy object. key is the low value of the range.
+            long key = t1.getServerRange().getLow();
+            KVRange range = serverInfo.getServerRange();
+            if (range.isIndexInRange(key)) {
+                return 0;
+            } else {
+                long low = range.getLow();
+                long high = range.getHigh();
+                // Last node of the ring
+                if (low > high) {
+                    // If the key is not in the range, the key has to be lesser.
+                    return 1;
+                } else if (low > key) {
+                    // Key towards the left.
+                    return 1;
+                } else {
+                    // Key towards the right.
+                    return -1;
+                }
             }
         }
-        return null;
     }
 }

@@ -17,7 +17,8 @@ import java.util.Random;
 public class KVPersistenceEngine {
 
     private Properties prop;
-    private final String fileName = "data.store";
+    private final String fileNamePrefix = "data.store";
+    private final String fileName = "data.store" + randomSuffix(4) ;
     private InputStream input = null;
     private OutputStream output = null;
     private static Logger logger = Logger.getLogger(KVPersistenceEngine.class);
@@ -31,7 +32,7 @@ public class KVPersistenceEngine {
     public KVPersistenceEngine() throws StorageException {
         try {
             // Initialize properties file
-            File storeFile = new File(fileName + randomSuffix(4));
+            File storeFile = new File(fileName);
             prop = new Properties();
             if(storeFile.exists()) {
                 storeFile.delete();
@@ -123,4 +124,10 @@ public class KVPersistenceEngine {
     }
 
 
+    public void cleanUp() {
+        File storeFile = new File(fileName);
+        if(storeFile.exists()) {
+            storeFile.delete();
+        }
+    }
 }

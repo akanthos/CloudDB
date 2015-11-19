@@ -41,6 +41,12 @@ public class KVClient {
 			return;
 		}
 		engine = new KVStore(hostName, Integer.parseInt(port));
+		try {
+			engine.connect();
+		} catch (Exception e) {
+			logger.error("Cannot connect to initial server!");
+			return;
+		}
 		BufferedReader consoleReader;
 		// Reader for input from stdIn
 		consoleReader = new BufferedReader(new InputStreamReader(System.in));

@@ -58,11 +58,13 @@ public class KVServer {
         ConnectionHandler handler = new KVConnectionHandler(server);
         server.addHandler(handler);
         server.initKVServer(metadata, cacheSize, displacementStrategy);
-        server.startServing();
+
 
         try {
             server.connect();
+            server.startServing();
             server.run();
+            //server.cleanUp();
         } catch (IOException e) {
             logger.error("Cannot open socket... Terminating", e);
         }
@@ -79,7 +81,8 @@ public class KVServer {
 //        if( args.length == 1 ) {
 //            try {
 //                Integer port = Integer.parseInt(args[0]);
-            try {
+
+        try {
                 new Thread(new Runnable() {
                     public void run() {
                         new KVServer("localhost", 50000, 10, "FIFO");
@@ -109,6 +112,7 @@ public class KVServer {
                 e.printStackTrace();
 
             }
+
 //            } catch (NumberFormatException e) {
 //                logger.error("Cannot parse port number or cache size", e);
 //                printHelp();

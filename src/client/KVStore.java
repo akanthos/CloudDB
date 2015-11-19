@@ -22,6 +22,7 @@ public class KVStore implements KVCommInterface {
     private List<ServerInfo> metadataFromServer;
     private MD5Hash hash;
     private SearchComparator searchComparator;
+    ServerInfo initialServer;
 
 	/**
 	 * Initialize KVStore with address and port of KVServer
@@ -34,20 +35,26 @@ public class KVStore implements KVCommInterface {
         connections = new HashMap<>();
         hash = new MD5Hash();
         // All key requests going to a single server initially.
-        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
-        metadataFromServer.add(serverInfo);
+        initialServer = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
+//        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
+        metadataFromServer.add(initialServer);
         searchComparator = new SearchComparator();
 	}
 
     // TODO: Do we need these methods now?
     @Override
     public void connect() throws Exception {
-
+        ServerConnection serverConnection = new ServerConnection(initialServer.getAddress(), initialServer.getServerPort());
+        connections.put(initialServer, serverConnection);
     }
 
     @Override
     public void disconnect() {
-
+        for (ServerInfo server : connections.keySet()) {
+            ServerConnection conn = connections.get(server);
+            conn.closeConnections();
+        }
+        connections.clear();
     }
 
     /**
@@ -62,14 +69,20 @@ public class KVStore implements KVCommInterface {
 	public KVMessage put(String key, String value) throws Exception {
         // TODO: Perform key validation.
         boolean resendRequest = true;
-        KVMessageImpl kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);;
+        KVMessageImpl kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);
         try {
             while (resendRequest) {
                 ServerConnection connection = getServerConnection(key);
+                if (connection == null) {
+                    logger.error(String.format("Put request cannot be performed. Key: %s, Value: %s", key, value));
+                    throw new Exception("Client is disconnected");
+                }
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
                 byte[] response = send(kvMessage.getMsgBytes(), connection);
                 KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
-                if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)) {
+                if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)
+                        || kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)
+                        || kvMessageFromServer.getStatus().equals(KVMessage.StatusType.DELETE_SUCCESS)) {
                     resendRequest = false;
                     kvMessage = kvMessageFromServer;
                 } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
@@ -104,10 +117,14 @@ public class KVStore implements KVCommInterface {
         try {
             while (resendRequest) {
                 ServerConnection connection = getServerConnection(key);
+                if (connection == null) {
+                    logger.error(String.format("Get request cannot be performed. Key: %s", key));
+                    throw new Exception("Client is disconnected");
+                }
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
                 byte[] response = send(kvMessage.getMsgBytes(), connection);
                 KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
-                if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)) {
+                if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.GET_SUCCESS)) {
                     resendRequest = false;
                     kvMessage = kvMessageFromServer;
                 } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
@@ -232,9 +249,10 @@ public class KVStore implements KVCommInterface {
         if (connections.containsKey(serverInfo)) {
             return connections.get(serverInfo);
         } else {
-            ServerConnection serverConnection = new ServerConnection(serverInfo.getAddress(), serverInfo.getServerPort());
-            connections.put(serverInfo, serverConnection);
-            return serverConnection;
+            return null;
+//            ServerConnection serverConnection = new ServerConnection(serverInfo.getAddress(), serverInfo.getServerPort());
+//            connections.put(serverInfo, serverConnection);
+//            return serverConnection;
         }
     }
 

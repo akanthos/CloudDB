@@ -288,4 +288,7 @@ public class SocketServer {
     }
 
 
+    public void cleanUp() {
+        this.kvCache.cleanUp();
+    }
 }

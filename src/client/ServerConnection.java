@@ -25,7 +25,7 @@ public class ServerConnection extends ServerInfo {
     private Socket clientSocket;
     private static Logger logger = Logger.getLogger(ServerConnection.class);
 
-    public ServerConnection(String hostname, Integer port) throws CannotConnectException {
+    public ServerConnection(String hostname, Integer port) throws CannotConnectException, UnknownHostException {
         super(hostname, port);
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         try {
@@ -46,7 +46,7 @@ public class ServerConnection extends ServerInfo {
         }
         catch (UnknownHostException e) {
             logger.error("KVServer hostname cannot be resolved", e);
-            throw new CannotConnectException("Hostname cannot be resolved");
+            throw e;
         }
     }
 

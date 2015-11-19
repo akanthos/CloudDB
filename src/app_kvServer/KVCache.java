@@ -274,4 +274,8 @@ public class KVCache {
         }
         return currentPairs;
     }
+
+    public void cleanUp() {
+        this.persistence.cleanUp();
+    }
 }

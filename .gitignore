@@ -16,5 +16,5 @@ bin/*
 # Project specific
 logs/*
 logs/*.log
-data.store
+data.store*
 

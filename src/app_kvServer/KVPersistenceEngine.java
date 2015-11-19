@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.util.Properties;
+import java.util.Random;
 
 
 /**
@@ -30,12 +31,12 @@ public class KVPersistenceEngine {
     public KVPersistenceEngine() throws StorageException {
         try {
             // Initialize properties file
-            File storeFile = new File(fileName);
+            File storeFile = new File(fileName + randomSuffix(4));
             prop = new Properties();
-            if(!storeFile.exists()) {
-                storeFile.createNewFile();
-                //System.out.println("Created file!");
+            if(storeFile.exists()) {
+                storeFile.delete();
             }
+            storeFile.createNewFile();
             input = new FileInputStream(fileName);
             output = new FileOutputStream(fileName);
             prop.load(input);
@@ -44,6 +45,16 @@ public class KVPersistenceEngine {
             logger.error("Cannot initialize persistence file", e);
             throw new StorageException("Cannot initialize persistence file");
         }
+    }
+
+    private String randomSuffix(int suffixSize) {
+        Random r = new Random();
+        StringBuffer sb = new StringBuffer();
+        while(sb.length() < suffixSize){
+            sb.append(Integer.toHexString(r.nextInt()));
+        }
+
+        return sb.toString().substring(0, suffixSize);
     }
 
     /**

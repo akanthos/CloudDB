@@ -11,12 +11,12 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 
-public class ServerInfo implements java.io.Serializable {
+public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> {
 
     private String ServerName;
-    private Integer ServerPort;
+    private Integer serverPort;
     private String address;
-    private KVRange ServerRange;
+    private KVRange serverRange;
     private boolean isLaunched;
 
 
@@ -30,7 +30,7 @@ public class ServerInfo implements java.io.Serializable {
         try {
             String[] msgParts = messageString.split(",");
             address = msgParts[0];
-            ServerPort = Integer.parseInt(msgParts[1]);
+            serverPort = Integer.parseInt(msgParts[1]);
         } catch (Exception e) {
             logger.error(String.format("Unable to construct ServerInfo from message: %s", messageString), e);
             throw new Exception("Unknown message format");
@@ -40,21 +40,21 @@ public class ServerInfo implements java.io.Serializable {
 
     public ServerInfo(String address, Integer port) {
         this.address = address;
-        this.ServerPort = port;
+        this.serverPort = port;
     }
 
     public ServerInfo(String address, Integer port, KVRange range) {
         this.address = address;
-        this.ServerPort = port;
-        this.ServerRange = range;
+        this.serverPort = port;
+        this.serverRange = range;
     }
 
     public Integer getServerPort() {
-        return ServerPort;
+        return serverPort;
     }
 
     public void setServerPort( Integer serverPort ) {
-        this.ServerPort = serverPort;
+        this.serverPort = serverPort;
     }
 
     @Override
@@ -76,31 +76,33 @@ public class ServerInfo implements java.io.Serializable {
     }
 
     public KVRange getServerRange() {
-        return ServerRange;
+        return serverRange;
     }
 
     public void setServerRange(KVRange serverRange) {
-        ServerRange = serverRange;
+        this.serverRange = serverRange;
     }
 
     public Long getFromIndex() {
-        return ServerRange.getLow();
+        return serverRange.getLow();
     }
 
     public void setFromIndex(Long fromIndex) {
-        this.ServerRange.setLow(fromIndex);    }
+        this.serverRange.setLow(fromIndex);    }
 
     public Long getToIndex() {
-        return ServerRange.getHigh();
+        return serverRange.getHigh();
     }
 
     public void setToIndex(Long toIndex) {
-        this.ServerRange.setHigh(toIndex);
+        this.serverRange.setHigh(toIndex);
     }
 
     public void setLaunched(boolean isLaunched) { this.isLaunched = isLaunched; }
 
-
-
-
+    @Override
+    public int compareTo(ServerInfo o) {
+        Long l = serverRange.getLow();
+        return l.compareTo(o.getServerRange().getLow());
+    }
 }

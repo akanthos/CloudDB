@@ -37,10 +37,10 @@ public class ServerConnection extends ServerInfo {
                 logger.info("KVServer connection established");
                 isConnected = true;
             } catch (NumberFormatException e) {
-                logger.error("Number Format Exception", e);
+                logger.error(String.format("Number Format Exception. Server: %s:%s", address, port), e);
                 throw new CannotConnectException(ErrorMessages.ERROR_INTERNAL);
             } catch (IOException e) {
-                logger.error("Error while connecting to the server.", e);
+                logger.error(String.format("Error while connecting to the server. Server: %s:%s", hostname, port), e);
                 throw new CannotConnectException(e.getMessage());
             }
         }
@@ -51,17 +51,19 @@ public class ServerConnection extends ServerInfo {
     }
 
     public void closeConnections() {
-        try {
-            inStream.close();
-            outStream.close();
-            clientSocket.close();
-            clientSocket = null;
-        } catch (IOException e) {
-            logger.error(String.format("Cannot close connections. Host: %s. Port: %s", getAddress(), getServerPort()), e);
-        } finally {
-            isConnected = false;
-            setServerPort(0);
-            setAddress("");
+        if (isConnected) {
+            try {
+                inStream.close();
+                outStream.close();
+                clientSocket.close();
+                clientSocket = null;
+            } catch (IOException e) {
+                logger.error(String.format("Cannot close connections. Host: %s. Port: %s", getAddress(), getServerPort()), e);
+            } finally {
+                isConnected = false;
+                setServerPort(0);
+                setAddress("");
+            }
         }
     }
 

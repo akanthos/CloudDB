@@ -1,9 +1,9 @@
 package client;
 
-import app_kvEcs.ServerInfos;
+import common.Serializer;
+import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
-import common.utils.KVMetadata;
 import common.utils.KVRange;
 import common.utils.Utilities;
 import hashing.MD5Hash;
@@ -15,13 +15,13 @@ import org.apache.log4j.PropertyConfigurator;
 import java.io.*;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 public class KVStore implements KVCommInterface {
 
     private static Logger logger = Logger.getLogger(KVStore.class);
-    private KVMetadata metadata;
-    private HashMap<KVRange, ServerConnection> connections;
-    private LinkedList<KVRange> ranges;
+    private HashMap<ServerInfo, ServerConnection> connections;
+    private List<ServerInfo> metadataFromServer;
     private MD5Hash hash;
 
 	/**
@@ -31,15 +31,12 @@ public class KVStore implements KVCommInterface {
 	 */
 	public KVStore(String address, int port) {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
-        ranges = new LinkedList<>();
+        metadataFromServer = new LinkedList<>();
         connections = new HashMap<>();
-        metadata = new KVMetadata();
         hash = new MD5Hash();
         // All key requests going to a single server initially.
-        KVRange range = new KVRange(0, Integer.MAX_VALUE);
-        ranges.add(range);
-        ServerInfos serverInfo = new ServerInfos(address, port);
-        metadata.addServer(range, serverInfo);
+        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
+        metadataFromServer.add(serverInfo);
 	}
 
     /**
@@ -59,8 +56,8 @@ public class KVStore implements KVCommInterface {
             while (resendRequest) {
                 ServerConnection connection = getServerConnection(key);
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-                String response = send(kvMessage.toString(), connection);
-                KVMessageImpl kvMessageFromServer = new KVMessageImpl(response);
+                byte[] response = send(kvMessage.getMsgBytes(), connection);
+                KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
                 if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)) {
                     resendRequest = false;
                     kvMessage = kvMessageFromServer;
@@ -73,9 +70,10 @@ public class KVStore implements KVCommInterface {
                     resendRequest = false;
                 }
             }
-        } catch (CannotConnectException e) {
+        } catch (Exception e) {
             kvMessage.setStatus(KVMessage.StatusType.PUT_ERROR);
-            logger.error(e);
+            logger.error(String.format("Put request cannot be performed. Key: %s, Value: %s", key, value));
+            throw new Exception("Put request not successful");
         }
         return kvMessage;
 	}
@@ -96,8 +94,8 @@ public class KVStore implements KVCommInterface {
             while (resendRequest) {
                 ServerConnection connection = getServerConnection(key);
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-                String response = send(kvMessage.toString(), connection);
-                KVMessageImpl kvMessageFromServer = new KVMessageImpl(response);
+                byte[] response = send(kvMessage.getMsgBytes(), connection);
+                KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
                 if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)) {
                     resendRequest = false;
                     kvMessage = kvMessageFromServer;
@@ -109,9 +107,10 @@ public class KVStore implements KVCommInterface {
                     resendRequest = false;
                 }
             }
-        } catch (CannotConnectException e) {
+        } catch (Exception e) {
             kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
-            logger.error(e);
+            logger.error(String.format("GET request cannot be performed. Key: %s", key));
+            throw new Exception("GET request not successful");
         }
         return kvMessage;
 	}
@@ -122,18 +121,10 @@ public class KVStore implements KVCommInterface {
      * @param msg
      * @throws CannotConnectException
      */
-    public String send(String msg, ServerConnection serverConnection) throws CannotConnectException, IOException {
+    public byte[] send(byte[] msg, ServerConnection serverConnection) throws CannotConnectException, IOException {
         Utilities.send(msg, serverConnection.getOutStream());
         byte[] answer = Utilities.receive(serverConnection.getInStream());
-        System.out.println("I am the client and received message SIZE: " + answer.length);
-        try {
-            String msgFromServer = new String(answer, "US-ASCII").trim();
-            logger.info("Message received from server: " + msgFromServer);
-            return msgFromServer;
-        } catch (UnsupportedEncodingException e) {
-            logger.error("Unsupported Encoding in message from server", e);
-            throw new CannotConnectException(ErrorMessages.ERROR_INVALID_MESSAGE_FROM_SERVER);
-        }
+        return answer;
     }
 
     /**
@@ -200,8 +191,7 @@ public class KVStore implements KVCommInterface {
      */
     private boolean retryRequest(KVMessageImpl messageFromServer) {
         if (messageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
-            metadata = messageFromServer.getMetadata();
-            ranges = new LinkedList<>(metadata.getMap().keySet());
+            metadataFromServer = messageFromServer.getMetadata();
             closeConnections();
             connections = new HashMap<>();
             return true;
@@ -228,30 +218,28 @@ public class KVStore implements KVCommInterface {
      * @throws CannotConnectException
      */
     private ServerConnection getServerConnection(String key) throws CannotConnectException {
-        // TODO: Rework this.
-        Integer keyValue = (int) hash.hash(key);
-        KVRange range = getRange(keyValue);
-        ServerConnection returnConnection;
-        if (connections.containsKey(range)) {
-            returnConnection = connections.get(range);
+        Long keyValue = hash.hash(key);
+        ServerInfo serverInfo = getRange(keyValue);
+        if (connections.containsKey(serverInfo)) {
+            return connections.get(serverInfo);
         } else {
-            ServerInfos info = metadata.getServer(range);
-            returnConnection = new ServerConnection(info.getServerIP(), info.getHostPort());
-            connections.put(range, returnConnection);
+            ServerConnection serverConnection = new ServerConnection(serverInfo.getAddress(), serverInfo.getServerPort());
+            connections.put(serverInfo, serverConnection);
+            return serverConnection;
         }
-        return returnConnection;
     }
 
     /**
      * For a given key, get the server range
+     * TODO: Change this to bubble sort
      *
      * @param keyValue
      * @return
      */
-    private KVRange getRange(Integer keyValue) {
-        for (KVRange range: ranges) {
-            if (range.isInRange(keyValue)) {
-                return range;
+    private ServerInfo getRange(Long keyValue) {
+        for (ServerInfo serverInfo: metadataFromServer) {
+            if (serverInfo.getServerRange().isIndexInRange(keyValue)) {
+                return serverInfo;
             }
         }
         return null;

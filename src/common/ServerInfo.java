@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 
-public class ServerInfo implements java.io.Serializable{
+public class ServerInfo implements java.io.Serializable {
 
     private String ServerName;
     private Integer ServerPort;

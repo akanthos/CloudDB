@@ -1,6 +1,6 @@
 package client;
 
-import app_kvEcs.ServerInfos;
+import common.ServerInfo;
 import helpers.CannotConnectException;
 import helpers.Constants;
 import helpers.ErrorMessages;
@@ -17,7 +17,7 @@ import java.net.UnknownHostException;
 /**
  * Created by sreenath on 13.11.15.
  */
-public class ServerConnection extends ServerInfos {
+public class ServerConnection extends ServerInfo {
 
     private boolean isConnected;
     private InputStream inStream;
@@ -57,35 +57,19 @@ public class ServerConnection extends ServerInfos {
             clientSocket.close();
             clientSocket = null;
         } catch (IOException e) {
-            logger.error(String.format("Cannot close connections. Host: %s. Port: %s", getServerIP(), getHostPort()), e);
+            logger.error(String.format("Cannot close connections. Host: %s. Port: %s", getAddress(), getServerPort()), e);
         } finally {
             isConnected = false;
-            setPort(0);
-            setServerIP("");
+            setServerPort(0);
+            setAddress("");
         }
-    }
-
-    public boolean isConnected() {
-        return isConnected;
-    }
-
-    public void setConnected(boolean connected) {
-        isConnected = connected;
     }
 
     public OutputStream getOutStream() {
         return outStream;
     }
 
-    public void setOutStream(OutputStream outStream) {
-        this.outStream = outStream;
-    }
-
     public InputStream getInStream() {
         return inStream;
-    }
-
-    public void setInStream(InputStream inStream) {
-        this.inStream = inStream;
     }
 }

@@ -3,6 +3,7 @@ package common;
 
 import app_kvEcs.ECSCommand;
 import common.messages.*;
+import common.utils.KVRange;
 
 import javax.activation.UnsupportedDataTypeException;
 import java.util.ArrayList;
@@ -72,33 +73,41 @@ public class Serializer {
     public static byte[] toByteArray(KVAdminMessageImpl message) {
         // message : <TypeOfMessage>(int)-- <StatusType>(number)--list of metadata
         // data/fromindex--toindex-- to_serverInfo
-        String msg = (ECS_MESSAGE + HEAD_DLM + message.getStatus()
+        StringBuilder msg = new StringBuilder(ECS_MESSAGE + HEAD_DLM + message.getStatus()
                 .ordinal());
         // Extra MetaData information for the cases of INIT && MOVE_DATA.
         if (message.getStatus() == KVAdminMessage.StatusType.INIT
                 || message.getStatus() == KVAdminMessage.StatusType.UPDATE_METADATA) {
             // add metadata (List)
-            msg += HEAD_DLM;
+            msg.append(HEAD_DLM);
             //Message_Data => MetaData(List)
             for (ServerInfo server : message.getMetadata()) {
-                msg += server.getAddress() + SUB_DLM1 + server.getServerPort() + SUB_DLM1
-                        + server.getFromIndex() + SUB_DLM1 + server.getToIndex() + SUB_DLM1 + SUB_DLM1;
-                msg += SUB_DLM2;
+                msg.append( server.getAddress() + SUB_DLM1 + server.getServerPort() + SUB_DLM1
+                        + server.getFromIndex() + SUB_DLM1 + server.getToIndex() + SUB_DLM1 + SUB_DLM1 );
+                msg.append(SUB_DLM2);
+            }
+
+            if (message.getStatus() == KVAdminMessage.StatusType.INIT) {
+                msg.append(HEAD_DLM);
+                msg.append(message.getCacheSize());
+                msg.append(HEAD_DLM);
+                msg.append(message.getDisplacementStrategy());
+                msg.append(HEAD_DLM);
             }
 
         } else if (message.getStatus() == KVAdminMessage.StatusType.MOVE_DATA) {
             // add the from and to and the server info
             ServerInfo server = message.getServerInfo();
             //Message_Data = Information for the move server
-            msg += HEAD_DLM + message.getRange().getLow() + HEAD_DLM
+            msg.append( HEAD_DLM + message.getRange().getLow() + HEAD_DLM
                     + message.getRange().getHigh() + HEAD_DLM
-                    + server.getAddress() + HEAD_DLM + server.getServerPort();
+                    + server.getAddress() + HEAD_DLM + server.getServerPort() );
 
         }
         // in the case of start|stop| etc. messages we just have
         // a message : <TypeOfMessage>(int)-- <StatusType>(number)
         // convert String to bytes
-        byte[] bytes = msg.getBytes();
+        byte[] bytes = msg.toString().getBytes();
         byte[] ctrBytes = new byte[] { RETURN };
         byte[] tmp = new byte[bytes.length + ctrBytes.length];
         System.arraycopy(bytes, 0, tmp, 0, bytes.length);
@@ -143,22 +152,30 @@ public class Serializer {
                         int statusNum = Integer.parseInt(tokens[1]);
                         ((KVAdminMessageImpl)retrievedMessage).setStatus(KVAdminMessage.StatusType.values()[statusNum]);
                     }
-                    if (tokens.length>= 3 && tokens[2] != null) {// is always the key
-                        if(((KVAdminMessageImpl)retrievedMessage).getStatus()== (KVAdminMessage.StatusType.INIT) ||
-                                ((KVAdminMessageImpl)retrievedMessage).getStatus()== (KVAdminMessage.StatusType.UPDATE_METADATA)){
+                    if (((KVAdminMessageImpl)retrievedMessage).getStatus()== (KVAdminMessage.StatusType.INIT)) {
+                        if (tokens.length>= 3 && tokens[2] != null) {// is always the key
                             List<ServerInfo> metaData = getMetaData(tokens[2].trim());
                             ((KVAdminMessageImpl)retrievedMessage).setMetadata(metaData);
-                        }else  if(((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)){
-                            ((KVAdminMessageImpl)retrievedMessage).setLow(Long.valueOf(tokens[2].trim()));
                         }
-
-                    }
-                    if (tokens.length>= 4 && tokens[3] != null) {
-                        ((KVAdminMessageImpl)retrievedMessage).setHigh(Long.valueOf(tokens[3].trim()));
-                    }
-                    if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
-                        ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
-                        ((KVAdminMessageImpl)retrievedMessage).setServerInfo(toNode);
+                        if (tokens.length>= 4 && tokens[3] != null) {
+                            Integer cacheSize = Integer.parseInt(tokens[3].trim());
+                            ((KVAdminMessageImpl)retrievedMessage).setCacheSize(cacheSize);
+                        }
+                        if (tokens.length>= 5 && tokens[4] != null) {
+                            ((KVAdminMessageImpl)retrievedMessage).setDisplacementStrategy(tokens[4]);
+                        }
+                    } else if (((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)) {
+                        if (tokens.length>= 3 && tokens[2] != null) {
+                            ((KVAdminMessageImpl) retrievedMessage).setRange(new KVRange());
+                            ((KVAdminMessageImpl) retrievedMessage).setLow(Long.valueOf(tokens[2].trim()));
+                        }
+                        if (tokens.length>= 4 && tokens[3] != null) {
+                            ((KVAdminMessageImpl)retrievedMessage).setHigh(Long.valueOf(tokens[3].trim()));
+                        }
+                        if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
+                            ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
+                            ((KVAdminMessageImpl)retrievedMessage).setServerInfo(toNode);
+                        }
                     }
                     break;
                 case SERVER_MESSAGE:
@@ -209,16 +226,42 @@ public class Serializer {
     }
 
     private static List<ServerInfo> getMetaData(String metaDataStr) {
-        List<ServerInfo> KVServerList = new ArrayList<>();
-        String[] tokens = metaDataStr.split(SUB_DLM2);
-        for (String serverInfoStr : tokens) {
-            String[] serverInfoTokens = serverInfoStr.split(SUB_DLM1);
-            ServerInfo serverInfo = new ServerInfo(serverInfoTokens[0],
-                    Integer.parseInt(serverInfoTokens[1]));
-            serverInfo.setFromIndex(Long.valueOf(serverInfoTokens[2]));
-            serverInfo.setToIndex(Long.valueOf(serverInfoTokens[3]));
-            KVServerList.add(serverInfo);
+        if (!metaDataStr.equals("")) {
+            List<ServerInfo> KVServerList = new ArrayList<>();
+            String[] tokens = metaDataStr.split(SUB_DLM2);
+            for (String serverInfoStr : tokens) {
+                String[] serverInfoTokens = serverInfoStr.split(SUB_DLM1);
+                ServerInfo serverInfo = new ServerInfo(serverInfoTokens[0],
+                        Integer.parseInt(serverInfoTokens[1]));
+                serverInfo.setServerRange(new KVRange(Long.valueOf(serverInfoTokens[2]), Long.valueOf(serverInfoTokens[3])));
+                KVServerList.add(serverInfo);
+            }
+            return KVServerList;
         }
-        return KVServerList;
+        else {
+            return new ArrayList<>();
+        }
     }
+
+//    public static void main(String[] args) {
+//
+//        ServerInfo si = new ServerInfo("salami", 23, new KVRange());
+//        KVRange rangeToMove = new KVRange(0L, Long.MAX_VALUE/2);
+//
+//        List<ServerInfo> m = new ArrayList<>();
+////        m.add(si);
+//
+//        KVAdminMessageImpl message =
+//                new KVAdminMessageImpl(KVAdminMessage.StatusType.INIT,
+//                        m, 10, "FIFO");
+//
+//        byte[] bytesToSend = toByteArray(message);
+//        try {
+//            KVAdminMessageImpl receivedMessage = (KVAdminMessageImpl) toObject(bytesToSend);
+//            System.out.println("Salami " + receivedMessage.getStatus().toString());
+//        } catch (UnsupportedDataTypeException e) {
+//            e.printStackTrace();
+//        }
+//
+//    }
 }

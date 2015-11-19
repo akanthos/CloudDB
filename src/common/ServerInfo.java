@@ -41,6 +41,7 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
     public ServerInfo(String address, Integer port) {
         this.address = address;
         this.serverPort = port;
+        this.serverRange = new KVRange();
     }
 
     public ServerInfo(String address, Integer port, KVRange range) {

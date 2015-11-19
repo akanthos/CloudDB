@@ -33,6 +33,11 @@ public class KVRange {
         this.high = high;
     }
 
+    public KVRange(){
+        this.low = 0;
+        this.high = 0;
+    }
+
     public long getLow() {
         return low;
     }

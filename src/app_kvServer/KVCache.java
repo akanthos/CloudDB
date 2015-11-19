@@ -2,6 +2,9 @@ package app_kvServer;
 
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
+import common.messages.KVPair;
+import common.utils.KVRange;
+import hashing.MD5Hash;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
@@ -236,5 +239,39 @@ public class KVCache {
         return map;
     }
 
+    public ArrayList<KVPair> getPairsInRange(KVRange range) {
+        ArrayList<KVPair> allCurrentPairs = getAllCurrentPairs();
+        ArrayList<KVPair> filteredPairs = new ArrayList<>();
+        MD5Hash md5Hash = new MD5Hash();
+        for (KVPair pair : allCurrentPairs) {
+            long keyHash = md5Hash.hash(pair.getKey());
+            if (range.isIndexInRange(keyHash)) {
+                filteredPairs.add(pair);
+            }
+        }
+        return filteredPairs;
+    }
 
+    private ArrayList<KVPair> getAllCurrentPairs() {
+        ArrayList<KVPair> currentPairs = new ArrayList<>();
+        if (policy == LFU) {
+            LinkedHashMap<String, LfuCacheEntry> currentMap;
+            synchronized (this) {
+                currentMap = new LinkedHashMap<>(lfu.getCacheMap());
+            }
+            for (String key : currentMap.keySet()) {
+                currentPairs.add(new KVPair(key, currentMap.get(key).getValue()));
+            }
+        }
+        else {
+            LinkedHashMap<String, String> currentMap;
+            synchronized (this) {
+                currentMap = new LinkedHashMap<>(map);
+            }
+            for (String key : currentMap.keySet()) {
+                currentPairs.add(new KVPair(key, currentMap.get(key)));
+            }
+        }
+        return currentPairs;
+    }
 }

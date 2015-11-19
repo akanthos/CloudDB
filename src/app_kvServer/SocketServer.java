@@ -1,15 +1,20 @@
 package app_kvServer;
 
+import common.Serializer;
 import common.ServerInfo;
 import common.messages.*;
 import common.utils.KVMetadata;
 import common.utils.KVRange;
+import common.utils.Utilities;
+import helpers.CannotConnectException;
+import helpers.ErrorMessages;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -137,11 +142,69 @@ public class SocketServer {
     }
 
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
-        // TODO: Gather k-v pairs that belong in range and send ServerMessage "MOVE_DATA" message to "server"
-        // TODO: and wait for answer from that server
-        // TODO: If it's MOVE_DATA_SUCCESS => send back OPERATION_SUCCESS
-        // TODO: If it's MOVE_DATA_FAILURE => send back OPERATION_FAILED
-        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
+        ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
+        return sendToServer(pairsToSend, server);
+    }
+
+    private KVAdminMessageImpl sendToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
+        // Send ServerMessage "MOVE_DATA" message to "server" and wait for answer from that server
+        // If it's MOVE_DATA_SUCCESS => send back OPERATION_SUCCESS
+        // If it's MOVE_DATA_FAILURE => send back OPERATION_FAILED
+        KVAdminMessageImpl reply;
+        InputStream inStream = null;
+        OutputStream outStream = null;
+        Socket clientSocket = null;
+        try {
+            /***************************/
+            /* Connect to other server */
+            /***************************/
+
+            InetAddress address = InetAddress.getByName(server.getAddress());
+            clientSocket = new Socket(address, server.getServerPort());
+            inStream = clientSocket.getInputStream();
+            outStream = clientSocket.getOutputStream();
+
+            /*****************************************************/
+            /* Send MOVE_DATA server message to the other server */
+            /*****************************************************/
+
+            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(pairsToSend, KVServerMessage.StatusType.MOVE_DATA);
+            Utilities.send(bulkPutMessage, outStream);
+            byte[] bulkPutAnswerBytes = Utilities.receive(inStream);
+            KVServerMessageImpl bulkPutAnswer = (KVServerMessageImpl) Serializer.toObject(bulkPutAnswerBytes);
+            if (bulkPutAnswer.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_SUCCESS)) {
+                reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
+            }
+            else {
+                reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+            }
+
+        } catch (UnknownHostException e) {
+            logger.error("KVServer hostname cannot be resolved", e);
+            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        } catch (IOException e) {
+            logger.error("Error while connecting to the server for bulk put.", e);
+            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        } catch (CannotConnectException e) {
+            logger.error("Error while connecting to the server.", e);
+            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        } finally {
+            /****************************************/
+            /* Tear down connection to other server */
+            /****************************************/
+            try {
+                if (inStream != null
+                    && outStream != null
+                    && clientSocket != null) {
+                    inStream.close();
+                    outStream.close();
+                    clientSocket.close();
+                }
+            } catch(IOException ioe){
+                logger.error("Error! Unable to tear down connection for bulk put!", ioe);
+            }
+        }
+        return reply;
     }
 
     public synchronized KVAdminMessageImpl update(List<ServerInfo> metadata) {
@@ -153,9 +216,11 @@ public class SocketServer {
     /*                          Server Requests                         */
     /********************************************************************/
     public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs) {
-        // TODO: Insert new key-value pairs to kvCache and respond with MOVE_SUCCESS
-        // TODO: If it fails, respond with MOVE_FAILURE
+        for (KVPair kv : kvPairs) {
+            kvCache.put(kv.getKey(), kv.getValue());
+        }
         return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_SUCCESS);
+        // If it fails, respond with MOVE_FAILURE ???
     }
 
 

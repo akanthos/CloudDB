@@ -41,6 +41,10 @@ public class KVMessageImpl implements KVMessage {
 
     }
 
+    public KVMessageImpl (StatusType status) {
+        this.status = status;
+    }
+
     /**
      * Constractor
      * @param key Key of the connection KV Message
@@ -51,6 +55,11 @@ public class KVMessageImpl implements KVMessage {
         this.key = key;
         this.value = value;
         this.status = status;
+    }
+
+    public KVMessageImpl(List<ServerInfo> metadata, StatusType status) {
+        this.status = status;
+        this.setMetadata(metadata);
     }
 
     /**

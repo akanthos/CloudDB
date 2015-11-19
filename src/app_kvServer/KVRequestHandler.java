@@ -80,7 +80,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                             Utilities.send(kvServerResponse, outputStream);
                         }
                         else {
-                            Utilities.send(new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR), outputStream);
+                            Utilities.send(new KVMessageImpl(KVMessage.StatusType.GENERAL_ERROR), outputStream);
                         }
                     }
                 } catch (IOException ioe) {
@@ -153,7 +153,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             return server.insertNewDataToCache(kvServerMessage.getKVPairs());
         } */else {
             logger.error(String.format("Server: Invalid message from ECSImpl: %s", kvServerMessage.toString()));
-            response = new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_FAILURE);
+            response = new KVServerMessageImpl(KVServerMessage.StatusType.GENERAL_ERROR);
         }
         return response;
     }
@@ -165,37 +165,36 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
      * @return resulting KVMessageImpl
      */
     private KVMessageImpl processMessage(KVMessage kvMessage) {
-        if (server.isStopped()) {
-            return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_STOPPED);
+        if (!server.isInitialized()) {
+            return new KVMessageImpl(KVMessage.StatusType.GENERAL_ERROR);
         }
-        if (server.isInitialized()) {
+        // Server is properly initialized
+        if (server.isStopped()) {
+            return new KVMessageImpl(KVMessage.StatusType.SERVER_STOPPED);
+        }
+        // Server is not stopped
+        if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
+            // Server IS responsible for key
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
                 // Do the GET
-                if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
-                    return server.getKvCache().get(kvMessage.getKey());
-                }
-                else {
-                    // TODO: Populate with new metadata
-                    return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
-                }
+                return server.getKvCache().get(kvMessage.getKey());
             } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
-                if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
-                    if (server.isWriteLocked()) {
-                        // Cannot proceed PUT request
-                        return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_WRITE_LOCK);
-                    } else {
-                        return server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
-                    }
-                }
-                else {
-                    return new KVMessageImpl("", "", KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
+                // Check if WRITE_LOCKED
+                if (server.isWriteLocked()) {
+                    // Cannot proceed PUT request
+                    return new KVMessageImpl(KVMessage.StatusType.SERVER_WRITE_LOCK);
+                } else {
+                    // Do the PUT
+                    return server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
                 }
             } else {
                 logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
-                return new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
+                return new KVMessageImpl(KVMessage.StatusType.GENERAL_ERROR);
             }
-        } else {
-            return new KVMessageImpl("", "", KVMessage.StatusType.GENERAL_ERROR);
+        }
+        else {
+            // Server not responsible for key
+            return new KVMessageImpl(server.getMetadata(), KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
         }
     }
 }

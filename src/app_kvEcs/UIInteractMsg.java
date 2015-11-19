@@ -19,10 +19,11 @@ public class UIInteractMsg {
 
     public static final String ECS_HELP_TEXT = "ECS:  Cloud databases MS3 ECS Service."
             + "\nUsage:"
+            + "\nInit <NumberOfNodes> <cacheSize> <displacementStrategy>: Initialize the service with N random nodes"
             + "\nStart: Sends a start signal to all the servers using ECS Service.\n"
             + "Stop:  Sends a stop signal to all the servers using ECS Service.\n"
             + "Shutdown:  Sends a Shutdown signal to all the servers using ECS Service.\n"
-            + "Add:  Adds a Store Server to the Ring and performs respective data Re-Arrangements.\n"
+            + "Add <cacheSize> <displacementStrategy>:  Adds a Store Server to the Ring and performs respective data Re-Arrangements.\n"
             + "Remove:  Removes a Store Server from the Ring and performs related data Re-Arrangements.\n"
             + "\nlogLevel <level>: Sets the logger to the desired Logging Level."
             + "\nHelp: Prints the help guide."

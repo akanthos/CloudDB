@@ -1,11 +1,15 @@
 package app_kvEcs;
 
 import com.sun.corba.se.spi.activation.Server;
+import common.Serializer;
 import common.ServerInfo;
+import common.messages.AbstractMessage;
 import common.messages.KVAdminMessage;
 import common.messages.KVAdminMessageImpl;
 import common.messages.KVMessage;
+import common.utils.Utilities;
 import hashing.MD5Hash;
+import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -72,29 +76,38 @@ public class ECSImpl implements ECS {
                 count++;
             }
         }
-        logger.info("ECS launching " + numberOfNodes + " servers.");
 
+        logger.info("ECS launching " + numberOfNodes + " servers.");
         //start the store servers
         startServers = launchNodes(startServers, cacheSize, displacementStrategy);
         //calculate the meta-data => List <ServerInfo>
         startServers = calculateMetaData(startServers);
+        activeServers = startServers;
         // communicate with servers and send call initialize command
         KVAdminMessageImpl initMsg = (KVAdminMessageImpl) InitMsg(startServers);
 
         // create server connection for further communication with the servers
         for (ServerInfo server : this.activeServers) {
+            KVAdminMessage kvAdminMessage;
+            byte[] byteMessage;
             KVConnection kvconnection = new KVConnection(server);
             try {
                 kvconnection.connect();
-                kvconnection.sendMessage(initMsg);
-                KVConnections.put(server, kvconnection);
-                kvconnection.disconnect();
+                //send message to server
+                Utilities.send(initMsg, kvconnection.getOutput());
+                byteMessage = Utilities.receive(kvconnection.getInput());
+                AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
+                kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
+                if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.OPERATION_SUCCESS))
+                    KVConnections.put(server, kvconnection);
+                else
+                    System.out.println("Init Operation on server " + server + " failed.");
             } catch (IOException e) {
                 logger.error("One server node couldn't be initiated" + server);
+            } catch (CannotConnectException e) {
+                logger.error("Could not communicate with server" + server);
             }
         }
-
-
 
         return true;
     }

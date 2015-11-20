@@ -3,11 +3,9 @@ package app_kvServer;
 import common.Serializer;
 import common.ServerInfo;
 import common.messages.*;
-import common.utils.KVMetadata;
 import common.utils.KVRange;
 import common.utils.Utilities;
 import helpers.CannotConnectException;
-import helpers.ErrorMessages;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
@@ -17,7 +15,6 @@ import java.io.OutputStream;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Class handling all TCP  connections

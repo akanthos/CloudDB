@@ -2,7 +2,6 @@ package app_kvServer;
 
 
 import common.ServerInfo;
-import common.utils.KVMetadata;
 import common.utils.KVRange;
 import helpers.Constants;
 import helpers.StorageException;
@@ -11,7 +10,6 @@ import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**

@@ -22,39 +22,53 @@ public class KVStore implements KVCommInterface {
     private List<ServerInfo> metadataFromServer;
     private MD5Hash hash;
     private SearchComparator searchComparator;
-    ServerInfo initialServer;
+    private ServerInfo currentServer;
+    private ServerConnection currentConnection;
+    boolean connected;
 
 	/**
-	 * Initialize KVStore with address and port of KVServer
-	 * @param address the address of the KVServer
-	 * @param port the port of the KVServer
+	 * Initialize KVStore
+	 *
 	 */
-	public KVStore(String address, int port) {
+	public KVStore() {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         metadataFromServer = new LinkedList<>();
         connections = new HashMap<>();
         hash = new MD5Hash();
         // All key requests going to a single server initially.
-        initialServer = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
-//        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
-        metadataFromServer.add(initialServer);
         searchComparator = new SearchComparator();
+        connected = false;
 	}
 
-    // TODO: Do we need these methods now?
+    /**
+     * Initialize KVStore with address and port of KVServer
+     * and connect to the server
+     * @param hostAddress the address of the KVServer
+     * @param port the port of the KVServer
+     * @throws Exception
+     */
     @Override
-    public void connect() throws Exception {
-        ServerConnection serverConnection = new ServerConnection(initialServer.getAddress(), initialServer.getServerPort());
-        connections.put(initialServer, serverConnection);
+    public void connect(String hostAddress, Integer port) throws Exception {
+        if (connected) {
+            disconnect();
+        }
+        currentServer = new ServerInfo(hostAddress, port, new KVRange(0L, Long.MAX_VALUE));
+//        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
+        metadataFromServer.add(currentServer);
+        currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
+        connections.put(currentServer, currentConnection);
+        setIsConnected(true);
     }
 
     @Override
     public void disconnect() {
+        currentConnection.closeConnections();
         for (ServerInfo server : connections.keySet()) {
             ServerConnection conn = connections.get(server);
             conn.closeConnections();
         }
         connections.clear();
+        setIsConnected(false);
     }
 
     /**
@@ -67,6 +81,9 @@ public class KVStore implements KVCommInterface {
      */
 	@Override
 	public KVMessage put(String key, String value) throws Exception {
+        if (!isConnected()) {
+            throw new Exception("Client not Connected to server");
+        }
         // TODO: Perform key validation.
         boolean resendRequest = true;
         KVMessageImpl kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);
@@ -111,6 +128,9 @@ public class KVStore implements KVCommInterface {
      */
 	@Override
 	public KVMessage get(String key) throws Exception {
+        if (!isConnected()) {
+            throw new Exception("Client not Connected to server");
+        }
         // TODO: Perform key validation
         boolean resendRequest = true;
         KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.GET);
@@ -238,23 +258,28 @@ public class KVStore implements KVCommInterface {
      *
      * @param key
      * @return
-     * @throws CannotConnectException
+     * @throws Exception
      */
-    private ServerConnection getServerConnection(String key) throws CannotConnectException {
+    private ServerConnection getServerConnection(String key) throws Exception {
         Long keyValue = hash.hash(key);
         // Passing the key in the form of a dummy object
         // TODO: Is there a cleaner way to do this?
         int index = Collections.binarySearch(metadataFromServer, new ServerInfo("", 0, new KVRange(keyValue, 0L)), searchComparator);
         ServerInfo serverInfo = metadataFromServer.get(index);
-        if (connections.containsKey(serverInfo)) {
-            return connections.get(serverInfo);
-        } else {
-            return null;
+        if (currentServer.equals(serverInfo)) {
+            return currentConnection;
+        }
+        else {
+            connect(serverInfo.getAddress(), serverInfo.getServerPort());
+            return currentConnection;
 //            ServerConnection serverConnection = new ServerConnection(serverInfo.getAddress(), serverInfo.getServerPort());
 //            connections.put(serverInfo, serverConnection);
 //            return serverConnection;
         }
+
     }
+
+
 
     class SearchComparator implements Comparator<ServerInfo> {
 
@@ -282,4 +307,22 @@ public class KVStore implements KVCommInterface {
             }
         }
     }
+
+    /**
+     *
+     * @return True if connected else False
+     */
+    public boolean isConnected() {
+        return connected;
+    }
+
+    /**
+     * Set connection Status
+     * @param connected
+     */
+    public void setIsConnected(boolean connected) {
+        this.connected = connected;
+    }
+
+
 }

@@ -36,9 +36,9 @@ public class AdditionalTest extends TestCase {
 		Exception[] ex = new Exception[NUMBER_OF_CLIENTS];
 
 		for(int i = 0; i < NUMBER_OF_CLIENTS; i++) {
-			KVStore client = new KVStore("localhost", 50000);
+			KVStore client = new KVStore();
 			try {
-				client.connect();
+				client.connect("localhost", 50000);
 			} catch (Exception e) {
 				ex[i] = e;
 			}
@@ -83,9 +83,9 @@ public class AdditionalTest extends TestCase {
 
 		public ClientResult(Integer i) throws Exception{
 			this.i = i;
-			kvClient = new KVStore("localhost", 50000);
+			kvClient = new KVStore();
 			try {
-				kvClient.connect();
+				kvClient.connect("localhost", 50000);
 				System.out.println("Client " + i + ": Connected");
 			} catch (Exception e) {
 				System.out.println("Client " + i + ": Cannot connect");

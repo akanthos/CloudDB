@@ -14,9 +14,9 @@ public class ConnectionTest extends TestCase {
 
 		Exception ex = null;
 
-		KVStore kvClient = new KVStore("localhost", 50000);
+		KVStore kvClient = new KVStore();
 		try {
-			kvClient.connect();
+			kvClient.connect("localhost", 50000);
 		} catch (Exception e) {
 			ex = e;
 		}
@@ -27,10 +27,10 @@ public class ConnectionTest extends TestCase {
 
 	public void testUnknownHost() {
 		Exception ex = null;
-		KVStore kvClient = new KVStore("unknown", 50000);
+		KVStore kvClient = new KVStore();
 
 		try {
-			kvClient.connect();
+			kvClient.connect("unknown", 50000);
 		} catch (Exception e) {
 			ex = e;
 		}
@@ -41,10 +41,10 @@ public class ConnectionTest extends TestCase {
 	
 	public void testIllegalPort() {
 		Exception ex = null;
-		KVStore kvClient = new KVStore("localhost", 123456789);
+		KVStore kvClient = new KVStore();
 		
 		try {
-			kvClient.connect();
+			kvClient.connect("localhost", 123456789);
 		} catch (Exception e) {
 			ex = e; 
 		}

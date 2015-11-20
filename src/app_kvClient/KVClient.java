@@ -30,23 +30,24 @@ public class KVClient {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		if (args.length < 2) {
-			System.out.println("Provide valid host and port. Usage java <application> <host> <port>");
-			return;
-		}
-		String hostName = args[0];
-		String port = args[1];
-		if (!isHostValid(hostName, port)) {
-			System.out.println("Provide valid host and port. Usage java <application> <host> <port>");
-			return;
-		}
-		engine = new KVStore(hostName, Integer.parseInt(port));
-		try {
-			engine.connect();
-		} catch (Exception e) {
-			logger.error("Cannot connect to initial server!");
-			return;
-		}
+//		if (args.length < 2) {
+//			System.out.println("Provide valid host and port. Usage java <application> <host> <port>");
+//			return;
+//		}
+//		String hostName = args[0];
+//		String port = args[1];
+//		if (!isHostValid(hostName, port)) {
+//			System.out.println("Provide valid host and port. Usage java <application> <host> <port>");
+//			return;
+//		}
+//		engine = new KVStore(hostName, Integer.parseInt(port));
+//		try {
+//			engine.connect();
+//		} catch (Exception e) {
+//			logger.error("Cannot connect to initial server!");
+//			return;
+//		}
+		engine = new KVStore(); // Initializing with default values
 		BufferedReader consoleReader;
 		// Reader for input from stdIn
 		consoleReader = new BufferedReader(new InputStreamReader(System.in));
@@ -78,6 +79,43 @@ public class KVClient {
 						default:
 							printHelp("quit");
 							break;
+						}
+					} else if (tokens[0].equals("disconnect")) {
+						switch (tokens.length) {
+							case 1:
+								engine.disconnect();
+								System.out.println("Connection to the server has been terminated. Please connect again.");
+								break;
+							default:
+								printHelp("disconnect");
+								break;
+						}
+					} else if (tokens[0].equals("connect")) {
+						switch (tokens.length) {
+							case 3:
+								// Perform the connection
+								if (!engine.isConnected()) {
+									if (isHostValid(tokens[1], tokens[2])) {
+										try {
+											engine.connect(tokens[1],Integer.parseInt(tokens[2]) );
+										} catch (CannotConnectException e) {
+											System.out.println("Connection failed: " + "\nError Message: " + e.getErrorMessage());
+										} catch (Exception e) {
+											logger.error("Could not establish connection to the server", e);
+											System.out.println("Connection failed: " + "\nError Message: " + e.getMessage());
+										}
+									} else {
+										logger.debug(String.format("Invalid host and port entry. Host: %s, Port: %s", tokens[1], tokens[2]));
+										System.out.println("Please insert valid IP or Port");
+										printHelp("connect");
+									}
+								} else {
+									System.out.println("There is already a connection open, please run disconnect first");
+								}
+								break;
+							default:
+								printHelp("connect");
+								break;
 						}
 					} else if (tokens[0].equals("get")) {
 						// Get value of key

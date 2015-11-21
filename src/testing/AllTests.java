@@ -1,12 +1,7 @@
 package testing;
 
 import java.io.IOException;
-import java.util.HashMap;
 
-import common.ServerInfo;
-import common.utils.KVMetadata;
-import common.utils.KVRange;
-import junit.framework.TestResult;
 import org.apache.log4j.Level;
 
 import app_kvServer.KVServer;

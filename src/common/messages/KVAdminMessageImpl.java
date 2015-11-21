@@ -2,9 +2,7 @@ package common.messages;
 
 import common.Serializer;
 import common.ServerInfo;
-import common.utils.KVMetadata;
 import common.utils.KVRange;
-import common.utils.Utilities;
 import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;

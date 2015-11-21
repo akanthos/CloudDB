@@ -19,10 +19,13 @@ public class ECSClient implements ECSClientListener {
     private static final String PROMPT = "ECSClient> ";
     private BufferedReader stdin;
     private ECSImpl ECServer;
-    private final String fileName = "ecs.config";
+    private String fileName;
     private boolean stop = false;
     private boolean initialized = false;
 
+    public ECSClient (String fileName) {
+        this.fileName = fileName;
+    }
 
     public void run() {
         while(!stop) {
@@ -115,53 +118,54 @@ public class ECSClient implements ECSClientListener {
     private void ECSinit(String numNodes,String cacheSize, String displacementStrategy) {
         try {
             ECServer = new ECSImpl(fileName);
+            ECServer.initService(Integer.parseInt(numNodes), Integer.parseInt(cacheSize), displacementStrategy);
+            initialized = true;
         } catch (IOException e) {
             logger.error("Could not initialize ECSImpl Service. Problem accessing ecs.config file");
             System.out.println("Could not initialize ECSImpl Service");
+            return;
         }
-        ECServer.initService(Integer.parseInt(numNodes), Integer.parseInt(cacheSize), displacementStrategy);
     }
 
     /**
      * Start the ECSImpl service
      */
     private void ECSStart() {
-        if ( ECServer == null ) {
+        if ( !initialized ) {
             System.out.println(PROMPT + "ECSImpl Service is not initialized. First initialize the server.");
             return;
         }
-        if ( ECServer.start() ) {
-            logger.info( "ECSImpl Service started." );
-            System.out.println(PROMPT + "ECSImpl Service started.");
-        }
+        ECServer.start();
+        logger.info( "ECSImpl Service started." );
+        System.out.println(PROMPT + "ECSImpl Service started.");
+        /*
         else {
             logger.error( "Failed starting the ECSImpl Service." );
             System.out.println(PROMPT + "Failed starting the ECSImpl Service.");
 
-        }
+        }*/
     }
 
     /**
      * Stop the ECSImpl
      */
     private void ECSStop() {
-        if ( ECServer == null )
+        if ( !initialized )
             System.out.println(PROMPT + "ECSImpl Service is not initialized. First initialize the server.");
-        if ( ECServer.stop() ) {
-            logger.info( "ECSImpl Service stopped." );
-            System.out.println(PROMPT + "ECSImpl Service stopped.");
-        }
-        else {
+        ECServer.stop();
+        logger.info( "ECSImpl Service stopped." );
+        System.out.println(PROMPT + "ECSImpl Service stopped.");
+        /*else {
             logger.info( "ECSImpl Service could not be stopped." );
             System.out.println(PROMPT + "ECSImpl Service could not be stopped.");
-        }
+        }*/
     }
 
     /**
      * Shutdown ECSImpl
      */
     private void ECSShutDown() {
-        if ( ECServer == null ) {
+        if ( !initialized ) {
             System.out.println(PROMPT + "ECSImpl Service is not initialized. First initialize the server.");
             return;
         }
@@ -182,14 +186,14 @@ public class ECSClient implements ECSClientListener {
      * @param displacementStrategy
      */
     private void ECSAddServer(String cacheSize, String displacementStrategy) {
-        if( ECServer.addNode( Integer.parseInt(cacheSize), displacementStrategy)){
-            logger.debug("A node has been added! ");
-            System.out.println(PROMPT + "A node has been added!");
-        }
+        ECServer.addNode( Integer.parseInt(cacheSize), displacementStrategy );
+        logger.debug("A node has been added! ");
+        System.out.println(PROMPT + "A node has been added!");
+        /*
         else{
             System.out.println(PROMPT + "ECSImpl Service failed adding a new node.");
             logger.debug("ECSImpl Service failed adding a new node.");
-        }
+        }*/
     }
 
     /**
@@ -206,13 +210,9 @@ public class ECSClient implements ECSClientListener {
         }
     }
 
-    public static void main(String[] args) {
-        new ECSClient().run();
-    }
-
 
     private void printError(String error){
-        System.out.println(PROMPT + "Error! " +  error);
+        System.out.println(PROMPT + "Error. " +  error);
     }
 
     @Override

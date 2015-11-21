@@ -38,15 +38,16 @@ public interface KVAdminMessage extends AbstractMessage {
      *
      */
     Integer getCacheSize();
-    void setCacheSize(Integer cacheSize);
 
+    void setCacheSize(Integer cacheS);
     /**
      *
      * @return the cache displacement strategy that is associated
      *         with this message.
      */
     String getDisplacementStrategy();
-    void setDisplacementStrategy(String displacementStrategy);
+
+    void setDisplacementStrategy(String strategy);
 
     /**
      *
@@ -58,7 +59,7 @@ public interface KVAdminMessage extends AbstractMessage {
      *
      * @return the range that is associated to the message
      */
-    void setRange(KVRange range);
+    void setRange(Long low, Long high);
 
     /**
      *

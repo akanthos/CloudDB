@@ -37,6 +37,7 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
         }
     }
 
+    public ServerInfo(){}
 
     public ServerInfo(String address, Integer port) {
         this.address = address;

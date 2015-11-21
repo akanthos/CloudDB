@@ -17,7 +17,7 @@ import java.net.Socket;
  *
  */
 public class KVConnection{
-    private Logger logger = Logger.getRootLogger();
+    private static Logger logger = Logger.getLogger(KVConnection.class);
     private Socket connection;
     private OutputStream output;
     private InputStream input;
@@ -45,10 +45,21 @@ public class KVConnection{
             connection = new Socket(server.getAddress(), server.getServerPort());
             output = connection.getOutputStream();
             input = connection.getInputStream();
+            connected = true;
+            logger.info("CREATED Socket connection with server");
         } catch (IOException ioe) {
             logger.error("Connection could not be established!");
             throw ioe;
         }
+    }
+
+    public void sendMessage(KVAdminMessageImpl msg) throws IOException {
+        byte[] msgBytes = Serializer.toByteArray(msg);
+        System.out.println(new String(msgBytes,"UTF-8"));
+        output.write(msgBytes, 0, msgBytes.length);
+        output.flush();
+        logger.info("Send message to " + connection.getPort() + ":\t '"
+                + msg.getStatus() + "' to : " + server.toString());
     }
 
     public void disconnect() {

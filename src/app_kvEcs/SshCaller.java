@@ -120,7 +120,7 @@ public class SshCaller implements SshCommunication {
                 command += " " + argument;
             // logger.debug("<<<<<<" + command + ">>>>>");
             ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar",
-                    "ms3-server.jar", arguments[0], arguments[1], arguments[2], "&");
+                    "ms3-server.jar", arguments[0], "&");
             String path = System.getProperty("user.dir");
 
             processb.directory(new File(path));

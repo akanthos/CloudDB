@@ -6,6 +6,7 @@ import common.messages.*;
 import common.utils.KVRange;
 
 import javax.activation.UnsupportedDataTypeException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,7 +84,7 @@ public class Serializer {
             //Message_Data => MetaData(List)
             for (ServerInfo server : message.getMetadata()) {
                 msg.append( server.getAddress() + SUB_DLM1 + server.getServerPort() + SUB_DLM1
-                        + server.getFromIndex() + SUB_DLM1 + server.getToIndex() + SUB_DLM1 + SUB_DLM1 );
+                        + server.getFromIndex() + SUB_DLM1 + server.getToIndex() );
                 msg.append(SUB_DLM2);
             }
 
@@ -166,7 +167,7 @@ public class Serializer {
                         }
                     } else if (((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)) {
                         if (tokens.length>= 3 && tokens[2] != null) {
-                            ((KVAdminMessageImpl) retrievedMessage).setRange(new KVRange());
+                            //((KVAdminMessageImpl) retrievedMessage).setRange(new KVRange());
                             ((KVAdminMessageImpl) retrievedMessage).setLow(Long.valueOf(tokens[2].trim()));
                         }
                         if (tokens.length>= 4 && tokens[3] != null) {
@@ -264,4 +265,26 @@ public class Serializer {
 //        }
 //
 //    }
+
+    public static void main (String[] args) throws UnsupportedEncodingException, UnsupportedDataTypeException {
+
+        ServerInfo server1 = new ServerInfo("127.0.0.1", 500, new KVRange(1111, 22222));
+        ServerInfo server2 = new ServerInfo("127.0.0.1", 502, new KVRange(33333, 44444));
+        ServerInfo server3 = new ServerInfo("127.0.0.1", 504, new KVRange(33333, 44444));
+        List<ServerInfo> list = new ArrayList<ServerInfo>();
+        list.add(server1);
+        KVAdminMessageImpl msg = new KVAdminMessageImpl();
+        msg.setMetadata(list);
+        msg.setCacheSize(11);
+        msg.setDisplacementStrategy("LRU");
+        msg.setStatus(KVAdminMessage.StatusType.INIT);
+
+        byte[] arr = toByteArray(msg);
+
+        System.out.println(new String(arr,"UTF-8"));
+        System.out.println("PART_2");
+        AbstractMessage abstractMessage = Serializer.toObject(arr);
+
+
+    }
 }

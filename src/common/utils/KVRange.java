@@ -60,7 +60,7 @@ public class KVRange {
             return true;
         }
         if ( low > high){
-            return ((index >= low) && (index <= high));
+            return ((index >= low) || (index <= high));
 //            if ( index >= low )
 //                return true;
 //            else
@@ -76,8 +76,4 @@ public class KVRange {
         return String.valueOf(low) + "," + String.valueOf(high);
     }
 
-    public static void main (String[] args) {
-        Long key = new Long(2898073819);
-
-    }
 }

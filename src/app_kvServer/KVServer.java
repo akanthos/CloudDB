@@ -50,12 +50,12 @@ public class KVServer {
         this.info = new ServerInfo(address, port);
         this.server = new SocketServer(this.info);
 
-        ArrayList<ServerInfo> metadata = new ArrayList<>();
-        metadata.add(new ServerInfo(address, port, new KVRange(0, Long.MAX_VALUE)));
+//        ArrayList<ServerInfo> metadata = new ArrayList<>();
+//        metadata.add(new ServerInfo(address, port, new KVRange(0, Long.MAX_VALUE)));
 
         ConnectionHandler handler = new KVConnectionHandler(server);
         server.addHandler(handler);
-        server.initKVServer(metadata, cacheSize, displacementStrategy);
+//        server.initKVServer(metadata, cacheSize, displacementStrategy);
 
 
         try {
@@ -83,7 +83,7 @@ public class KVServer {
         try {
                 new Thread(new Runnable() {
                     public void run() {
-                        new KVServer("localhost", Integer.parseInt(args[0]), 10, "FIFO");
+                        new KVServer("127.0.0.1", Integer.parseInt(args[0]), 10, "FIFO");
                     }
                 }).start();
 

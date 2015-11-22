@@ -74,7 +74,7 @@ public class KVServer {
      * @param args <Port> <Cachesize> <CachePolicy>
      * @throws IOException
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
 
 //        if( args.length == 1 ) {
 //            try {
@@ -83,7 +83,7 @@ public class KVServer {
         try {
                 new Thread(new Runnable() {
                     public void run() {
-                        new KVServer("localhost", 50000, 10, "FIFO");
+                        new KVServer("localhost", Integer.parseInt(args[0]), 10, "FIFO");
                     }
                 }).start();
 

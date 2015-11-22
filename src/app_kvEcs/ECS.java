@@ -12,12 +12,12 @@ public interface ECS {
     /**
      * Called by the ECS client starting all the services
      */
-    public void start();
+    public boolean start();
 
     /**
      * Called by the ECS client stopping all the services
      */
-    public void stop();
+    public boolean stop();
 
     /**
      * Called by the ECS client to shut down all the services
@@ -28,7 +28,7 @@ public interface ECS {
      * Adds a node to the ring
      * Update the meta data, and move data operations
      */
-    public void addNode(int cacheSize, String displacementStrategy);
+    public boolean addNode(int cacheSize, String displacementStrategy);
 
     /**
      * Removes a node to the ring

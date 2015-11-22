@@ -9,6 +9,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ import java.util.List;
  */
 public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
 
-    List<ServerInfo> metadata;
+    List<ServerInfo> metadata = new ArrayList<ServerInfo>();
     Integer cacheSize;
     String displacementStrategy;
     KVRange range = new KVRange();

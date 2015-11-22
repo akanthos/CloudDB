@@ -57,6 +57,7 @@ public class ECSImpl implements ECS {
      */
     public boolean initService(int numberOfNodes, int cacheSize, String displacementStrategy) {
 
+        boolean initSuccess=false;
         running = true;
         Random rand = new Random();
         int count = 0;
@@ -91,15 +92,16 @@ public class ECSImpl implements ECS {
         for (ServerInfo server : this.activeServers) {
             KVConnection connection = new KVConnection(server);
             try {
-                sendECSCmd(connection, server, initMsg);
+                if (sendECSCmd(connection, server, initMsg))
+                    initSuccess=true;
             } catch (CannotConnectException e) {
                 connection.disconnect();
                 logger.info(initMsg.getStatus() + " operation on server " + server.getAddress()+":"
                         +server.getServerPort() + " failed due to Connection problem");
+                return false;
             }
         }
-
-        return true;
+        return initSuccess;
     }
 
 
@@ -168,22 +170,26 @@ public class ECSImpl implements ECS {
      * @return true if succeeded else false
      */
     @Override
-    public void start() {
+    public boolean start() {
 
+        boolean startSuccess = false;
         KVAdminMessageImpl startMessage = new KVAdminMessageImpl();
         startMessage.setStatus(KVAdminMessage.StatusType.START);
-        KVConnection channel = null;
         byte[] byteMessage;
+
         for (ServerInfo server : this.activeServers) {
             try {
-                sendECSCmd(KVConnections.get(server), server, startMessage);
+                if (sendECSCmd(KVConnections.get(server), server, startMessage))
+                    startSuccess = true;
             } catch (CannotConnectException e) {
                 KVConnections.get(server).disconnect();
                 logger.info(startMessage.getStatus() + " operation on server " + server.getAddress()+":"
                         +server.getServerPort() + " failed due to Connection problem");
+                return false;
             }
         }
         logger.info("Active servers are started.");
+        return startSuccess;
     }
 
 
@@ -193,41 +199,58 @@ public class ECSImpl implements ECS {
      * @return true if succeeded else false
      */
     @Override
-    public void stop() {
+    public boolean stop() {
+
+        boolean stopSuccess = false;
         KVAdminMessageImpl stopMessage = new KVAdminMessageImpl();
         stopMessage.setStatus(KVAdminMessage.StatusType.STOP);
         KVConnection channel = null;
         byte[] byteMessage;
+
         for (ServerInfo server : this.activeServers) {
             try {
-                channel = KVConnections.get(server);
-                channel.connect();
-
-                channel.sendMessage(stopMessage);
-                byteMessage = Utilities.receive(channel.getInput());
-                AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
-                stopMessage = (KVAdminMessageImpl) abstractMessage;
-                if (stopMessage.getStatus().equals(KVAdminMessage.StatusType.OPERATION_SUCCESS))
-                    System.out.println("Successfully started server" + server.getAddress() + server.getServerPort());
-                else
-                    System.out.println("Sat");
-            } catch (IOException e) {
-                channel.disconnect();
-                logger.error("Could not send message to server" + server
-                        + e.getMessage());
+                if (sendECSCmd(KVConnections.get(server), server, stopMessage))
+                    stopSuccess = true;
             } catch (CannotConnectException e) {
-                channel.disconnect();
-                e.printStackTrace();
+                KVConnections.get(server).disconnect();
+                logger.info(stopMessage.getStatus() + " operation on server " + server.getAddress()+":"
+                        +server.getServerPort() + " failed due to Connection problem");
+                return false;
             }
         }
         logger.info("Active servers are started.");
+        return stopSuccess;
     }
 
     /**
      * Stops all server instances and exits the remote processes.
      * @return true if succeeded else false
      */
-    public boolean shutdown() { return true; }
+    @Override
+    public boolean shutdown() {
+
+        boolean shutdownSuccess = false;
+        KVAdminMessageImpl shutDown = new KVAdminMessageImpl();
+        shutDown.setStatus(KVAdminMessage.StatusType.SHUT_DOWN);
+        KVConnection channel = null;
+        byte[] byteMessage;
+
+        for (ServerInfo server : this.activeServers) {
+            try {
+                if (sendECSCmd(KVConnections.get(server), server, shutDown))
+                    shutdownSuccess = true;
+            } catch (CannotConnectException e) {
+                KVConnections.get(server).disconnect();
+                logger.info(shutDown.getStatus() + " operation on server " + server.getAddress()+":"
+                        +server.getServerPort() + " failed due to Connection problem");
+                return false;
+            }
+        }
+        this.KVConnections.clear();
+        this.activeServers.clear();
+        logger.info("Active servers shut down.");
+        return shutdownSuccess;
+    }
 
 
     /**
@@ -244,7 +267,6 @@ public class ECSImpl implements ECS {
         arguments[1] = "  ERROR &";
         int result;
         arguments[0] = String.valueOf(startServer.getServerPort());
-
         // ssh calls
         if (!local)
             result = processInv.invokeProcessRemotely(startServer.getAddress(),
@@ -271,9 +293,10 @@ public class ECSImpl implements ECS {
      * @return true if succeeded else false
      */
     @Override
-    public void addNode(int cacheSize, String displacementStrategy){
+    public boolean addNode(int cacheSize, String displacementStrategy){
 
-        logger.debug("!! SYSTEM BEFORE ADDING A NEW NODE !!");
+        boolean addSuccess = false;
+        logger.debug("System BEFORE adding new node.");
         for (ServerInfo s : activeServers)
             logger.debug(s.getServerPort() + s.getFromIndex() + s.getToIndex() );
         int run = -1;
@@ -289,13 +312,13 @@ public class ECSImpl implements ECS {
                     break;
                 else {
                     logger.warn("Could not add a new Server!");
-                    return;
+                    return false;
                 }
             }
         }
         if (newServer == null) {
             logger.info("No available node to add.");
-            return;
+            return false;
         }
         //calculate the new MetaData.
         activeServers = calculateMetaData(activeServers);
@@ -304,52 +327,67 @@ public class ECSImpl implements ECS {
         KVAdminMessageImpl initMsg = InitMsg(activeServers, cacheSize, displacementStrategy);
         KVConnection kvconnection = new KVConnection(newServer);
         byte[] byteMessage;
+
         try {
-            kvconnection.connect();
-            kvconnection.sendMessage(initMsg);
-            byteMessage = Utilities.receive(kvconnection.getInput());
-            AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
-            initMsg = (KVAdminMessageImpl) abstractMessage;
-            if (initMsg.getStatus().equals(KVAdminMessage.StatusType.OPERATION_SUCCESS))
-                KVConnections.put(newServer, kvconnection);
+            if (sendECSCmd(kvconnection, newServer, initMsg))
+                addSuccess = true;
             else
-                System.out.println("Init Operation on server " + newServer + " failed.");
-            logger.info("The new node added" + newServer.getAddress() + ":"
-                    + newServer.getServerPort());
-        } catch (Exception e) {
-            // server could not be initiated so remove it from the list!
-            logger.error(" server node couldn't be initiated"
-                    + newServer.getAddress() + ":" + newServer.getServerPort()
-                    + " Operation addNode Not Successfull");
-            activeServers.remove(newServer);
+                return false;
+        } catch (CannotConnectException e) {
             kvconnection.disconnect();
+            logger.info(initMsg.getStatus() + " operation on server " + newServer.getAddress()+":"
+                    + newServer.getServerPort() + " failed due to Connection problem");
+            activeServers.remove(newServer);
             KVConnections.remove(kvconnection);
             calculateMetaData(activeServers);
-            return;
+            return false;
         }
+
         ServerInfo successor = getSuccessor(newServer);
-        //tell successor to send the
+        //tell successor to send data
         if (sendData(successor, newServer, newServer.getFromIndex(), newServer.getToIndex()) == 0)
         {
-            UpdateMetaData();
+            //UPDATE METADATA
+            if (!UpdateMetaData())
+                return false;
+
             // release the lock from the successor, new Node
             logger.debug("release the lock");
             KVAdminMessageImpl releaseLock = new KVAdminMessageImpl();
             releaseLock.setStatus(KVAdminMessage.StatusType.UNLOCK_WRITE);
             try {
-                sendECSCmd(KVConnections.get(successor), successor, releaseLock);
+                if (sendECSCmd(KVConnections.get(successor), successor, releaseLock))
+                    addSuccess = true;
+                else
+                    return false;
                 logger.debug("All locks are released.");
             } catch (CannotConnectException e) {
                 logger.error("Release Lock message couldn't be sent.");
+                kvconnection.disconnect();
+                return false;
             }
-            kvconnection.disconnect();
-            return;
+
 
         }
-
+        /*
+			 * when move data from successor to the
+			 * newNode was not successful
+			 */
+        else {
+            // data could not be moved to the newly added Server
+            logger.error("Could not move data from "
+                    + successor.getAddress() + ":" + successor.getServerPort() + " to "
+                    + newServer.getAddress() + ":" + successor.getServerPort());
+            logger.error("Operation addNode Not Successfull.");
+            activeServers.remove(newServer);
+            kvconnection.disconnect();
+            KVConnections.remove(newServer);
+            calculateMetaData(activeServers);
+        }
+        return addSuccess;
     }
 
-    private void sendECSCmd(KVConnection channel, ServerInfo server, KVAdminMessageImpl message) throws CannotConnectException {
+    private boolean sendECSCmd(KVConnection channel, ServerInfo server, KVAdminMessageImpl message) throws CannotConnectException {
         byte[] byteMessage;
         KVAdminMessageImpl result;
         try {
@@ -363,10 +401,13 @@ public class ECSImpl implements ECS {
                     KVConnections.put(server, channel);
                 logger.info(message.getStatus() + "Operation on server " + server.getAddress() + ":"
                         + server.getServerPort() + " succeeded.");
+                channel.disconnect();
+                return true;
             }else {
                 logger.info(message.getStatus() + "Operation on server " + server.getAddress() + ":"
                         + server.getServerPort() + " failed.");
                 channel.disconnect();
+                return false;
             }
         } catch (IOException e) {
             throw new CannotConnectException(message.getStatus() + " operation on server " + server.getAddress()+":"
@@ -375,12 +416,89 @@ public class ECSImpl implements ECS {
     }
 
     /**
+     * Get Random number in range
+     *
+     * @param size
+     *            : the range upper bound
+     * @return
+     */
+    private int pickRandomValue(int size) {
+        Random randomGenerator = new Random();
+        int randomNum = randomGenerator.nextInt(size);
+        logger.info("Picked " + randomNum + " as a random number.");
+        return randomNum;
+    }
+
+    /**
      * Remove a node from the storage service at an arbitrary position.
      * @return true if succeeded else false
      */
-    public boolean removeNode(){
+    @Override
+    public boolean removeNode() {
+        int rmvIndex = pickRandomValue(this.activeServers.size());
+        logger.debug("Picked node index to remove " + rmvIndex);
+        ServerInfo rmvNode = this.activeServers.get(rmvIndex);
+        ServerInfo successor = getSuccessor(rmvNode);
+        if (rmvNode.equals(successor)) {
+            logger.error("Cannot remove node because it is the only active node available," +
+                    " If you want to remove please use the shutdown option");
+            return false;
+        } else {
+            return removeNode(rmvNode);
+        }
+    }
+
+    public boolean removeNode(ServerInfo deleteNode) {
+
+        //get the successor
+        ServerInfo successor = getSuccessor(deleteNode);
+        //socket connection of Node to be removed
+        KVConnection deleteNodeConnection = this.KVConnections
+                .get(deleteNode);
+        KVConnection successorConnection = this.KVConnections
+                .get(successor);
+        //remove NodetoDelete from the active servers list
+        //and recalculate the Metadata
+        this.activeServers.remove(deleteNode);
+        logger.debug("System before removing Node.");
+        for (ServerInfo s : activeServers)
+            logger.debug(s.getAddress() + ":" + s.getServerPort());
+        logger.debug("DONE.");
+
+        //calculate the new MetaData.
+        activeServers = calculateMetaData(activeServers);
+
+
+        if (sendData(deleteNode, successor, deleteNode.getFromIndex(),
+                deleteNode.getToIndex()) == 0)
+        {
+            //UPDATE METADATA
+            UpdateMetaData();
+            // release the lock from the successor, new Node
+            logger.debug("release the lock");
+            KVAdminMessageImpl releaseLock = new KVAdminMessageImpl();
+            releaseLock.setStatus(KVAdminMessage.StatusType.UNLOCK_WRITE);
+            try {
+                if (sendECSCmd(KVConnections.get(successor), successor, releaseLock))
+                    logger.debug("All locks are released.");
+            } catch (CannotConnectException e) {
+                deleteNodeConnection.disconnect();
+                logger.error("Release Lock message couldn't be sent.");
+            }
+            deleteNodeConnection.disconnect();
+        }
+        KVAdminMessageImpl shutDown = new KVAdminMessageImpl();
+        shutDown.setStatus(KVAdminMessage.StatusType.SHUT_DOWN);
+        try {
+            sendECSCmd(deleteNodeConnection, deleteNode, shutDown);
+        } catch (CannotConnectException e) {
+            logger.error("shut down message couldn't be sent.");
+        }
+
         return true;
     }
+
+
 
     /**
      * Lock the KVServer for write operations.
@@ -422,28 +540,15 @@ public class ECSImpl implements ECS {
                          Long fromIndex, Long toIndex) {
 
 
-        KVConnection kvConnection = new KVConnection(fromNode);
+        //KVConnection kvConnection = new KVConnection(fromNode);
         KVAdminMessageImpl lockMsg = new KVAdminMessageImpl();
         lockMsg.setStatus(KVAdminMessage.StatusType.LOCK_WRITE);
-        byte[] byteMessage;
         try {
-            kvConnection.connect();
-            kvConnection.sendMessage(lockMsg);
-            byteMessage = Utilities.receive(kvConnection.getInput());
-            AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
-            lockMsg = (KVAdminMessageImpl) abstractMessage;
-            if (lockMsg.getStatus().equals(KVAdminMessage.StatusType.OPERATION_SUCCESS))
-                logger.info("Write lock operation on: " + fromNode.getAddress() +":"+
-                fromNode.getServerPort()+ " succeeded.");
-            else {
-                logger.info("Write lock operation on: " + fromNode.getAddress() + ":" +
-                        fromNode.getServerPort() + " failed.");
-                return -1;
-            }
-        } catch (Exception e) {
-            logger.error("WriteLock message couldn't be sent to "
-                    + fromNode.getServerPort());
-            kvConnection.disconnect();
+            sendECSCmd(KVConnections.get(fromNode), fromNode, lockMsg);
+        } catch (CannotConnectException e) {
+            KVConnections.get(fromNode).disconnect();
+            logger.info(lockMsg.getStatus() + " operation on server " + fromNode.getAddress()+":"
+                    + fromNode.getServerPort() + " failed due to Connection problem");
             return -1;
         }
 
@@ -453,25 +558,12 @@ public class ECSImpl implements ECS {
         moveDataMsg.setLow(fromIndex);
         moveDataMsg.setHigh(toIndex);
         moveDataMsg.setServerInfo(toNode);
-        byte[] movebyteResponse;
         try {
-            kvConnection.sendMessage(moveDataMsg);
-            movebyteResponse = Utilities.receive(kvConnection.getInput());
-            AbstractMessage abstractMessage = Serializer.toObject(movebyteResponse);
-            moveDataMsg = (KVAdminMessageImpl) abstractMessage;
-            if (moveDataMsg.getStatus().equals(KVAdminMessage.StatusType.OPERATION_SUCCESS))
-                logger.info("Mode data on: " + fromNode.getAddress() +":"+
-                        fromNode.getServerPort()+ " succeeded.");
-            else {
-                logger.info("Write lock operation on: " + fromNode.getAddress() + ":" +
-                        fromNode.getServerPort() + " succeded.");
-                return -1;
-            }
-
-        } catch (Exception e) {
-            logger.error("MoveData message couldn't be sent to  "
-                    + fromNode.getServerPort());
-            kvConnection.disconnect();
+            sendECSCmd(KVConnections.get(fromNode), fromNode, moveDataMsg);
+        } catch (CannotConnectException e) {
+            KVConnections.get(fromNode).disconnect();
+            logger.info(lockMsg.getStatus() + " operation on server " + fromNode.getAddress()+":"
+                    + fromNode.getServerPort() + " failed due to Connection problem");
             return -1;
         }
         return 0;
@@ -502,35 +594,26 @@ public class ECSImpl implements ECS {
      *
      * @return
      */
-    private int UpdateMetaData() {
+    private boolean UpdateMetaData() {
+
+        boolean updateSuccess = false;
         // send meta data to all active servers
         KVAdminMessageImpl UpdateMsg = new KVAdminMessageImpl();
         UpdateMsg.setStatus(KVAdminMessage.StatusType.UPDATE_METADATA);
         UpdateMsg.setMetadata(activeServers);
 
         for (ServerInfo server : this.activeServers) {
-            byte[] byteMessage;
-            KVConnection kvconnection = new KVConnection(server);
             try {
-                kvconnection.connect();
-                kvconnection.sendMessage(UpdateMsg);
-                byteMessage = Utilities.receive(kvconnection.getInput());
-                AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
-                UpdateMsg = (KVAdminMessageImpl) abstractMessage;
-                if (UpdateMsg.getStatus().equals(KVAdminMessage.StatusType.OPERATION_SUCCESS)) {
-                    KVConnections.put(server, kvconnection);
-                    logger.info("Update Operation on server " + server + " succeeded.");
-                    kvconnection.disconnect();
-                } else
-                    logger.info("Update Operation on server " + server + " failed.");
-            } catch (Exception e) {
-                kvconnection.disconnect();
-                logger.error("Could not send Update Message to server" + server
-                        + e.getMessage());
+                if (sendECSCmd(KVConnections.get(server), server, UpdateMsg))
+                    updateSuccess=true;
+            } catch (CannotConnectException e) {
+                KVConnections.get(server).disconnect();
+                logger.info(UpdateMsg.getStatus() + " operation on server " + server.getAddress()+":"
+                        +server.getServerPort() + " failed due to Connection problem");
+                return false;
             }
         }
-        logger.debug("KV Servers given updated MetaData successfully.");
-        return 0;
+        return updateSuccess;
     }
 
     /**

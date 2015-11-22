@@ -118,8 +118,12 @@ public class ECSClient implements ECSClientListener {
     private void ECSinit(String numNodes,String cacheSize, String displacementStrategy) {
         try {
             ECServer = new ECSImpl(fileName);
-            ECServer.initService(Integer.parseInt(numNodes), Integer.parseInt(cacheSize), displacementStrategy);
-            initialized = true;
+            if (ECServer.initService(Integer.parseInt(numNodes), Integer.parseInt(cacheSize), displacementStrategy)) {
+                initialized = true;
+            }
+            else{
+                System.out.println(PROMPT + "Failed initializing the ECS Service.");
+            }
         } catch (IOException e) {
             logger.error("Could not initialize ECSImpl Service. Problem accessing ecs.config file");
             System.out.println("Could not initialize ECSImpl Service");
@@ -132,18 +136,18 @@ public class ECSClient implements ECSClientListener {
      */
     private void ECSStart() {
         if ( !initialized ) {
-            System.out.println(PROMPT + "ECSImpl Service is not initialized. First initialize the server.");
+            System.out.println(PROMPT + "ECS Service is not initialized. First initialize the server.");
             return;
         }
-        ECServer.start();
-        logger.info( "ECSImpl Service started." );
-        System.out.println(PROMPT + "ECSImpl Service started.");
-        /*
+        if (ECServer.start()) {
+            logger.info("ECSImpl Service started.");
+            System.out.println(PROMPT + "ECS Service started.");
+        }
         else {
             logger.error( "Failed starting the ECSImpl Service." );
-            System.out.println(PROMPT + "Failed starting the ECSImpl Service.");
+            System.out.println(PROMPT + "Failed starting the ECS Service.");
 
-        }*/
+        }
     }
 
     /**
@@ -151,14 +155,15 @@ public class ECSClient implements ECSClientListener {
      */
     private void ECSStop() {
         if ( !initialized )
-            System.out.println(PROMPT + "ECSImpl Service is not initialized. First initialize the server.");
-        ECServer.stop();
-        logger.info( "ECSImpl Service stopped." );
-        System.out.println(PROMPT + "ECSImpl Service stopped.");
-        /*else {
+            System.out.println(PROMPT + "ECS Service is not initialized. First initialize the server.");
+        if (ECServer.stop()) {
+            logger.info("ECSImpl Service stopped.");
+            System.out.println(PROMPT + "ECS Service stopped.");
+        }
+        else {
             logger.info( "ECSImpl Service could not be stopped." );
-            System.out.println(PROMPT + "ECSImpl Service could not be stopped.");
-        }*/
+            System.out.println(PROMPT + "ECS Service could not be stopped.");
+        }
     }
 
     /**
@@ -166,17 +171,17 @@ public class ECSClient implements ECSClientListener {
      */
     private void ECSShutDown() {
         if ( !initialized ) {
-            System.out.println(PROMPT + "ECSImpl Service is not initialized. First initialize the server.");
+            System.out.println(PROMPT + "ECSI Service is not initialized. First initialize the server.");
             return;
         }
-        if ( ECServer.shutdown() ) {
+        if ( ECServer.shutdown()) {
             logger.info( "ECSImpl Service shutdown." );
-            System.out.println(PROMPT + "ECSImpl Service shutdown.");
+            System.out.println(PROMPT + "ECS Service shutdown successfully.");
             ECServer = null;
         }
         else {
             logger.debug("ECSImpl Service shutdown failed.");
-            System.out.println(PROMPT + "ECSImpl Service shutdown failed.");
+            System.out.println(PROMPT + "ECS Service shutdown failed.");
         }
     }
 
@@ -186,14 +191,14 @@ public class ECSClient implements ECSClientListener {
      * @param displacementStrategy
      */
     private void ECSAddServer(String cacheSize, String displacementStrategy) {
-        ECServer.addNode( Integer.parseInt(cacheSize), displacementStrategy );
-        logger.debug("A node has been added! ");
-        System.out.println(PROMPT + "A node has been added!");
-        /*
+        if (ECServer.addNode( Integer.parseInt(cacheSize), displacementStrategy )) {
+            logger.debug("A node has been added! ");
+            System.out.println(PROMPT + "A node has been added!");
+        }
         else{
             System.out.println(PROMPT + "ECSImpl Service failed adding a new node.");
             logger.debug("ECSImpl Service failed adding a new node.");
-        }*/
+        }
     }
 
     /**

@@ -72,7 +72,11 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                         AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
                         logger.error("\n88888888\n");
                         if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.CLIENT_MESSAGE)) {
+
                             kvMessage = (KVMessageImpl) abstractMessage;
+
+
+
                             kvResponse = processMessage(kvMessage);
                             Utilities.send(kvResponse, outputStream);
                         } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
@@ -125,6 +129,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     private KVAdminMessageImpl processAdminMessage(KVAdminMessage kvAdminMessage) {
         KVAdminMessageImpl response;
         if (kvAdminMessage.getStatus().equals(StatusType.INIT)) {
+            logger.info("Got INIT message from ECS!!");
             return server.initKVServer(kvAdminMessage.getMetadata(), kvAdminMessage.getCacheSize(), kvAdminMessage.getDisplacementStrategy());
         } else if (kvAdminMessage.getStatus().equals(StatusType.START)) {
             return server.startServing();
@@ -179,13 +184,28 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         if (server.isStopped()) {
             return new KVMessageImpl(KVMessage.StatusType.SERVER_STOPPED);
         }
+        logger.info("Got client message");
+        logger.info("My Address is: " + server.getInfo().getAddress());
+        logger.info("My Port is: " + server.getInfo().getServerPort());
+        logger.info("My Range is: " + server.getInfo().getFromIndex() + ":" + server.getInfo().getToIndex());
+        logger.info("Message: " + kvMessage.getStatus() + ", " + kvMessage.getKey() + " (" + kvMessage.getHash() + ")"
+                + " Value: " + kvMessage.getValue() );
+        if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
+            logger.info("Index is ours!");
+        }
+        else {
+            logger.info("Index is NOT ours!");
+        }
         // Server is not stopped
         logger.info("Got key " + kvMessage.getKey() + " with Hash " + kvMessage.getHash() +".My Range is " + server.getInfo().getFromIndex() + ":" + server.getInfo().getToIndex());
         if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
             // Server IS responsible for key
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
+                KVMessageImpl answer = server.getKvCache().get(kvMessage.getKey());
+                logger.info("Answer: " + answer.getStatus() + ", " + answer.getKey() + " (" + answer.getHash() + ")"
+                        + " Value: " + answer.getValue() );
                 // Do the GET
-                return server.getKvCache().get(kvMessage.getKey());
+                return answer;
             } else if (kvMessage.getStatus().equals(KVMessage.StatusType.PUT)) {
                 // Check if WRITE_LOCKED
                 if (server.isWriteLocked()) {

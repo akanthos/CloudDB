@@ -56,19 +56,28 @@ public class KVRange {
 
     public boolean isIndexInRange(long index) {
         // the last node in the ring
+        if (low == high) {
+            return true;
+        }
         if ( low > high){
-            if ( index >= low )
-                return true;
-            else
-                return index <= high;
+            return ((index >= low) && (index <= high));
+//            if ( index >= low )
+//                return true;
+//            else
+//                return index <= high;
         }
         // all the other nodes
-        else
+        else // low < high
             return ( (index >= low) && (index <= high) );
     }
 
     @Override
     public String toString() {
         return String.valueOf(low) + "," + String.valueOf(high);
+    }
+
+    public static void main (String[] args) {
+        Long key = new Long(2898073819);
+
     }
 }

@@ -13,6 +13,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.util.*;
 
 public class KVStore implements KVCommInterface {
@@ -58,7 +59,8 @@ public class KVStore implements KVCommInterface {
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
         connections.put(currentServer, currentConnection);
         setIsConnected(true);
-        logger.info("Switch to server " + currentServer.getAddress() + ":" + currentServer.getServerPort());
+        logger.info("Switched to server " + currentServer.getAddress() +
+                ":" + currentServer.getServerPort());
     }
 
     @Override
@@ -149,6 +151,7 @@ public class KVStore implements KVCommInterface {
                     resendRequest = false;
                     kvMessage = kvMessageFromServer;
                 } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
+                    logger.info("He was not responsible!!! Oh god!");
                     retryRequest(kvMessageFromServer);
                     resendRequest = true;
                 } else {
@@ -265,22 +268,48 @@ public class KVStore implements KVCommInterface {
         Long keyValue = hash.hash(key);
         // Passing the key in the form of a dummy object
         // TODO: Is there a cleaner way to do this?
-        int index = Collections.binarySearch(metadataFromServer, new ServerInfo("", 0, new KVRange(keyValue, 0L)), searchComparator);
-        ServerInfo serverInfo = metadataFromServer.get(index);
-        logger.info("Key " + key + " with Hash " + keyValue +  " to Server " + serverInfo.getAddress() + ":" + serverInfo.getServerPort());
-        if (currentServer.equals(serverInfo)) {
-            return currentConnection;
+        for (ServerInfo m : metadataFromServer) {
+            if (m.getServerRange().isIndexInRange(keyValue)) {
+                if (m.getAddress().equals(currentServer.getAddress()) && m.getServerPort().equals(currentServer.getServerPort())) {
+                    return currentConnection;
+                } else {
+                    try {
+                        connect(m.getAddress(), m.getServerPort());
+                        return currentConnection;
+                    } catch (ConnectException e) {
+                        metadataFromServer.remove(m);
+                        return tryOtherNodes(metadataFromServer);
+                    }
+
+                }
+            }
         }
-        else {
-            connect(serverInfo.getAddress(), serverInfo.getServerPort());
-            return currentConnection;
-//            ServerConnection serverConnection = new ServerConnection(serverInfo.getAddress(), serverInfo.getServerPort());
-//            connections.put(serverInfo, serverConnection);
-//            return serverConnection;
-        }
+        return null;
+//        int index = Collections.binarySearch(metadataFromServer, new ServerInfo("", 0, new KVRange(keyValue, 0L)), searchComparator);
+//        ServerInfo serverInfo = metadataFromServer.get(index);
+//        if (currentServer.equals(serverInfo)) {
+//            return currentConnection;
+//        }
+//        else {
+//            connect(serverInfo.getAddress(), serverInfo.getServerPort());
+//            return currentConnection;
+////            ServerConnection serverConnection = new ServerConnection(serverInfo.getAddress(), serverInfo.getServerPort());
+////            connections.put(serverInfo, serverConnection);
+////            return serverConnection;
+//        }
 
     }
 
+    private ServerConnection tryOtherNodes(List<ServerInfo> metadataFromServer) {
+        for (ServerInfo s : metadataFromServer) {
+            try {
+                connect(s.getAddress(), s.getServerPort());
+                return currentConnection;
+            } catch (Exception e) {
+            }
+        }
+        return null;
+    }
 
 
     class SearchComparator implements Comparator<ServerInfo> {

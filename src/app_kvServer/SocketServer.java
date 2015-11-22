@@ -112,6 +112,10 @@ public class SocketServer {
         setMetadata(metadata);
         state.setInitialized(true);
         info.setLaunched(true);
+        logger.info("Just initialized myself!!!");
+        logger.info("My Address is: " + this.info.getAddress());
+        logger.info("My Port is: " + this.info.getServerPort());
+        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
@@ -135,10 +139,18 @@ public class SocketServer {
         state.setIsOpen(false);
         this.closeSocket();
         this.handler.shutDown();
+        logger.info("SHUTTING DOWN: ");
+        logger.info("My Address is: " + this.info.getAddress());
+        logger.info("My Port is: " + this.info.getServerPort());
+        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
+        logger.info("My Address is: " + this.info.getAddress());
+        logger.info("My Port is: " + this.info.getServerPort());
+        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
+        logger.info("Move data called");
         ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
         return sendToServer(pairsToSend, server);
     }
@@ -213,6 +225,10 @@ public class SocketServer {
     /*                          Server Requests                         */
     /********************************************************************/
     public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs) {
+        logger.info("My Address is: " + this.info.getAddress());
+        logger.info("My Port is: " + this.info.getServerPort());
+        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
+        logger.info("Inserting new data");
         for (KVPair kv : kvPairs) {
             kvCache.put(kv.getKey(), kv.getValue());
         }
@@ -253,10 +269,11 @@ public class SocketServer {
     public void setMetadata(List<ServerInfo> metadata) {
         this.metadata = metadata;
         for (ServerInfo info : metadata) {
-            logger.info("Server " + info.getAddress() + ":" + info.getServerPort() + " range " + info.getFromIndex() + ":" + info.getToIndex());
+            logger.info("Server " + info.getAddress() + ":" + info.getServerPort() +
+                    " range : " + info.getFromIndex() + ":" + info.getToIndex());
             if (info.getAddress().equals(this.info.getAddress()) && info.getServerPort().equals(this.info.getServerPort())) {
                 this.info.setServerRange(info.getServerRange());
-                logger.info("Update my Range to " + this.info.getFromIndex() +":"+this.info.getToIndex());
+                logger.info("Update my range to: " + this.info.getFromIndex() +":"+ this.info.getToIndex());
             }
         }
     }

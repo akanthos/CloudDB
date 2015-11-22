@@ -58,6 +58,7 @@ public class KVStore implements KVCommInterface {
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
         connections.put(currentServer, currentConnection);
         setIsConnected(true);
+        logger.info("Switch to server " + currentServer.getAddress() + ":" + currentServer.getServerPort());
     }
 
     @Override
@@ -266,6 +267,7 @@ public class KVStore implements KVCommInterface {
         // TODO: Is there a cleaner way to do this?
         int index = Collections.binarySearch(metadataFromServer, new ServerInfo("", 0, new KVRange(keyValue, 0L)), searchComparator);
         ServerInfo serverInfo = metadataFromServer.get(index);
+        logger.info("Key " + key + " with Hash " + keyValue +  " to Server " + serverInfo.getAddress() + ":" + serverInfo.getServerPort());
         if (currentServer.equals(serverInfo)) {
             return currentConnection;
         }

@@ -61,6 +61,12 @@ public class ECSClient implements ECSClientListener {
             case STOP:
                 this.ECSStop();
                 break;
+            case SET_WRITE_LOCK:
+                ECServer.lockWrite();
+                break;
+            case UNLOCK_WRITE:
+                ECServer.unlockWrite();
+                break;
             case ADD:
                 if(tokens.length == 3) {
                     if ( validator.isValidPolicy(tokens[2]) )
@@ -214,7 +220,6 @@ public class ECSClient implements ECSClientListener {
             logger.debug("ECSImpl Service failed to remove a node.");
         }
     }
-
 
     private void printError(String error){
         System.out.println(PROMPT + "Error. " +  error);

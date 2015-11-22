@@ -55,7 +55,7 @@ public class KVConnection{
 
     public void sendMessage(KVAdminMessageImpl msg) throws IOException {
         byte[] msgBytes = Serializer.toByteArray(msg);
-        //System.out.println(new String(msgBytes,"UTF-8"));
+        System.out.println(new String(msgBytes,"UTF-8"));
         output.write(msgBytes, 0, msgBytes.length);
         output.flush();
         logger.info("Send message to " + connection.getPort() + ":\t '"

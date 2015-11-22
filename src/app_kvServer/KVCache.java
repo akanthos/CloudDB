@@ -1,5 +1,6 @@
 package app_kvServer;
 
+import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
 import common.messages.KVPair;
@@ -23,9 +24,10 @@ import static app_kvServer.CachePolicy.*;
  */
 public class KVCache {
 
+    private ServerInfo server;
     private LinkedHashMap<String,String> map;
     private LFUCache lfu;
-    private KVPersistenceEngine persistence;
+    private KVPersistenceEngine persistence = new KVPersistenceEngine();
     final Integer cacheSize;
     CachePolicy policy;
     private static Logger logger = Logger.getLogger(KVCache.class);
@@ -37,8 +39,45 @@ public class KVCache {
      */
     public KVCache (final int cacheSize, String Policy) throws StorageException {
 
+     //   this.server = server;
         this.cacheSize = cacheSize;
-        this.persistence = new KVPersistenceEngine();
+    //    this.persistence = new KVPersistenceEngine(server);
+        switch (policy = valueOf(Policy)) {
+            case LRU:
+                map = new LinkedHashMap<String, String>(cacheSize +1, 1F, true) {
+                    // (an anonymous inner class)
+                    private static final long serialVersionUID = 1;
+                    @Override protected boolean removeEldestEntry (Map.Entry<String, String> eldest) {
+                        return size() > KVCache.this.cacheSize; }};
+                break;
+            case FIFO:
+                map = new LinkedHashMap<String, String>(cacheSize +1, 1F, false) {
+                    // (an anonymous inner class)
+                    private static final long serialVersionUID = 1;
+                    @Override protected boolean removeEldestEntry (Map.Entry<String, String> eldest) {
+                        return size() > KVCache.this.cacheSize; }};
+                break;
+            case LFU:
+                lfu = new LFUCache(cacheSize, persistence);
+                break;
+            default:
+                System.out.println("No such Cache replacement policy.");
+                break;
+
+        }
+
+    }
+
+
+    /**
+     * Creates a new LRU or FIFO or LFU cache according to the cache replacing policy.
+     * @param cacheSize the maximum number of entries that will be kept in this cache.
+     */
+    public KVCache (final int cacheSize, String Policy, ServerInfo server) throws StorageException {
+
+        this.server = server;
+        this.cacheSize = cacheSize;
+        this.persistence = new KVPersistenceEngine(server);
         switch (policy = valueOf(Policy)) {
             case LRU:
                 map = new LinkedHashMap<String, String>(cacheSize +1, 1F, true) {

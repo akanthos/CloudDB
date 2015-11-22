@@ -31,7 +31,7 @@ public class KVCacheTest extends TestCase{
 
         String key="1";
         String value="1st item";
-        KVCache kvCache= new KVCache(cacheSize, policy );
+        KVCache kvCache= new KVCache(cacheSize, policy);
 
         kvCache.put(key,value);
         assertEquals(value, kvCache.get(key).getValue());

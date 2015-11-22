@@ -1,12 +1,10 @@
 package app_kvEcs;
 
-import com.sun.corba.se.spi.activation.Server;
 import common.Serializer;
 import common.ServerInfo;
 import common.messages.AbstractMessage;
 import common.messages.KVAdminMessage;
 import common.messages.KVAdminMessageImpl;
-import common.messages.KVMessage;
 import common.utils.Utilities;
 import hashing.MD5Hash;
 import helpers.CannotConnectException;
@@ -504,7 +502,24 @@ public class ECSImpl implements ECS {
      * Lock the KVServer for write operations.
      * @return true if succeeded else false
      */
-    public boolean lockWrite( ServerInfo server){
+    public boolean lockWrite(){
+        //KVConnection kvConnection = new KVConnection(fromNode);
+        KVAdminMessageImpl lockMsg = new KVAdminMessageImpl();
+        lockMsg.setStatus(KVAdminMessage.StatusType.LOCK_WRITE);
+        boolean allDone = false;
+
+        for (ServerInfo server: activeServers) {
+            try {
+                if (!sendECSCmd(KVConnections.get(server), server, lockMsg))
+                    return false;
+
+            } catch (CannotConnectException e) {
+                KVConnections.get(server).disconnect();
+                logger.info(lockMsg.getStatus() + " operation on server " + server.getAddress() + ":"
+                        + server.getServerPort() + " failed due to Connection problem");
+                return false;
+            }
+        }
         return true;
     }
 
@@ -512,7 +527,24 @@ public class ECSImpl implements ECS {
      * Unlock the KVServer for write operations.
      * @return true if succeeded else false
      */
-    public boolean unlockWrite( ServerInfo server){
+    public boolean unlockWrite( ){
+        //KVConnection kvConnection = new KVConnection(fromNode);
+        KVAdminMessageImpl lockMsg = new KVAdminMessageImpl();
+        lockMsg.setStatus(KVAdminMessage.StatusType.UNLOCK_WRITE);
+        boolean allDone = false;
+
+        for (ServerInfo server: activeServers) {
+            try {
+                if (!sendECSCmd(KVConnections.get(server), server, lockMsg))
+                    return false;
+
+            } catch (CannotConnectException e) {
+                KVConnections.get(server).disconnect();
+                logger.info(lockMsg.getStatus() + " operation on server " + server.getAddress() + ":"
+                        + server.getServerPort() + " failed due to Connection problem");
+                return false;
+            }
+        }
         return true;
     }
 

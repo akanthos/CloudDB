@@ -96,7 +96,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     logger.error("Error! Connection lost!");
                     clientConnected = false;
                 } catch (Exception e) {
-                    logger.error("Unable to parse string XAXAXAX"+ new String(byteMessage,"UTF-8") +"message from client" +e);
+                    logger.error("Unable to parse string "+ new String(byteMessage,"UTF-8") +" message from client" +e);
                     clientConnected = false;
                 }
             }
@@ -180,6 +180,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             return new KVMessageImpl(KVMessage.StatusType.SERVER_STOPPED);
         }
         // Server is not stopped
+        logger.info("Got key " + kvMessage.getKey() + " with Hash " + kvMessage.getHash() +".My Range is " + server.getInfo().getFromIndex() + ":" + server.getInfo().getToIndex());
         if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
             // Server IS responsible for key
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {

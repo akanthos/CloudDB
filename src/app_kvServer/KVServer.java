@@ -83,7 +83,7 @@ public class KVServer {
         try {
                 new Thread(new Runnable() {
                     public void run() {
-                        new KVServer("localhost", Integer.parseInt(args[0]), 10, "FIFO");
+                        new KVServer("127.0.0.1", Integer.parseInt(args[0]), 10, "FIFO");
                     }
                 }).start();
 
@@ -138,7 +138,7 @@ public class KVServer {
                 && cacheSize > 0 && metadata != null) {
             System.out.println("Binding KVServer:");
             try {
-                KVCache kvCache = new KVCache(cacheSize, displacementStrategy);
+                KVCache kvCache = new KVCache(cacheSize, displacementStrategy, server.getInfo());
                 server.initKVServer(metadata, cacheSize, displacementStrategy);
             } catch (StorageException e) {
                 logger.error("Cannot create KVCache instance", e);

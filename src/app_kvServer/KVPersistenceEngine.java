@@ -1,5 +1,6 @@
 package app_kvServer;
 
+import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
 import helpers.StorageException;
@@ -18,20 +19,23 @@ public class KVPersistenceEngine {
 
     private Properties prop;
     private final String fileNamePrefix = "data.store";
-    private final String fileName = "data.store" + randomSuffix(4) ;
+    private  String fileName;
     private InputStream input = null;
     private OutputStream output = null;
     private static Logger logger = Logger.getLogger(KVPersistenceEngine.class);
 
 
+    public KVPersistenceEngine(){
+    }
     /**
      *
      * @throws StorageException
      * indicating problems accessing the persistant file
      */
-    public KVPersistenceEngine() throws StorageException {
+    public KVPersistenceEngine(ServerInfo info) throws StorageException {
         try {
             // Initialize properties file
+            fileName = fileNamePrefix + String.valueOf(info.getServerPort());
             File storeFile = new File(fileName);
             prop = new Properties();
             if(storeFile.exists()) {

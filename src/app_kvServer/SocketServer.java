@@ -104,7 +104,7 @@ public class SocketServer {
     /********************************************************************/
     public synchronized KVAdminMessageImpl initKVServer(List<ServerInfo> metadata, Integer cacheSize, String displacementStrategy){
         try {
-            this.kvCache = new KVCache(cacheSize, displacementStrategy);
+            this.kvCache = new KVCache(cacheSize, displacementStrategy, info);
         } catch (StorageException e) {
             logger.error("Cannot create KVCache", e);
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
@@ -253,8 +253,10 @@ public class SocketServer {
     public void setMetadata(List<ServerInfo> metadata) {
         this.metadata = metadata;
         for (ServerInfo info : metadata) {
+            logger.info("Server " + info.getAddress() + ":" + info.getServerPort() + " range " + info.getFromIndex() + ":" + info.getToIndex());
             if (info.getAddress().equals(this.info.getAddress()) && info.getServerPort().equals(this.info.getServerPort())) {
                 this.info.setServerRange(info.getServerRange());
+                logger.info("Update my Range to " + this.info.getFromIndex() +":"+this.info.getToIndex());
             }
         }
     }

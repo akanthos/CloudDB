@@ -25,7 +25,7 @@ public class ServerConnection extends ServerInfo {
     private Socket clientSocket;
     private static Logger logger = Logger.getLogger(ServerConnection.class);
 
-    public ServerConnection(String hostname, Integer port) throws CannotConnectException, UnknownHostException {
+    public ServerConnection(String hostname, Integer port) throws NumberFormatException, IOException, UnknownHostException {
         super(hostname, port);
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         try {
@@ -38,10 +38,10 @@ public class ServerConnection extends ServerInfo {
                 isConnected = true;
             } catch (NumberFormatException e) {
                 logger.error(String.format("Number Format Exception. Server: %s:%s", address, port), e);
-                throw new CannotConnectException(ErrorMessages.ERROR_INTERNAL);
+                throw new NumberFormatException(ErrorMessages.ERROR_INTERNAL);
             } catch (IOException e) {
                 logger.error(String.format("Error while connecting to the server. Server: %s:%s", hostname, port), e);
-                throw new CannotConnectException(e.getMessage());
+                throw new IOException(e.getMessage());
             }
         }
         catch (UnknownHostException e) {

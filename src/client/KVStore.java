@@ -34,7 +34,7 @@ public class KVStore implements KVCommInterface {
 	public KVStore() {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         metadataFromServer = new LinkedList<>();
-        connections = new HashMap<>();
+//        connections = new HashMap<>();
         hash = new MD5Hash();
         // All key requests going to a single server initially.
         searchComparator = new SearchComparator();
@@ -57,7 +57,27 @@ public class KVStore implements KVCommInterface {
 //        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
         metadataFromServer.add(currentServer);
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
-        connections.put(currentServer, currentConnection);
+//        connections.put(currentServer, currentConnection);
+        setIsConnected(true);
+        logger.info("Switched to server " + currentServer.getAddress() +
+                ":" + currentServer.getServerPort());
+    }
+
+    /**
+     * Initialize KVStore with an instance of ServerInfo
+     * and connect to the server
+     * @param sererInfo
+     * @throws Exception
+     */
+    public void connect(ServerInfo sererInfo) throws Exception {
+        if (connected) {
+            disconnect();
+        }
+        currentServer = new ServerInfo(sererInfo.getAddress(), sererInfo.getServerPort(), sererInfo.getServerRange());
+//        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
+//        metadataFromServer.add(currentServer);
+        currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
+//        connections.put(currentServer, currentConnection);
         setIsConnected(true);
         logger.info("Switched to server " + currentServer.getAddress() +
                 ":" + currentServer.getServerPort());
@@ -65,12 +85,13 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public void disconnect() {
-        currentConnection.closeConnections();
-        for (ServerInfo server : connections.keySet()) {
-            ServerConnection conn = connections.get(server);
-            conn.closeConnections();
+        if (currentConnection != null) {
+            currentConnection.closeConnections();
         }
-        connections.clear();
+//        closeConnections();
+//        connections.clear();
+        currentConnection = null;
+        currentServer = null;
         setIsConnected(false);
     }
 
@@ -242,8 +263,8 @@ public class KVStore implements KVCommInterface {
      * @return
      */
     private void retryRequest(KVMessageImpl messageFromServer) {
-        closeConnections();
-        connections = new HashMap<>();
+//        closeConnections();
+//        connections = new HashMap<>();
         metadataFromServer = messageFromServer.getMetadata();
         Collections.sort(metadataFromServer);
     }
@@ -273,12 +294,14 @@ public class KVStore implements KVCommInterface {
                 if (m.getAddress().equals(currentServer.getAddress()) && m.getServerPort().equals(currentServer.getServerPort())) {
                     return currentConnection;
                 } else {
+                    disconnect();
                     try {
-                        connect(m.getAddress(), m.getServerPort());
+                        logger.info("Trying server: " + m.getAddress()+":"+m.getServerPort()+", range:" + m.getFromIndex() + ":" + m.getToIndex() );
+                        connect(m);
                         return currentConnection;
-                    } catch (ConnectException e) {
-                        metadataFromServer.remove(m);
-                        return tryOtherNodes(metadataFromServer);
+                    } catch (IOException e) {
+                        logger.info("Connection caught..." );
+                        return tryOtherNodes(metadataFromServer, m);
                     }
 
                 }
@@ -300,10 +323,15 @@ public class KVStore implements KVCommInterface {
 
     }
 
-    private ServerConnection tryOtherNodes(List<ServerInfo> metadataFromServer) {
-        for (ServerInfo s : metadataFromServer) {
+    private ServerConnection tryOtherNodes(List<ServerInfo> metadataFromServer, ServerInfo m) {
+        List<ServerInfo> newMetadata = new ArrayList<>(metadataFromServer) ;
+        newMetadata.remove(m);
+        logger.info("Trying remaining servers");
+        for (ServerInfo s : newMetadata) {
+            disconnect();
             try {
-                connect(s.getAddress(), s.getServerPort());
+                logger.info("Trying server: " + s.getAddress()+":"+s.getServerPort()+", range:" + s.getFromIndex() + ":" + s.getToIndex() );
+                connect(s);
                 return currentConnection;
             } catch (Exception e) {
             }

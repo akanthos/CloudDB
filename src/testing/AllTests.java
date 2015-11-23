@@ -1,7 +1,10 @@
 package testing;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
+import common.ServerInfo;
+import common.utils.KVRange;
 import org.apache.log4j.Level;
 
 import app_kvServer.KVServer;
@@ -18,9 +21,7 @@ public class AllTests {
 		try {
 			new LogSetup("logs/testing/test.log", Level.ERROR);
 			new Thread(new Runnable() {
-				public void run() {
-					new KVServer("localhost", 50000, 20, "FIFO");
-				}
+				public void run() { new KVServer("127.0.0.1", 50000, 20, "FIFO", "Test");}
 			}).start();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -38,7 +39,7 @@ public class AllTests {
 		clientSuite.addTestSuite(ConnectionTest.class);
 		clientSuite.addTestSuite(InteractionTest.class);
 		clientSuite.addTestSuite(AdditionalTest.class);
-//		clientSuite.addTestSuite(KVCacheTest.class);
+		clientSuite.addTestSuite(KVCacheTest.class);
 		return clientSuite;
 	}
 	

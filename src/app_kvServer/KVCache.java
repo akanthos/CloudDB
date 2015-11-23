@@ -39,9 +39,9 @@ public class KVCache {
      */
     public KVCache (final int cacheSize, String Policy) throws StorageException {
 
-     //   this.server = server;
+        this.server = new ServerInfo("127.0.0.1", 50000);
         this.cacheSize = cacheSize;
-    //    this.persistence = new KVPersistenceEngine(server);
+        this.persistence = new KVPersistenceEngine(server);
         switch (policy = valueOf(Policy)) {
             case LRU:
                 map = new LinkedHashMap<String, String>(cacheSize +1, 1F, true) {

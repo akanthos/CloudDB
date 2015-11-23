@@ -175,6 +175,10 @@ public class KVClient {
 			System.out.println("Delete operation successful");
 		} else if (response.getStatus().equals(KVMessage.StatusType.PUT_ERROR)) {
 			System.out.println("Put operation failed");
+		} else if (response.getStatus().equals(KVMessage.StatusType.SERVER_STOPPED)) {
+			System.out.println("Server is stopped, please try again later.");
+		} else if (response.getStatus().equals(KVMessage.StatusType.SERVER_WRITE_LOCK)) {
+			System.out.println("Server is locked for put operations, please try again later.");
 		} else if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
 			System.out.println("Delete operation failed");
 		} else {
@@ -192,6 +196,8 @@ public class KVClient {
 			System.out.println(response.getValue());
 		} else if (response.getStatus().equals(KVMessage.StatusType.GET_ERROR)) {
 			System.out.println("Value could not be retrieved");
+		} else if (response.getStatus().equals(KVMessage.StatusType.SERVER_STOPPED)) {
+			System.out.println("Server is stopped, please try again later.");
 		} else {
 			System.out.println("Unknown error occurred. Please try again.");
 		}

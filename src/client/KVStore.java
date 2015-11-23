@@ -126,9 +126,21 @@ public class KVStore implements KVCommInterface {
                         || kvMessageFromServer.getStatus().equals(KVMessage.StatusType.DELETE_SUCCESS)) {
                     resendRequest = false;
                     kvMessage = kvMessageFromServer;
+                } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
+                    logger.info("Server responded with DELETE_ERROR");
+                    kvMessage.setStatus(KVMessage.StatusType.DELETE_ERROR);
+                    resendRequest = false;
                 } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
                     retryRequest(kvMessageFromServer);
                     resendRequest = true;
+                } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_STOPPED)) {
+                    logger.info("Server responded STOPPED");
+                    kvMessage.setStatus(KVMessage.StatusType.SERVER_STOPPED);
+                    resendRequest = false;
+                } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_WRITE_LOCK)) {
+                    logger.info("Server responded WRITE_LOCKED");
+                    kvMessage.setStatus(KVMessage.StatusType.SERVER_WRITE_LOCK);
+                    resendRequest = false;
                 } else {
                     logger.error(String.format("Server not able to service the request. Status: %s. Request: PUT <%s, %s>", kvMessageFromServer.getStatus(), kvMessageFromServer.getKey(), kvMessageFromServer.getValue()));
                     kvMessage.setStatus(KVMessage.StatusType.PUT_ERROR);
@@ -187,6 +199,10 @@ public class KVStore implements KVCommInterface {
                     logger.info("He was not responsible!!! Oh god!");
                     retryRequest(kvMessageFromServer);
                     resendRequest = true;
+                } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_STOPPED)) {
+                    logger.info("Server responded stopped");
+                    kvMessage.setStatus(KVMessage.StatusType.SERVER_STOPPED);
+                    resendRequest = false;
                 } else {
                     logger.error(String.format("Server not able to service the request. Status: %s. Request: GET <%s>", kvMessageFromServer.getStatus(), kvMessageFromServer.getKey()));
                     kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);

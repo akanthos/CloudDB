@@ -160,7 +160,7 @@ public class KVClient {
 				System.out.println(ErrorMessages.CONNECTION_ERROR);
 			} catch (Exception e) {
 				logger.error("Exception occurred", e);
-				System.out.println(ErrorMessages.ERROR_INTERNAL);
+				System.out.println(ErrorMessages.SERVERS_DOWN);
 			}
 		}
 		System.out.println("KVClient exit!");

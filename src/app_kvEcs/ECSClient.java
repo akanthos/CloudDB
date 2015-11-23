@@ -180,7 +180,7 @@ public class ECSClient implements ECSClientListener {
             System.out.println(PROMPT + "ECSI Service is not initialized. First initialize the server.");
             return;
         }
-        if ( ECServer.shutdown()) {
+        if ( ECServer != null && ECServer.shutdown()) {
             logger.info( "ECSImpl Service shutdown." );
             System.out.println(PROMPT + "ECS Service shutdown successfully.");
             ECServer = null;

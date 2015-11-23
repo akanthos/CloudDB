@@ -37,7 +37,7 @@ public class KVStore implements KVCommInterface {
 //        connections = new HashMap<>();
         hash = new MD5Hash();
         // All key requests going to a single server initially.
-        searchComparator = new SearchComparator();
+//        searchComparator = new SearchComparator();
         connected = false;
 	}
 
@@ -166,7 +166,19 @@ public class KVStore implements KVCommInterface {
                     throw new Exception("Client is disconnected");
                 }
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-                byte[] response = send(kvMessage.getMsgBytes(), connection);
+                byte[] response = null;
+                try {
+                    response = send(kvMessage.getMsgBytes(), connection);
+                    if (response[0] == -1) {
+                        disconnect();
+                        continue;
+                    }
+                }
+                catch (Exception e) {
+                    disconnect();
+                    continue;
+                }
+
                 KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
                 if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.GET_SUCCESS)) {
                     resendRequest = false;
@@ -180,6 +192,7 @@ public class KVStore implements KVCommInterface {
                     kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
                     resendRequest = false;
                 }
+
             }
         } catch (Exception e) {
             kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
@@ -290,8 +303,9 @@ public class KVStore implements KVCommInterface {
         // Passing the key in the form of a dummy object
         // TODO: Is there a cleaner way to do this?
         for (ServerInfo m : metadataFromServer) {
-            if (m.getServerRange().isIndexInRange(keyValue)) {
-                if (m.getAddress().equals(currentServer.getAddress()) && m.getServerPort().equals(currentServer.getServerPort())) {
+            if (m.getServerRange().isIndexInRange(keyValue)
+                    ) {
+                if (currentServer != null && m.getAddress().equals(currentServer.getAddress()) && m.getServerPort().equals(currentServer.getServerPort())) {
                     return currentConnection;
                 } else {
                     disconnect();

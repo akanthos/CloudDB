@@ -2,6 +2,7 @@ package performance;
 
 import app_kvEcs.ECSImpl;
 import client.KVStore;
+import common.ServerInfo;
 import common.messages.KVMessage;
 
 import java.io.File;
@@ -20,8 +21,8 @@ import java.util.concurrent.*;
  */
 public class MeasureSuite {
 
-    private static final int MAX_SERVERS = 3;
-    private static final int SERVER_COUNT_STEP = 1;
+    private static final int MAX_SERVERS = 10;
+    private static final int SERVER_COUNT_STEP = 5;
     private static final int MAX_CLIENTS = 50;
     private static final int CLIENT_COUNT_STEP = 10;
     private static ExecutorService threadpool;
@@ -40,13 +41,13 @@ public class MeasureSuite {
             threadpool = Executors.newCachedThreadPool();
 
             /* Service administration initialization */
-            ecs = new ECSImpl("ecs.config.small");
+            ecs = new ECSImpl("ecs.config");
 
             /* Titles of CSV output file */
             resultsFile.println("result, servers, clients, cacheSize, strategy, time (sec)");
 
             /* Start measurements */
-            for (int serverCount = 3 ; serverCount <= MAX_SERVERS ; serverCount+=SERVER_COUNT_STEP ) {
+            for (int serverCount = 1 ; serverCount <= MAX_SERVERS ; serverCount+=SERVER_COUNT_STEP ) {
                 for (String strategy : new String[]{"FIFO", "LRU", "LFU"}) {
                     for (int cacheSize : new int[]{10, 30, 50}) {
                         for (int clientCount = 1 ; clientCount <= MAX_CLIENTS; clientCount += CLIENT_COUNT_STEP) {
@@ -80,6 +81,7 @@ public class MeasureSuite {
                         }
                     }
                 }
+                if (serverCount==1) { serverCount=0; }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -92,12 +94,13 @@ public class MeasureSuite {
     }
 
     private static void runClients(int serverCount, int clientCount, int cacheSize, String strategy) {
+        ServerInfo entryServer = ecs.getEntryServer();
         List<Callable<KVMessage>> tasks = new ArrayList<>();
         try {
             // Create clients
             for(int i = 0; i < clientCount; i++)
             {
-                tasks.add(new ClientResult(i));
+                tasks.add(new ClientResult(i, entryServer.getServerPort()));
             }
 
             // Timer start
@@ -143,15 +146,15 @@ public class MeasureSuite {
         protected KVStore kvClient;
         protected Integer i;
 
-        public ClientResult(Integer i) throws Exception{
+        public ClientResult(Integer i, int port) throws Exception{
             this.i = i;
             kvClient = new KVStore();
             try {
-                int max = 2;
-                int min = 0;
-                Random rand = new Random();
-                int randomNum = rand.nextInt((max - min) + 1) + min;
-                kvClient.connect("localhost", 60000+randomNum);
+//                int max = 2;
+//                int min = 0;
+//                Random rand = new Random();
+//                int randomNum = rand.nextInt((max - min) + 1) + min;
+                kvClient.connect("127.0.0.1", port);
                 System.out.println("Client " + i + ": Connected");
             } catch (Exception e) {
                 System.out.println("Client " + i + ": Cannot connect");

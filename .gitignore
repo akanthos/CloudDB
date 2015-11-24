@@ -18,3 +18,6 @@ logs/*
 logs/*.log
 data.store*
 
+# Measurement results
+results_*.txt
+

@@ -39,6 +39,7 @@ public class KVServer {
 
         try {
             server.connect();
+
             server.run();
         } catch (IOException e) {
             logger.error("Cannot open socket... Terminating", e);
@@ -67,6 +68,33 @@ public class KVServer {
             logger.error("Cannot open socket... Terminating", e);
         }
     }
+
+    public KVServer(String address, Integer port, Integer cacheSize, String displacementStrategy, String testing) {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+        this.info = new ServerInfo(address, port);
+        this.server = new SocketServer(this.info);
+
+//        ArrayList<ServerInfo> metadata = new ArrayList<>();
+//        metadata.add(new ServerInfo(address, port, new KVRange(0, Long.MAX_VALUE)));
+
+        ConnectionHandler handler = new KVConnectionHandler(server);
+        server.addHandler(handler);
+
+        ArrayList<ServerInfo> metadata = new ArrayList<>();
+        metadata.add(new ServerInfo(server.getInfo().getAddress(), server.getInfo().getServerPort(), new KVRange(0, 0)));
+        server.initKVServer(metadata, cacheSize, displacementStrategy);
+
+
+        try {
+            server.connect();
+            server.startServing();
+            server.run();
+            //server.cleanUp();
+        } catch (IOException e) {
+            logger.error("Cannot open socket... Terminating", e);
+        }
+    }
+
 
 
 

@@ -179,12 +179,12 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         if (server.isStopped()) {
             return new KVMessageImpl(KVMessage.StatusType.SERVER_STOPPED);
         }
-        logger.info("Got client message");
-        logger.info("My Address is: " + server.getInfo().getAddress());
-        logger.info("My Port is: " + server.getInfo().getServerPort());
-        logger.info("My Range is: " + server.getInfo().getFromIndex() + ":" + server.getInfo().getToIndex());
-        logger.info("Message: " + kvMessage.getStatus() + ", " + kvMessage.getKey() + " (" + kvMessage.getHash() + ")"
-                + " Value: " + kvMessage.getValue() );
+//        logger.info("Got client message");
+//        logger.info("My Address is: " + server.getInfo().getAddress());
+//        logger.info("My Port is: " + server.getInfo().getServerPort());
+//        logger.info("My Range is: " + server.getInfo().getFromIndex() + ":" + server.getInfo().getToIndex());
+//        logger.info("Message: " + kvMessage.getStatus() + ", " + kvMessage.getKey() + " (" + kvMessage.getHash() + ")"
+//                + " Value: " + kvMessage.getValue() );
         if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
             logger.info("Index is ours!");
         }

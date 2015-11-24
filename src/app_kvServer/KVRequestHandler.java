@@ -64,14 +64,11 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     byteMessage = Utilities.receive(inputStream);
                     if (!Thread.currentThread().isInterrupted()) {
                         String hello = new String(byteMessage, "UTF-8");
-                        logger.error("!!!!!!!!!!!!!!!" + new String(byteMessage, "UTF-8"));
 
                         if (byteMessage[0] == -1) {
                             clientConnected = false;
                         } else {
-                            logger.error("\n99999\n");
                             AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
-                            logger.error("\n88888888\n");
                             if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.CLIENT_MESSAGE)) {
 
                                 kvMessage = (KVMessageImpl) abstractMessage;
@@ -82,9 +79,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                             } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
                                 kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
                                 kvAdminResponse = processAdminMessage(kvAdminMessage);
-                                logger.error("\n11111111\n");
                                 Utilities.send(kvAdminResponse, outputStream);
-                                logger.error("\n22222222\n");
                             } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
                                 kvServerMessage = (KVServerMessageImpl) abstractMessage;
                                 kvServerResponse = processServerMessage(kvServerMessage);

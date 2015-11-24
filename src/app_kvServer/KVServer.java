@@ -104,7 +104,7 @@ public class KVServer {
      */
     public static void main(final String[] args) {
 
-//        if( args.length == 1 ) {
+        if( args.length == 1 ) {
 //            try {
 //                Integer port = Integer.parseInt(args[0]);
 
@@ -139,14 +139,10 @@ public class KVServer {
 
             }
 
-//            } catch (NumberFormatException e) {
-//                logger.error("Cannot parse port number or cache size", e);
-//                printHelp();
-//            }
-//        }
-//        else {
-//            printHelp();
-//        }
+        }
+        else {
+            printHelp();
+        }
 
 
     }

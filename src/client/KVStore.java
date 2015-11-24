@@ -119,7 +119,18 @@ public class KVStore implements KVCommInterface {
                     throw new Exception("Client is disconnected");
                 }
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-                byte[] response = send(kvMessage.getMsgBytes(), connection);
+                byte[] response = null;
+                try {
+                    response = send(kvMessage.getMsgBytes(), connection);
+                    if (response[0] == -1) {
+                        disconnect();
+                        continue;
+                    }
+                }
+                catch (Exception e) {
+                    disconnect();
+                    continue;
+                }
                 KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
                 if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)
                         || kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)

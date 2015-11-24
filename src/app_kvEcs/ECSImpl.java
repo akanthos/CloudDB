@@ -686,4 +686,15 @@ public class ECSImpl implements ECS {
         }
         return servers;
     }
+
+    /**
+     * Get an active server
+     * @return
+     */
+    public ServerInfo getEntryServer(){
+        int serverIndex = pickRandomValue(this.activeServers.size());
+        ServerInfo entryNode = this.activeServers.get(serverIndex);
+        return  entryNode;
+    }
+
 }

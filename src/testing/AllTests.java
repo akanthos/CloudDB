@@ -1,5 +1,7 @@
 package testing;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 
 import app_kvEcs.ECSClient;
@@ -18,6 +20,20 @@ public class AllTests {
 	private static ECSClient Ecs;
 
 	static {
+
+		final File folder = new File(".");
+		final File[] files = folder.listFiles( new FilenameFilter() {
+			@Override
+			public boolean accept( final File dir,
+								   final String name ) {
+				return name.matches( "data\\.store.*" );
+			}
+		} );
+		for ( final File file : files ) {
+			if ( !file.delete() ) {
+				System.err.println( "Can't remove " + file.getAbsolutePath() );
+			}
+		}
 //		try {
 //			new LogSetup("logs/testing/test.log", Level.ERROR);
 			new Thread(new Runnable() {

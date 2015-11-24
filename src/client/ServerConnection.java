@@ -25,7 +25,7 @@ public class ServerConnection extends ServerInfo {
     private Socket clientSocket;
     private static Logger logger = Logger.getLogger(ServerConnection.class);
 
-    public ServerConnection(String hostname, Integer port) throws NumberFormatException, IOException, UnknownHostException {
+    public ServerConnection(String hostname, Integer port) throws IOException {
         super(hostname, port);
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         try {
@@ -36,15 +36,11 @@ public class ServerConnection extends ServerInfo {
                 outStream = clientSocket.getOutputStream();
                 logger.info("KVServer connection established");
                 isConnected = true;
-            } catch (NumberFormatException e) {
-                logger.error(String.format("Number Format Exception. Server: %s:%s", address, port), e);
-                throw new NumberFormatException(ErrorMessages.ERROR_INTERNAL);
-            } catch (IOException e) {
+            }  catch (IOException e) {
                 logger.error(String.format("Error while connecting to the server. Server: %s:%s", hostname, port), e);
                 throw new IOException(e.getMessage());
             }
-        }
-        catch (UnknownHostException e) {
+        } catch (UnknownHostException e) {
             logger.error("KVServer hostname cannot be resolved", e);
             throw e;
         }

@@ -18,8 +18,8 @@ public class AllTests {
 	private static ECSClient Ecs;
 
 	static {
-		try {
-			new LogSetup("logs/testing/test.log", Level.ERROR);
+//		try {
+//			new LogSetup("logs/testing/test.log", Level.ERROR);
 			new Thread(new Runnable() {
 				public void run() { new KVServer("127.0.0.1", 50000, 20, "FIFO", "Test");}
 			}).start();
@@ -37,9 +37,9 @@ public class AllTests {
 //			} catch (InterruptedException e) {
 //				e.printStackTrace();
 //			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 	
 	

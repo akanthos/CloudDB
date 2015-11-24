@@ -19,6 +19,8 @@ public class KVServiceStressTest extends TestCase {
     private KVStore kvClient;
     private ECSImpl Ecs;
     private ExecutorService threadpool;
+    private double difference;
+
 
     public void setUp() {
         threadpool = Executors.newCachedThreadPool();
@@ -34,6 +36,7 @@ public class KVServiceStressTest extends TestCase {
     public void tearDown() {
         Ecs.shutdown();
         threadpool.shutdownNow();
+        System.out.println("Seconds: " + difference);
     }
 
     /**
@@ -50,10 +53,16 @@ public class KVServiceStressTest extends TestCase {
             {
                 tasks.add(new ClientResult(i));
             }
+            // Timer start
+            long start_time = System.nanoTime();
             List<Future<KVMessage>> futures = threadpool.invokeAll(tasks);
             for (Future<KVMessage> f : futures) {
                 assertTrue(f.get().getStatus() == KVMessage.StatusType.PUT_SUCCESS);
             }
+            // Timer stop
+            long end_time = System.nanoTime();
+            difference = (end_time - start_time)/1e9;
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {

@@ -19,5 +19,8 @@ logs/*.log
 data.store*
 
 # Measurement results
+PUT_results_*.txt
+GET_results_*.txt
 results_*.txt
+
 

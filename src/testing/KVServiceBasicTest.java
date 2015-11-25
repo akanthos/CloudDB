@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 /**
+ * This test case tests the basic functionalities
+ * of the distributed key-value service
  * Created by akanthos on 24.11.15.
  */
 public class KVServiceBasicTest extends TestCase {

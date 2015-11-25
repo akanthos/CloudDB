@@ -11,16 +11,27 @@ public class KVServerMessageImpl implements KVServerMessage {
     List<KVPair> kvPairs;
     StatusType status;
 
+    /**
+     * Default constructor
+     */
     public KVServerMessageImpl() {}
 
+    /**
+     * Constructor which sets the status for simple messages
+     *
+     * @param status the status of the message
+     */
     public KVServerMessageImpl(StatusType status) {
         this.status = status;
     }
 
-    public KVServerMessageImpl(ArrayList<KVPair> kvPairs) {
-        this.kvPairs = kvPairs;
-    }
-
+    /**
+     * Constructor which sets the status and the key-value pairs
+     * to be sent
+     *
+     * @param kvPairs the key-value pairs of the message
+     * @param status the status of the message
+     */
     public KVServerMessageImpl(ArrayList<KVPair> kvPairs, StatusType status) {
         this.kvPairs = kvPairs;
         this.status = status;

@@ -5,6 +5,9 @@ import hashing.MD5Hash;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Client message interface
+ */
 public interface KVMessage extends AbstractMessage {
 	
 	enum StatusType {
@@ -41,7 +44,16 @@ public interface KVMessage extends AbstractMessage {
 	 */
 	StatusType getStatus();
 
+	/**
+	 * Status setter
+	 * @param statusType
+     */
 	void setStatus(StatusType statusType);
+
+	/**
+	 * Computes the hash value of the message
+	 * @return
+     */
 	long getHash();
 	
 }

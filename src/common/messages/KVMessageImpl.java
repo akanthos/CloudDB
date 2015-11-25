@@ -46,10 +46,10 @@ public class KVMessageImpl implements KVMessage {
     }
 
     /**
-     * Constractor
+     * Constructor
      * @param key Key of the connection KV Message
      * @param value Value of the connection KV Message
-     * @param status Status of the connection KV Messag
+     * @param status Status of the connection KV Message
      */
     public KVMessageImpl(String key, String value, StatusType status) {
         this.key = key;
@@ -57,33 +57,15 @@ public class KVMessageImpl implements KVMessage {
         this.status = status;
     }
 
+    /**
+     * Constructor
+     * @param metadata Key of the connection KV Message
+     * @param status Status of the connection KV Message
+     */
     public KVMessageImpl(List<ServerInfo> metadata, StatusType status) {
         this.status = status;
         this.setMetadata(metadata);
     }
-
-    /**
-     * Contructor using String represantion of connection message
-     * @param messageString String representation of the KV Message
-     * @throws Exception
-     */
-//    public KVMessageImpl(String messageString) throws Exception {
-//        try {
-//            String[] msgParts = messageString.split(":");
-//            this.status = StatusType.valueOf(msgParts[0]);
-//            String[] keyAndValue = msgParts[1].split("(?<!\\\\),");
-//            this.key = keyAndValue[0].replaceAll("\\\\,",",");
-//            // For GET requests, value would be null
-//            if (keyAndValue.length > 1) {
-//                this.value = keyAndValue[1].replaceAll("\\\\,",",");
-//            } else {
-//                this.value = "";
-//            }
-//        } catch (Exception e) {
-//            //logger.error(String.format("Cannot parse message string"), e);
-//            throw new Exception("Unable to parse message string");
-//        }
-//    }
 
     /**
      * Key getter
@@ -144,18 +126,6 @@ public class KVMessageImpl implements KVMessage {
     public String toString() {
         // TODO: This is obsolete, change it using serializer directly, not from bytes
         return getMsgBytes().toString();
-//        return null;
-//        StringBuilder msgString = new StringBuilder();
-//        msgString.append(status);
-//        msgString.append(":");
-//
-//
-//        String delimitedKey = key.replaceAll(",", "\\\\,");
-//        msgString.append(delimitedKey);
-//        msgString.append(",");
-//        String delimitedValue = value.replaceAll(",", "\\\\,");
-//        msgString.append(delimitedValue);
-//        return msgString.toString();
     }
 
     /**
@@ -166,15 +136,27 @@ public class KVMessageImpl implements KVMessage {
         return Serializer.toByteArray(this);
     }
 
+    /**
+     * Computes the hash value of the message
+     * @return
+     */
     public long getHash() {
         MD5Hash md5 = new MD5Hash();
         return md5.hash(key);
     }
 
+    /**
+     * Metadata getter
+     * @return the metadata that are part of the message
+     */
     public List<ServerInfo> getMetadata() {
         return metadata;
     }
 
+    /**
+     * Metadata setter
+     * @param metadata the metadata to be set
+     */
     public void setMetadata(List<ServerInfo> metadata) {
         this.metadata = metadata;
     }

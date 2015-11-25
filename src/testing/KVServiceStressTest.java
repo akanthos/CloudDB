@@ -13,6 +13,8 @@ import java.util.Random;
 import java.util.concurrent.*;
 
 /**
+ * This test case is a stress test for the
+ * distributed key-value service
  * Created by akanthos on 24.11.15.
  */
 public class KVServiceStressTest extends TestCase {
@@ -40,7 +42,7 @@ public class KVServiceStressTest extends TestCase {
     }
 
     /**
-     * This test creates 500 clients and they all send a put command
+     * This test creates 1000 clients and they all send a put command
      * to the server. The results returned by the server need to be
      * all PUT_SUCCESS.
      */

@@ -6,7 +6,7 @@ import common.utils.KVRange;
 import java.util.List;
 
 /**
- * Created by akanthos on 11.11.15.
+ * Admin (ECS) message interface
  */
 public interface KVAdminMessage extends AbstractMessage {
 
@@ -30,6 +30,10 @@ public interface KVAdminMessage extends AbstractMessage {
      */
     List<ServerInfo> getMetadata();
 
+    /**
+     * Metadata setter
+     * @param metadata the metadata to be set
+     */
     void setMetadata(List<ServerInfo> metadata);
 
     /**
@@ -38,7 +42,12 @@ public interface KVAdminMessage extends AbstractMessage {
      */
     Integer getCacheSize();
 
+    /**
+     * Cache size setter
+     * @param cacheS the cache size to be set
+     */
     void setCacheSize(Integer cacheS);
+
     /**
      *
      * @return the cache displacement strategy that is associated
@@ -46,6 +55,10 @@ public interface KVAdminMessage extends AbstractMessage {
      */
     String getDisplacementStrategy();
 
+    /**
+     * Displacement strategy setter
+     * @param strategy the displacement stratef=gy to be set
+     */
     void setDisplacementStrategy(String strategy);
 
     /**
@@ -67,6 +80,10 @@ public interface KVAdminMessage extends AbstractMessage {
      */
     ServerInfo getServerInfo();
 
+    /**
+     * Server info setter
+     * @param server the server info to be set
+     */
     void setServerInfo(ServerInfo server);
 
     /**
@@ -75,5 +92,10 @@ public interface KVAdminMessage extends AbstractMessage {
      */
     StatusType getStatus();
 
+    /**
+     * Status setter
+     *
+     * @param statusType status to set to
+     */
     void setStatus(StatusType statusType);
 }

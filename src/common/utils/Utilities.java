@@ -127,22 +127,4 @@ public class Utilities {
 
     }
 
-    public static byte[] getBytes(AbstractMessage message) throws UnsupportedEncodingException {
-        byte[] bytes;
-        byte[] ctrBytes;
-        byte[] tmp;
-        try {
-            bytes = message.toString().getBytes("UTF-8");
-            ctrBytes = new byte[]{LINE_FEED, RETURN};
-            tmp = new byte[bytes.length + ctrBytes.length];
-
-            System.arraycopy(bytes, 0, tmp, 0, bytes.length);
-            System.arraycopy(ctrBytes, 0, tmp, bytes.length, ctrBytes.length);
-
-        } catch (UnsupportedEncodingException e) {
-            logger.error(String.format("Cannot convert message to byte array"), e);
-            throw new UnsupportedEncodingException("Cannot convert message to byte array");
-        }
-        return tmp;
-    }
 }

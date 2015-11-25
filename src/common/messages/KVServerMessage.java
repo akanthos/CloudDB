@@ -6,7 +6,8 @@ import common.utils.KVRange;
 import java.util.List;
 
 /**
- * Created by aacha on 11/16/2015.
+ *
+ * Server to server message interface
  */
 public interface KVServerMessage extends AbstractMessage {
     enum StatusType {
@@ -29,5 +30,9 @@ public interface KVServerMessage extends AbstractMessage {
      */
     StatusType getStatus();
 
+    /**
+     * Status setter
+     * @param statusType the status to set
+     */
     void setStatus(StatusType statusType);
 }

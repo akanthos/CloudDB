@@ -10,7 +10,9 @@ import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
-
+/**
+ * Class representing the basic information about a server instance
+ */
 public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> {
 
     private String ServerName;
@@ -26,35 +28,48 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
     }
 
-    public ServerInfo(String messageString) throws Exception {
-        try {
-            String[] msgParts = messageString.split(",");
-            address = msgParts[0];
-            serverPort = Integer.parseInt(msgParts[1]);
-        } catch (Exception e) {
-            logger.error(String.format("Unable to construct ServerInfo from message: %s", messageString), e);
-            throw new Exception("Unknown message format");
-        }
-    }
-
+    /**
+     * Default constructor
+     */
     public ServerInfo(){}
 
+    /**
+     * Constructor
+     *
+     * @param address server address
+     * @param port server port
+     */
     public ServerInfo(String address, Integer port) {
         this.address = address;
         this.serverPort = port;
         this.serverRange = new KVRange();
     }
 
+    /**
+     * Constructor
+     *
+     * @param address server address
+     * @param port server port
+     * @param range server key range
+     */
     public ServerInfo(String address, Integer port, KVRange range) {
         this.address = address;
         this.serverPort = port;
         this.serverRange = range;
     }
 
+    /**
+     * Port getter
+     * @return server port
+     */
     public Integer getServerPort() {
         return serverPort;
     }
 
+    /**
+     * Port setter
+     * @param serverPort
+     */
     public void setServerPort( Integer serverPort ) {
         this.serverPort = serverPort;
     }
@@ -64,44 +79,90 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
         return this.getAddress()+","+this.getServerPort();
     }
 
+    /**
+     * Computes sever hash position on the ring
+     *
+     * @return
+     */
     public Long getHash() {
         MD5Hash md5 = new MD5Hash();
         return md5.hash(this.toString());
     }
 
+    /**
+     * Server address getter
+     * @return
+     */
     public String getAddress() {
         return address;
     }
 
+    /**
+     * Server address setter
+     * @param address
+     */
     public void setAddress(String address) {
         this.address = address;
     }
 
+    /**
+     * Server key range getter
+     * @return
+     */
     public KVRange getServerRange() {
         return serverRange;
     }
 
+    /**
+     * Server key range setter
+     * @param serverRange
+     */
     public void setServerRange(KVRange serverRange) {
         this.serverRange = serverRange;
     }
 
+    /**
+     * Low limit of the server instance key range getter
+     * @return
+     */
     public Long getFromIndex() {
         return serverRange.getLow();
     }
 
+    /**
+     * Low limit of the server instance key range setter
+     * @param fromIndex
+     */
     public void setFromIndex(Long fromIndex) {
         this.serverRange.setLow(fromIndex);    }
 
+    /**
+     * High limit of the server instance key range getter
+     * @return
+     */
     public Long getToIndex() {
         return serverRange.getHigh();
     }
 
+    /**
+     * High limit of the server instance key range setter
+     * @param toIndex
+     */
     public void setToIndex(Long toIndex) {
         this.serverRange.setHigh(toIndex);
     }
 
+    /**
+     * Launched state setter
+     * @param isLaunched
+     */
     public void setLaunched(boolean isLaunched) { this.isLaunched = isLaunched; }
 
+    /**
+     * Server position on the ring comparator
+     * @param o
+     * @return
+     */
     @Override
     public int compareTo(ServerInfo o) {
         Long l = serverRange.getLow();

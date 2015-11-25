@@ -23,6 +23,12 @@ public class Serializer {
 
     private static final char RETURN = 0x0D;
 
+    /**
+     * Client message object serializer (KVAdminMessageImpl)
+     *
+     * @param message client message to be sent
+     * @return
+     */
     public static byte[] toByteArray(KVMessageImpl message) {
 
         StringBuilder messageStr = new StringBuilder(CLIENT_MESSAGE + HEAD_DLM +message.getStatus().ordinal() + HEAD_DLM
@@ -46,9 +52,9 @@ public class Serializer {
     }
 
     /**
-     * Convert a ECS Message Object (KVAdminMessageImpl)
+     * Server message object serializer (KVAdminMessageImpl)
      *
-     * @param message message to be sent
+     * @param message server-to-server message to be sent
      * @return
      */
     public static byte[] toByteArray(KVServerMessageImpl message) {
@@ -71,6 +77,12 @@ public class Serializer {
         return tmp;
     }
 
+    /**
+     * Admin (ECS) message serializer
+     *
+     * @param message Outgoing admin message
+     * @return byte array representation of outgoing admin message
+     */
     public static byte[] toByteArray(KVAdminMessageImpl message) {
         // message : <TypeOfMessage>(int)-- <StatusType>(number)--list of metadata
         // data/fromindex--toindex-- to_serverInfo
@@ -117,6 +129,13 @@ public class Serializer {
     }
 
 
+    /**
+     * Message deserializer
+     *
+     * @param objectByteStream the byte array corresponding to the incoming message
+     * @return an abstract message that can be downcasted to a more specific message type
+     * @throws UnsupportedDataTypeException
+     */
     public static AbstractMessage toObject(byte[] objectByteStream) throws UnsupportedDataTypeException {
 
         String message = new String(objectByteStream).trim();
@@ -214,6 +233,14 @@ public class Serializer {
         return retrievedMessage;
     }
 
+    /**
+     * Extracts the abstract message type from the string representing it in the
+     * incoming message
+     *
+     * @param msgType the string representing the abstract message type
+     * @return the abstract message type extracted
+     * @throws UnsupportedDataTypeException
+     */
     private static AbstractMessage.MessageType toMessageType(String msgType) throws UnsupportedDataTypeException {
 
         if (msgType.equals(CLIENT_MESSAGE))
@@ -227,6 +254,14 @@ public class Serializer {
 
     }
 
+    /**
+     * Extracts the metadata as structured data from the string
+     * representation
+     *
+     * @param metaDataStr the string that was part of the message
+     *                    containing the metadata
+     * @return A list of ServerInfo
+     */
     private static List<ServerInfo> getMetaData(String metaDataStr) {
         if (!metaDataStr.equals("")) {
             List<ServerInfo> KVServerList = new ArrayList<>();
@@ -245,64 +280,15 @@ public class Serializer {
         }
     }
 
-//    public static void main(String[] args) {
-//
-//        ServerInfo si = new ServerInfo("salami", 23, new KVRange());
-//        KVRange rangeToMove = new KVRange(0L, Long.MAX_VALUE/2);
-//
-//        List<ServerInfo> m = new ArrayList<>();
-////        m.add(si);
-//
-//        KVAdminMessageImpl message =
-//                new KVAdminMessageImpl(KVAdminMessage.StatusType.INIT,
-//                        m, 10, "FIFO");
-//
-//        byte[] bytesToSend = toByteArray(message);
-//        try {
-//            KVAdminMessageImpl receivedMessage = (KVAdminMessageImpl) toObject(bytesToSend);
-//            System.out.println("Salami " + receivedMessage.getStatus().toString());
-//        } catch (UnsupportedDataTypeException e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
 
-//    public static void main (String[] args) throws UnsupportedEncodingException, UnsupportedDataTypeException {
-//
-//        ServerInfo server1 = new ServerInfo("127.0.0.1", 500, new KVRange(1111, 22222));
-//        ServerInfo server2 = new ServerInfo("127.0.0.1", 502, new KVRange(33333, 44444));
-//        ServerInfo server3 = new ServerInfo("127.0.0.1", 504, new KVRange(33333, 44444));
-//        List<ServerInfo> list = new ArrayList<ServerInfo>();
-//        list.add(server1);
-//        KVAdminMessageImpl msg = new KVAdminMessageImpl();
-//        msg.setMetadata(list);
-//        msg.setCacheSize(11);
-//        msg.setDisplacementStrategy("LRU");
-//        msg.setStatus(KVAdminMessage.StatusType.INIT);
-//
-//        byte[] arr = toByteArray(msg);
-//
-//        System.out.println(new String(arr,"UTF-8"));
-//        System.out.println("PART_2");
-//        AbstractMessage abstractMessage = Serializer.toObject(arr);
-//
-//
-//    }
-
-
+    /**
+     * Main method for testing purposes
+     *
+     * @param args
+     * @throws UnsupportedEncodingException
+     * @throws UnsupportedDataTypeException
+     */
     public static void main (String[] args) throws UnsupportedEncodingException, UnsupportedDataTypeException {
-        /*
-        ServerInfo server1 = new ServerInfo("127.0.0.1", 500, new KVRange(1111, 22222));
-        ServerInfo server2 = new ServerInfo("127.0.0.1", 502, new KVRange(33333, 44444));
-        ServerInfo server3 = new ServerInfo("127.0.0.1", 504, new KVRange(33333, 44444));
-        List<ServerInfo> list = new ArrayList<ServerInfo>();
-        list.add(server1);
-        KVAdminMessageImpl msg = new KVAdminMessageImpl();
-        msg.setMetadata(list);
-        msg.setCacheSize(11);
-        msg.setDisplacementStrategy("LRU");
-        msg.setStatus(KVAdminMessage.StatusType.INIT);
-        */
         String hehe = "0##7##127.0.0.1&&50000&&3706585719&&897794963%%127.0.0.1&&50001&&897794963&&3706585719%%";
         byte[] arr = hehe.toString().getBytes();
         //byte[] arr = toByteArray(hehe);

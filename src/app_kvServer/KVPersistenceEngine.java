@@ -127,7 +127,9 @@ public class KVPersistenceEngine {
 
     }
 
-
+    /**
+     * Cleans up the persistence file
+     */
     public void cleanUp() {
         File storeFile = new File(fileName);
         if(storeFile.exists()) {

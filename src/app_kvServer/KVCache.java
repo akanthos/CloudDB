@@ -269,15 +269,29 @@ public class KVCache {
 
     }
 
+    /**
+     * LFU cache getter
+     * @return the LFU cache instance
+     */
     public LFUCache getLFU(){
 
         return this.lfu;
     }
 
+    /**
+     * Hashmap getter
+     * @return the cache hashmap
+     */
     public LinkedHashMap<String, String> getCacheMap(){
         return map;
     }
 
+    /**
+     * Computes the key-value pairs of the cache that
+     * belong to the given range
+     * @param range the range that keys should belong to
+     * @return the pairs required
+     */
     public ArrayList<KVPair> getPairsInRange(KVRange range) {
         ArrayList<KVPair> allCurrentPairs = getAllCurrentPairs();
         ArrayList<KVPair> filteredPairs = new ArrayList<>();
@@ -314,7 +328,16 @@ public class KVCache {
         return currentPairs;
     }
 
+    /**
+     * Clears the cache and the persistence
+     */
     public void cleanUp() {
+        if (policy == LFU) {
+            lfu.cleanUp();
+        }
+        else {
+            map.clear();
+        }
         this.persistence.cleanUp();
     }
 }

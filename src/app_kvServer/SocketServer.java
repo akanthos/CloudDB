@@ -102,6 +102,13 @@ public class SocketServer {
     /********************************************************************/
     /*                      Administrative Commands                     */
     /********************************************************************/
+    /**
+     * Initializes the server
+     * @param metadata metadata for initialization
+     * @param cacheSize cache size for initialization
+     * @param displacementStrategy displacement strategy for initialization
+     * @return a status message
+     */
     public synchronized KVAdminMessageImpl initKVServer(List<ServerInfo> metadata, Integer cacheSize, String displacementStrategy){
         try {
             this.kvCache = new KVCache(cacheSize, displacementStrategy, info);
@@ -119,22 +126,46 @@ public class SocketServer {
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
+    /**
+     * Starts the server
+     * @return a status message
+     */
     public synchronized KVAdminMessageImpl startServing() {
         state.setStopped(false);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
+
+    /**
+     * Stops the server
+     * @return a status message
+     */
     public synchronized KVAdminMessageImpl stopServing() {
         state.setStopped(true);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
+
+    /**
+     * Locks the server for writes
+     * @return a status message
+     */
     public synchronized KVAdminMessageImpl writeLock() {
         state.setWriteLock(true);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
+
+    /**
+     * Unlocks the sever for writes
+     * @return a status message
+     */
     public synchronized KVAdminMessageImpl writeUnlock() {
         state.setWriteLock(false);
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
+
+    /**
+     * Shuts down the server
+     * @return a status message
+     */
     public synchronized KVAdminMessageImpl shutDown() {
         state.setIsOpen(false);
         this.closeSocket();
@@ -280,17 +311,6 @@ public class SocketServer {
 
     public synchronized List<ServerInfo> getMetadata() { return metadata; }
 
-    /********************************************************************/
-    /*                     Add/Remove listeners                         */
-    /********************************************************************/
-//    public void addListener(ServerActionListener l) {
-//        runnableListeners.add(l);
-//    }
-
-//    public void removeListener(KVRequestHandler kvRequestHandler) {
-//        runnableListeners.remove(kvRequestHandler);
-//    }
-
     public ServerInfo getInfo() {
         return this.info;
     }
@@ -304,6 +324,9 @@ public class SocketServer {
     }
 
 
+    /**
+     * Clears the cache
+     */
     public void cleanUp() {
         this.kvCache.cleanUp();
     }

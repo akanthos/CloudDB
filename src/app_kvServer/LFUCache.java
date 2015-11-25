@@ -6,6 +6,8 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
+import static app_kvServer.CachePolicy.LFU;
+
 /**
  * Class representing the LFU Cache
  * The KV pairs are represented by the LfuCacheEntry class
@@ -199,6 +201,13 @@ public class LFUCache {
      */
     public LinkedHashMap<String, LfuCacheEntry> getCacheMap(){
         return map;
+    }
+
+    /**
+     * Clears the lru cache
+     */
+    public void cleanUp() {
+        map.clear();
     }
 
 }

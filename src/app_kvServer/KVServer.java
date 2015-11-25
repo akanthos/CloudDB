@@ -105,10 +105,7 @@ public class KVServer {
     public static void main(final String[] args) {
 
         if( args.length == 1 ) {
-//            try {
-//                Integer port = Integer.parseInt(args[0]);
-
-        try {
+            try {
                 new Thread(new Runnable() {
                     public void run() {
                         new KVServer("127.0.0.1", Integer.parseInt(args[0]), 10, "FIFO");
@@ -153,9 +150,9 @@ public class KVServer {
      * requests are rejected with an SERVER_STOPPED error message; ECSImpl requests have
      * to be processed.
      *
-     * @param metadata
-     * @param cacheSize
-     * @param displacementStrategy
+     * @param metadata the initial metadata
+     * @param cacheSize the cache size required
+     * @param displacementStrategy the cache displacement strategy to adopt
      */
     public synchronized void initKVServer(List<ServerInfo> metadata, Integer cacheSize, String displacementStrategy){
         if ((displacementStrategy.equals("FIFO") || displacementStrategy.equals("LRU") || displacementStrategy.equals("LFU"))
@@ -218,8 +215,8 @@ public class KVServer {
      * (reallocation before removing this server or adding a new KVServer to
      * the ring); send a notification to the ECSImpl, if data transfer is completed.
      *
-     * @param range
-     * @param serverInfo
+     * @param range the range where the moved data should belong to
+     * @param serverInfo the server to move the data to
      */
     public void moveData(KVRange range, ServerInfo serverInfo) {
         server.moveData(range, serverInfo);
@@ -228,7 +225,7 @@ public class KVServer {
     /**
      * Update the meta-data repository of this server
      *
-     * @param metadata
+     * @param metadata the new metadata
      */
     public void update(List<ServerInfo> metadata) {
         server.update(metadata);
@@ -239,9 +236,9 @@ public class KVServer {
     }
 
     /**
-     *
+     * Checks if a given port is a valid socket port
      * @param hostPort Port Server is running on
-     * @return
+     * @return true if port is valid, else false
      */
     private boolean isPortValid(Integer hostPort) {
         return ((info.getServerPort() >= 0) && (info.getServerPort() <= 65535));

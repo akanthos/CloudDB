@@ -117,7 +117,8 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     }
 
     /**
-     * Process of the KVAdminMessage and communication with the cache
+     * Process of the KVAdminMessage (message from the ECS) and configure the server
+     * accordingly
      * @param kvAdminMessage KVAdminMessage representation of the ECSImpl request
      * @return resulting KVAdminMessageImpl
      */
@@ -148,7 +149,8 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     }
 
     /**
-     *
+     * Process of the KVServerMessage (message from another server in the ring)
+     * and configure the server accordingly
      * @param kvServerMessage
      * @return
      */

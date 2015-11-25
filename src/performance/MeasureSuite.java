@@ -21,8 +21,8 @@ public class MeasureSuite {
 
     private static final int MAX_SERVERS = 10;
     private static final int SERVER_COUNT_STEP = 5;
-    private static final int MAX_CLIENTS = 50;
-    private static final int CLIENT_COUNT_STEP = 10;
+    private static final int MAX_CLIENTS = 200;
+    private static final int CLIENT_COUNT_STEP = 200;
     private static ExecutorService threadpool;
     private static PrintWriter resultsFile;
     private static HashMap<String, String> randomKVs;
@@ -121,39 +121,55 @@ public class MeasureSuite {
             ecs = new ECSImpl("ecs.config");
 
             /* Titles of CSV output file */
-            resultsFile.println("result, servers, clients, cacheSize, strategy, time (sec)");
+            resultsFile.println("result, servers, clients, cacheSize, strategy, time (sec), throughput");
 
             /* Start measurements */
             for (int serverCount = 1 ; serverCount <= MAX_SERVERS ; serverCount+=SERVER_COUNT_STEP ) {
                 for (String strategy : new String[]{"FIFO", "LRU", "LFU"}) {
-                    for (int cacheSize : new int[]{10, 30, 50}) {
-                        /*  Deleting old data.store files */
-                        File folder = new File(".");
-                        File[] files = folder.listFiles( new FilenameFilter() {
-                            @Override
-                            public boolean accept( final File dir,
-                                                   final String name ) {
-                                return name.matches( "data\\.store.*" );
-                            }
-                        } );
-                        for ( File file : files ) {
-                            if ( !file.delete() ) {
-                                System.err.println( "Can't remove " + file.getAbsolutePath() );
-                            }
-                        }
+                    for (int cacheSize : new int[]{20, 200}) {
+                        for (int clientCount = MAX_CLIENTS ; clientCount <= MAX_CLIENTS; clientCount += CLIENT_COUNT_STEP) {
 
-                        /* Initialize servers */
-                        ecs.initService(serverCount, cacheSize, strategy);
-                        ecs.start();
+                            /*  Deleting old data.store files */
+                            File folder = new File(".");
+                            File[] files = folder.listFiles( new FilenameFilter() {
+                                @Override
+                                public boolean accept( final File dir,
+                                                       final String name ) {
+                                    return name.matches( "data\\.store.*" );
+                                }
+                            } );
+                            for ( File file : files ) {
+                                if ( !file.delete() ) {
+                                    System.err.println( "Can't remove " + file.getAbsolutePath() );
+                                }
+                            }
 
-                        for (int clientCount = 1 ; clientCount <= MAX_CLIENTS; clientCount += CLIENT_COUNT_STEP) {
+                            /* Initialize servers */
+                            ecs.initService(serverCount, cacheSize, strategy);
+                            ecs.start();
+
                             /* Run the clients and time the performance */
                             runPutClients(serverCount, clientCount, cacheSize, strategy);
+
+                            /* Shut down the servers */
+                            ecs.shutdown();
+
+
+//                            Process proc;
+//                            Runtime run = Runtime.getRuntime();
+//                            try {
+//                                Thread.sleep(2000);
+//                                proc = run.exec("./javakill.sh");
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+
+                            threadpool.shutdownNow();
+                            threadpool = Executors.newCachedThreadPool();
                             if (clientCount==1) { clientCount=0; }
                         }
-
-                        /* Shut down the servers */
-                        ecs.shutdown();
                     }
                 }
                 if (serverCount==1) { serverCount=0; }
@@ -242,6 +258,7 @@ public class MeasureSuite {
             // Timer stop
             long end_time = System.nanoTime();
             difference = (end_time - start_time)/1e9;
+            double throughput = clientCount / difference;
 
             // Output to results file
             resultsFile.println("result, " +
@@ -249,7 +266,9 @@ public class MeasureSuite {
                     clientCount + " , " +
                     cacheSize + " , " +
                     strategy + " , " +
-                    difference);
+                    difference + " , " +
+                    throughput
+            );
 
 
 

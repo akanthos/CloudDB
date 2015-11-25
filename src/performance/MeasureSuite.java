@@ -23,8 +23,8 @@ public class MeasureSuite {
 
     private static final int MAX_SERVERS = 10;
     private static final int SERVER_COUNT_STEP = 5;
-    private static final int MAX_CLIENTS = 50;
-    private static final int CLIENT_COUNT_STEP = 10;
+    private static final int MAX_CLIENTS = 200;
+    private static final int CLIENT_COUNT_STEP = 200;
     private static ExecutorService threadpool;
     private static PrintWriter resultsFile;
 
@@ -44,13 +44,13 @@ public class MeasureSuite {
             ecs = new ECSImpl("ecs.config");
 
             /* Titles of CSV output file */
-            resultsFile.println("result, servers, clients, cacheSize, strategy, time (sec)");
+            resultsFile.println("result, servers, clients, cacheSize, strategy, time (sec), throughput");
 
             /* Start measurements */
             for (int serverCount = 1 ; serverCount <= MAX_SERVERS ; serverCount+=SERVER_COUNT_STEP ) {
                 for (String strategy : new String[]{"FIFO", "LRU", "LFU"}) {
-                    for (int cacheSize : new int[]{10, 30, 50}) {
-                        for (int clientCount = 1 ; clientCount <= MAX_CLIENTS; clientCount += CLIENT_COUNT_STEP) {
+                    for (int cacheSize : new int[]{20, 200}) {
+                        for (int clientCount = MAX_CLIENTS ; clientCount <= MAX_CLIENTS; clientCount += CLIENT_COUNT_STEP) {
 
                             /*  Deleting old data.store files */
                             File folder = new File(".");
@@ -89,7 +89,8 @@ public class MeasureSuite {
 //                                e.printStackTrace();
 //                            }
 
-
+                            threadpool.shutdownNow();
+                            threadpool = Executors.newCachedThreadPool();
                             if (clientCount==1) { clientCount=0; }
                         }
                     }
@@ -102,7 +103,7 @@ public class MeasureSuite {
         finally {
             /* Close results file and shut down client thread pool */
             resultsFile.close();
-            threadpool.shutdownNow();
+
         }
     }
 
@@ -132,6 +133,7 @@ public class MeasureSuite {
             // Timer stop
             long end_time = System.nanoTime();
             difference = (end_time - start_time)/1e9;
+            double throughput = clientCount / difference;
 
             // Output to results file
             resultsFile.println("result, " +
@@ -139,7 +141,9 @@ public class MeasureSuite {
                     clientCount + " , " +
                     cacheSize + " , " +
                     strategy + " , " +
-                    difference);
+                    difference + " , " +
+                    throughput
+            );
 
 
 

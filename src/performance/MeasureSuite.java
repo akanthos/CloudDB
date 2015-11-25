@@ -77,6 +77,19 @@ public class MeasureSuite {
                             /* Shut down the servers */
                             ecs.shutdown();
 
+
+//                            Process proc;
+//                            Runtime run = Runtime.getRuntime();
+//                            try {
+//                                Thread.sleep(2000);
+//                                proc = run.exec("./javakill.sh");
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+
+
                             if (clientCount==1) { clientCount=0; }
                         }
                     }

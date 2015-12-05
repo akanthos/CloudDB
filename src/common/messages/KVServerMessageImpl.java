@@ -20,7 +20,7 @@ public class KVServerMessageImpl implements KVServerMessage {
 
     /**
      * Information related to replica messages.
-     * Other variables used: sourceIP, kvPairs
+     * Other variables used: sourceIP (coordinator IP), kvPairs (list of pairs that needs to be replicated)
      */
     int replicaNumber;
 

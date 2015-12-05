@@ -21,7 +21,8 @@ public interface KVAdminMessage extends AbstractMessage {
         UPDATE_METADATA,        /* Update meta-data repository */
         OPERATION_SUCCESS,      /* Operation requested by the ECS was successful */
         OPERATION_FAILED,       /* Operation requested by the ECS failed */
-        GENERAL_ERROR           /* For other types of errors */
+        GENERAL_ERROR,          /* For other types of errors */
+        SERVER_FAILURE          /* Message to ECS informing about a possible server failure */
     }
 
     /**r

@@ -4,10 +4,18 @@ package common;
 import app_kvEcs.ECSCommand;
 import common.messages.*;
 import common.utils.KVRange;
+import helpers.Constants;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import javax.activation.UnsupportedDataTypeException;
 import java.io.UnsupportedEncodingException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class Serializer {
@@ -22,6 +30,13 @@ public class Serializer {
     private static final String SUB_DLM2 = "%%";
 
     private static final char RETURN = 0x0D;
+    private static final DateFormat df = new SimpleDateFormat("dd/MM/yyyy kk:mm:ss.SSS z");
+
+    private static Logger logger = Logger.getLogger(KVMessageImpl.class);
+
+    static {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+    }
 
     /**
      * Client message object serializer (KVAdminMessageImpl)
@@ -65,10 +80,23 @@ public class Serializer {
             for (KVPair pair : message.getKVPairs()) {
                 messageStr.append(HEAD_DLM).append(pair.getKey() + SUB_DLM1 + pair.getValue());
             }
+        } else if (message.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
+            messageStr.append(HEAD_DLM);
+            messageStr.append(message.getSourceIP());
+            messageStr.append(HEAD_DLM);
+            messageStr.append(df.format(message.getTimeOfSendingMsg()));
+        } else if (message.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
+            messageStr.append(HEAD_DLM + message.getKVPairs().size());
+            for (KVPair pair : message.getKVPairs()) {
+                messageStr.append(HEAD_DLM).append(pair.getKey() + SUB_DLM1 + pair.getValue());
+            }
+            messageStr.append(HEAD_DLM);
+            messageStr.append(message.getReplicaNumber());
+            messageStr.append(HEAD_DLM);
+            messageStr.append(message.getSourceIP());
         }
-        if (message.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_SUCCESS)) {
 
-        }
+
         byte[] bytes = messageStr.toString().getBytes();
         byte[] ctrBytes = new byte[] { RETURN };
         byte[] tmp = new byte[bytes.length + ctrBytes.length];
@@ -116,6 +144,12 @@ public class Serializer {
                     + message.getRange().getHigh() + HEAD_DLM
                     + server.getAddress() + HEAD_DLM + server.getServerPort() );
 
+        } else if (message.getStatus() == KVAdminMessage.StatusType.SERVER_FAILURE) {
+            // add the failed message server details
+            ServerInfo server = message.getFailedServerInfo();
+            msg.append( HEAD_DLM + server.getServerRange().getLow() + HEAD_DLM
+                    + server.getServerRange().getHigh() + HEAD_DLM
+                    + server.getAddress() + HEAD_DLM + server.getServerPort() );
         }
         // in the case of start|stop| etc. messages we just have
         // a message : <TypeOfMessage>(int)-- <StatusType>(number)
@@ -131,6 +165,7 @@ public class Serializer {
 
     /**
      * Message deserializer
+     * TODO: This is getting pretty big, move this to the constructors?
      *
      * @param objectByteStream the byte array corresponding to the incoming message
      * @return an abstract message that can be downcasted to a more specific message type
@@ -197,6 +232,19 @@ public class Serializer {
                             ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
                             ((KVAdminMessageImpl)retrievedMessage).setServerInfo(toNode);
                         }
+                    } else if (((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.SERVER_FAILURE)) {
+                        KVRange range = new KVRange();
+                        if (tokens.length>= 3 && tokens[2] != null) {
+                            range.setLow(Long.valueOf(tokens[2].trim()));
+                        }
+                        if (tokens.length>= 4 && tokens[3] != null) {
+                            range.setHigh(Long.valueOf(tokens[3].trim()));
+                        }
+                        if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
+                            ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
+                            toNode.setServerRange(range);
+                            ((KVAdminMessageImpl)retrievedMessage).setFailedServerInfo(toNode);
+                        }
                     }
                     break;
                 case SERVER_MESSAGE:
@@ -205,7 +253,31 @@ public class Serializer {
                         int statusNum = Integer.parseInt(tokens[1]);
                         ((KVServerMessage)retrievedMessage).setStatus( KVServerMessage.StatusType.values()[statusNum] );
                     }
-                    if (tokens.length >= 3) {
+                    if ((((KVServerMessageImpl) retrievedMessage).getStatus() == (KVServerMessage.StatusType.HEARTBEAT))) {
+                        ((KVServerMessageImpl) retrievedMessage).setSourceIP(tokens[2].trim());
+                        try {
+                            ((KVServerMessageImpl) retrievedMessage).setTimeOfSendingMsg(df.parse(tokens[3].trim()));
+                        } catch (ParseException e) {
+                            logger.error(String.format("Unsupported date format in message. Complete message: %s", tokens[3].trim()), e);
+                            throw new UnsupportedDataTypeException("Unable to parse heartbeat message");
+                        }
+                    } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.REPLICATE)))) {
+                        if (tokens[2] != null) { // Data length and data
+                            int dataLength = Integer.parseInt(tokens[2]);
+                            ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
+                            for (int i = 0; i < dataLength; i++) {
+                                String[] kv = tokens[i + 3].split(SUB_DLM1);
+                                if (kv.length == 2) {
+                                    kvPairs.add(new KVPair(kv[0], kv[1]));
+                                }
+                            }
+                            ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
+                            ((KVServerMessage) retrievedMessage).setReplicaNumber(Integer.parseInt(tokens[3+dataLength].trim()));
+                            ((KVServerMessage) retrievedMessage).setSourceIP(tokens[3+dataLength+1].trim());
+                        }
+                    }
+                    // TODO:Use status codes instead of token length.
+                    else if (tokens.length >= 3) {
                         if (tokens[2] != null) { // Data length and data
                             int dataLength = Integer.parseInt(tokens[2]);
                             ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
@@ -216,14 +288,11 @@ public class Serializer {
                                         kvPairs.add(new KVPair(kv[0], kv[1]));
                                     }
                                 }
-
                             }
                             ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
                         }
                     }
                     break;
-
-
                 default:
                     // TODO: Maybe return an error message instead of null??
                     break;
@@ -289,15 +358,21 @@ public class Serializer {
      * @throws UnsupportedDataTypeException
      */
     public static void main (String[] args) throws UnsupportedEncodingException, UnsupportedDataTypeException {
-        String hehe = "0##7##127.0.0.1&&50000&&3706585719&&897794963%%127.0.0.1&&50001&&897794963&&3706585719%%";
-        byte[] arr = hehe.toString().getBytes();
+        // ServerInfo failedServerInfo = new ServerInfo("1.1.1.1", 1234, new KVRange(0L, 2000L));
+        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE);
+        // kvServerMessage.setTimeOfSendingMsg(new Date());
+        kvServerMessage.setSourceIP("1.1.1.1");
+        kvServerMessage.setKvPairs(Arrays.asList(new KVPair("foo", "bar"), new KVPair("boo", "far")));
+        kvServerMessage.setReplicaNumber(1);
+        byte[] bytes = toByteArray(kvServerMessage);
+
+        // String hehe = "0####127.0.0.1&&50000&&3706585719&&897794963%%127.0.0.1&&50001&&897794963&&3706585719%%";
+        // byte[] arr = hehe.toString().getBytes();
         //byte[] arr = toByteArray(hehe);
 
-        System.out.println(new String(arr,"UTF-8"));
+        System.out.println(new String(bytes,"UTF-8"));
         System.out.println("PART_2");
-        AbstractMessage abstractMessage = Serializer.toObject(arr);
-
-
+        AbstractMessage abstractMessage = Serializer.toObject(bytes);
     }
 
 

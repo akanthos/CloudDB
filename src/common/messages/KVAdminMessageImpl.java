@@ -9,7 +9,9 @@ import org.apache.log4j.PropertyConfigurator;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -23,6 +25,10 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     KVRange range = new KVRange();
     ServerInfo serverInfo;
     KVAdminMessage.StatusType status;
+    /**
+     * For a server failure message, this will contain the failed server's details
+     */
+    ServerInfo failedServerInfo;
 
     private static Logger logger = Logger.getLogger(KVMessageImpl.class);
 
@@ -70,6 +76,13 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
         this.status = status;
         this.range = range;
         this.serverInfo = serverInfo;
+    }
+
+    public KVAdminMessageImpl(KVAdminMessage.StatusType status, ServerInfo failedServerInfo) {
+        // This constructor is used in the SERVER_FAILURE command
+        // where only the following attributes are needed
+        this.failedServerInfo = failedServerInfo;
+        this.status = status;
     }
 
     /**
@@ -167,9 +180,16 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
         this.status = statusType;
     }
 
-
     @Override
     public MessageType getMessageType() {
         return MessageType.ECS_MESSAGE;
+    }
+
+    public ServerInfo getFailedServerInfo() {
+        return failedServerInfo;
+    }
+
+    public void setFailedServerInfo(ServerInfo failedServerInfo) {
+        this.failedServerInfo = failedServerInfo;
     }
 }

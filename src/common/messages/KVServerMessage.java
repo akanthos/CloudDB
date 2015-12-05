@@ -14,7 +14,10 @@ public interface KVServerMessage extends AbstractMessage {
         MOVE_DATA, 			        /* Move data message */
         MOVE_DATA_SUCCESS,
         MOVE_DATA_FAILURE,
-        GENERAL_ERROR
+        GENERAL_ERROR,
+        SERVER_FAILURE,             /* Message to ECS informing about a possible server failure */
+        HEARTBEAT,                  /* Heartbeats between coordinators and replicas */
+        REPLICATE                   /* Replica message from coordinator to replicas */
     }
 
     /**
@@ -35,4 +38,20 @@ public interface KVServerMessage extends AbstractMessage {
      * @param statusType the status to set
      */
     void setStatus(StatusType statusType);
+
+    /**
+     * The replica number of the server if the server message is of REPLICATE type
+     * @return
+     */
+    int getReplicaNumber();
+
+    void setReplicaNumber(int replicaNumber);
+
+    /**
+     * The IP of the coordinator if the server message is of REPLICATE type
+     * @return
+     */
+    String getSourceIP();
+
+    void setSourceIP(String sourceIP);
 }

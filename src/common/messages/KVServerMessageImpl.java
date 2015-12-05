@@ -1,6 +1,7 @@
 package common.messages;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -10,6 +11,18 @@ public class KVServerMessageImpl implements KVServerMessage {
 
     List<KVPair> kvPairs;
     StatusType status;
+
+    /**
+     * Information related to heartbeat messages
+     */
+    String sourceIP;
+    Date timeOfSendingMsg;
+
+    /**
+     * Information related to replica messages.
+     * Other variables used: sourceIP, kvPairs
+     */
+    int replicaNumber;
 
     /**
      * Default constructor
@@ -60,5 +73,37 @@ public class KVServerMessageImpl implements KVServerMessage {
     @Override
     public MessageType getMessageType() {
         return MessageType.SERVER_MESSAGE;
+    }
+
+    public List<KVPair> getKvPairs() {
+        return kvPairs;
+    }
+
+    public void setKvPairs(List<KVPair> kvPairs) {
+        this.kvPairs = kvPairs;
+    }
+
+    public String getSourceIP() {
+        return sourceIP;
+    }
+
+    public void setSourceIP(String sourceIP) {
+        this.sourceIP = sourceIP;
+    }
+
+    public Date getTimeOfSendingMsg() {
+        return timeOfSendingMsg;
+    }
+
+    public void setTimeOfSendingMsg(Date timeOfSendingMsg) {
+        this.timeOfSendingMsg = timeOfSendingMsg;
+    }
+
+    public int getReplicaNumber() {
+        return replicaNumber;
+    }
+
+    public void setReplicaNumber(int replicaNumber) {
+        this.replicaNumber = replicaNumber;
     }
 }

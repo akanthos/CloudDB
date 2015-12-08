@@ -49,12 +49,16 @@ public class SshCaller implements SshCommunication {
         boolean waiting;
         String tmpResponse = "";
         char c;
+        command = "nohup java -jar " + "/home/pi/clouddb" + "/ms3-server.jar ";
 
         try {
             JSch jsch = new JSch();
             jsch.setKnownHosts(knownHosts);
-            Session session = jsch.getSession(userName, host, port);
             jsch.addIdentity(privateKey);
+            Session session = jsch.getSession("pi", host, port);
+            session.setPassword("raspberry");
+            session.setConfig("StrictHostKeyChecking", "no"); //
+            session.setConfig("PreferredAuthentications", "password,gssapi-with-mic,publickey");
             session.connect(3000);
             // Add arguments to exec Command
             for (String argument : arguments)

@@ -25,7 +25,7 @@ public class ECSImpl implements ECS {
     private int cacheSize;
     private String displacementStrategy;
     private boolean running;
-    private boolean local=true;
+    private boolean local=false;
     private SshCommunication processInv;
     //map handling storing <ServerInfo>--<SocketConnection>
     private Map<ServerInfo, KVConnection> KVConnections;
@@ -140,16 +140,12 @@ public class ECSImpl implements ECS {
         while (iterator.hasNext()) {
             ServerInfo item = iterator.next();
             arguments[0] = String.valueOf(item.getServerPort());
-            // for ssh calls
             if (!local)
                 result = processInv.invokeProcessRemotely(item.getAddress(),
                         command, arguments);
 
-                // for local calls (for local testing, calls are made without SSH)
             else
                 result = processInv.invokeProcessLocally(command, arguments);
-
-            // the server started successfully
             if (result == 0) {
                 this.activeServers.add(item);
                 item.setLaunched(true);
@@ -369,7 +365,7 @@ public class ECSImpl implements ECS {
         }
         /*
 			 * when move data from successor to the
-			 * newNode was not successful
+			 * newNode was not successful÷
 			 */
         else {
             // data could not be moved to the newly added Server

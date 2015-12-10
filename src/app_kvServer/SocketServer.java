@@ -118,7 +118,7 @@ public class SocketServer {
         setMetadata(metadata);
         state.setInitialized(true);
         info.setLaunched(true);
-        replicationHandler = new ReplicationHandler(metadata);
+        replicationHandler = new ReplicationHandler(metadata, info.getServerRange());
 //        logger.info("Just initialized myself!!!");
 //        logger.info("My Address is: " + this.info.getAddress());
 //        logger.info("My Port is: " + this.info.getServerPort());

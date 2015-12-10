@@ -2,9 +2,9 @@ package app_kvServer;
 
 import common.ServerInfo;
 import common.messages.KVPair;
+import common.utils.KVRange;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
-import sun.awt.X11.XCreateWindowParams;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -23,16 +23,28 @@ public class ReplicationHandler {
     private ExecutorService timeoutThreadpool;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
-    public ReplicationHandler(List<ServerInfo> metadata) {
+    public ReplicationHandler(List<ServerInfo> metadata, KVRange range) {
         coordinators = new HashMap<>();
         replicas = new HashMap<>();
-        findAndRegisterReplicas(metadata);
+        findAndRegisterReplicas(metadata, range);
         replicatedData = new HashMap<>();
         timeoutThreadpool = Executors.newCachedThreadPool();
     }
 
-    private void findAndRegisterReplicas(List<ServerInfo> metadata) {
-        // TODO: Find replicas and fill replicas hashmap
+    private void findAndRegisterReplicas(List<ServerInfo> metadata, KVRange range) {
+        ServerInfo replica1=null, replica2=null;
+        for (int i=0; i<metadata.size(); i++) {
+            ServerInfo info = metadata.get(i);
+            if (info.getServerRange().equals(range)) {
+                int ii1 = (i+1)%(metadata.size());
+                int ii2 = (i+2)%(metadata.size());
+                replica1 = metadata.get(ii1);
+                replica2 = metadata.get(ii2);
+                logger.info("Found my place on the ring");
+                replicas.put(ii1, new Replica()); // TODO: Create proper Replica objects
+                replicas.put(ii2, new Replica());
+            }
+        }
     }
 
     public synchronized void registerCoordinator(int replicaNumber,
@@ -95,16 +107,18 @@ public class ReplicationHandler {
 
     public void cleanup() {
         // TODO: To be called when we receive changes in the ring with new replicas and new coordinators
-        // Remove coordinators
+        /* Remove coordinators */
         coordinators.clear();
-        // TODO: Remove also replica information
-
-        // Clean replicated data
+        /* Remove replica information */
+        replicas.clear();
+        /* Clean replicated data */
         for (int replicaNumber : replicatedData.keySet()) {
             replicatedData.get(replicaNumber).cleanUp();
         }
         replicatedData.clear();
-        // Shutdown timers
+        /* Shutdown timers */
         timeoutThreadpool.shutdownNow();
     }
+
+
 }

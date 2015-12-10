@@ -1,22 +1,15 @@
 package app_kvServer;
 
-import common.Serializer;
 import common.ServerInfo;
 import common.messages.*;
 import common.utils.KVRange;
-import common.utils.Utilities;
-import helpers.CannotConnectException;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Class handling all TCP  connections
@@ -31,8 +24,9 @@ public class SocketServer {
     private ServerSocket server;
     private int numOfClients;
     private List<ServerInfo> metadata;
-    private ReplicaHandler replicaHandler;
+    private ReplicationHandler replicationHandler;
     Messenger messenger;
+    final long heartbeatPeriod = 5000; // In milliseconds
 //    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
@@ -49,7 +43,7 @@ public class SocketServer {
                 /*writeLock*/ false,
                 /*stop*/ true
         );
-        replicaHandler = new ReplicaHandler();
+        replicationHandler = new ReplicationHandler();
         messenger = new Messenger();
 //        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
@@ -363,11 +357,11 @@ public class SocketServer {
     }
 
     public KVServerMessageImpl newReplica(String sourceIP, int replicaNumber, List<KVPair> kvPairs) {
-        replicaHandler.registerReplica(replicaNumber, sourceIP, kvPairs);
+        replicationHandler.registerCoordinator(replicaNumber, sourceIP, kvPairs, heartbeatPeriod);
         return null; // TODO: Send appropriate response?? New ServerMessage status??
     }
 
     public void heartbeatReceived(String sourceIP, int replicaNumber) {
-        replicaHandler.heartbeat(sourceIP, replicaNumber);
+        replicationHandler.heartbeat(sourceIP, replicaNumber);
     }
 }

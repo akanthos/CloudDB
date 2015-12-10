@@ -1,6 +1,8 @@
 package app_kvServer;
 
 import common.messages.KVPair;
+import helpers.StorageException;
+import org.apache.log4j.Logger;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -16,6 +18,7 @@ public class ReplicationHandler {
     private HashMap<Integer, Coordinator> coordinators;
     private HashMap<Integer, KVPersistenceEngine> replicatedData;
     private ExecutorService timeoutThreadpool;
+    private static Logger logger = Logger.getLogger(SocketServer.class);
 
     public ReplicationHandler() {
         coordinators = new HashMap<>();
@@ -28,8 +31,14 @@ public class ReplicationHandler {
                                                  List<KVPair> kvPairs, long heartbeatPeriod) {
         Coordinator coordinator = new Coordinator(replicaNumber, sourceIP, heartbeatPeriod);
         coordinators.put(coordinator.getCoordinatorNumber(), coordinator);
-        bulkInsert(replicatedData.get(replicaNumber), kvPairs);
-        spawnTimeoutThread(coordinator);
+        try {
+            KVPersistenceEngine data = new KVPersistenceEngine(replicaNumber);
+            bulkInsert(data, kvPairs);
+            replicatedData.put(replicaNumber, data);
+            spawnTimeoutThread(coordinator);
+        } catch (StorageException e) {
+            logger.error("Cannot initialize persistence file for coordinator: " + replicaNumber);
+        }
     }
 
     private void spawnTimeoutThread(Coordinator coordinator) {
@@ -45,6 +54,7 @@ public class ReplicationHandler {
     public synchronized void deregisterCoordinator(int replicaNumber) {
         // TODO: To be used in TimeoutException, when it occurs
         coordinators.remove(replicaNumber);
+        replicatedData.get(replicaNumber).cleanUp();
         replicatedData.remove(replicaNumber);
     }
 
@@ -62,7 +72,7 @@ public class ReplicationHandler {
         public void run() {
             // TODO: Wait for period
             // TODO: then check the new currentTimestamp of the coordinator
-            // TODO: if old, then somehow raise trigger the
+            // TODO: if old, then somehow raise trigger the timeout exception
 //            if (coordinator.timestampDiffExceededPeriod()) {
 //                throw new TimeoutException();
 //            }

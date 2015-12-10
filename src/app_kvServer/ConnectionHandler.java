@@ -9,7 +9,6 @@ import java.net.Socket;
 public interface ConnectionHandler {
 
     void handle(Socket client, int numOfClients) throws IOException;
-    void handleSimpleRunnable(Runnable runnable);
     void shutDown();
 
 }

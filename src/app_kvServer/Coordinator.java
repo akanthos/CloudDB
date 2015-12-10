@@ -1,5 +1,7 @@
 package app_kvServer;
 
+import org.apache.log4j.Logger;
+
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -11,6 +13,7 @@ public class Coordinator {
     private String sourceIP;
     private long HEARTBEAT_PERIOD; // In milliseconds
     private Date currentTimestamp;
+    private static Logger logger = Logger.getLogger(SocketServer.class);
 
 
     public Coordinator(int coordinatorNumber, String sourceIP, long heartbeatPeriod) {
@@ -41,7 +44,10 @@ public class Coordinator {
 
     public boolean timestampDiffExceededPeriod() {
         Date newTimestamp = new Date();
-        long diff = newTimestamp.getTime() - currentTimestamp.getTime();
+        long diff;
+        synchronized (currentTimestamp) {
+            diff = newTimestamp.getTime() - currentTimestamp.getTime();
+        }
         long milliseconds = TimeUnit.MILLISECONDS.toMillis(diff);
         return (milliseconds > HEARTBEAT_PERIOD);
     }

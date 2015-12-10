@@ -43,7 +43,6 @@ public class SocketServer {
                 /*writeLock*/ false,
                 /*stop*/ true
         );
-        replicationHandler = new ReplicationHandler();
         messenger = new Messenger();
 //        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
@@ -119,7 +118,7 @@ public class SocketServer {
         setMetadata(metadata);
         state.setInitialized(true);
         info.setLaunched(true);
-
+        replicationHandler = new ReplicationHandler(metadata);
 //        logger.info("Just initialized myself!!!");
 //        logger.info("My Address is: " + this.info.getAddress());
 //        logger.info("My Port is: " + this.info.getServerPort());
@@ -364,4 +363,5 @@ public class SocketServer {
     public void heartbeatReceived(String sourceIP, int replicaNumber) {
         replicationHandler.heartbeat(sourceIP, replicaNumber);
     }
+
 }

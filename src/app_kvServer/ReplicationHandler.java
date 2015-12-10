@@ -1,8 +1,10 @@
 package app_kvServer;
 
+import common.ServerInfo;
 import common.messages.KVPair;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
+import sun.awt.X11.XCreateWindowParams;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -16,28 +18,40 @@ import java.util.concurrent.Executors;
 public class ReplicationHandler {
 
     private HashMap<Integer, Coordinator> coordinators;
+    private HashMap<Integer, Replica> replicas;
     private HashMap<Integer, KVPersistenceEngine> replicatedData;
     private ExecutorService timeoutThreadpool;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
-    public ReplicationHandler() {
+    public ReplicationHandler(List<ServerInfo> metadata) {
         coordinators = new HashMap<>();
+        replicas = new HashMap<>();
+        findAndRegisterReplicas(metadata);
         replicatedData = new HashMap<>();
         timeoutThreadpool = Executors.newCachedThreadPool();
+    }
+
+    private void findAndRegisterReplicas(List<ServerInfo> metadata) {
+        // TODO: Find replicas and fill replicas hashmap
     }
 
     public synchronized void registerCoordinator(int replicaNumber,
                                                  String sourceIP,
                                                  List<KVPair> kvPairs, long heartbeatPeriod) {
-        Coordinator coordinator = new Coordinator(replicaNumber, sourceIP, heartbeatPeriod);
-        coordinators.put(coordinator.getCoordinatorNumber(), coordinator);
-        try {
-            KVPersistenceEngine data = new KVPersistenceEngine(replicaNumber);
-            bulkInsert(data, kvPairs);
-            replicatedData.put(replicaNumber, data);
-            spawnTimeoutThread(coordinator);
-        } catch (StorageException e) {
-            logger.error("Cannot initialize persistence file for coordinator: " + replicaNumber);
+        if (coordinators.containsKey(replicaNumber)) {
+            Coordinator coordinator = new Coordinator(replicaNumber, sourceIP, heartbeatPeriod);
+            coordinators.put(coordinator.getCoordinatorNumber(), coordinator);
+            try {
+                KVPersistenceEngine data = new KVPersistenceEngine(replicaNumber);
+                bulkInsert(data, kvPairs);
+                replicatedData.put(replicaNumber, data);
+                spawnTimeoutThread(coordinator);
+            } catch (StorageException e) {
+                logger.error("Cannot initialize persistence file for coordinator: " + replicaNumber);
+            }
+        }
+        else {
+            bulkInsert(replicatedData.get(replicaNumber), kvPairs);
         }
     }
 
@@ -77,5 +91,20 @@ public class ReplicationHandler {
 //                throw new TimeoutException();
 //            }
         }
+    }
+
+    public void cleanup() {
+        // TODO: To be called when we receive changes in the ring with new replicas and new coordinators
+        // Remove coordinators
+        coordinators.clear();
+        // TODO: Remove also replica information
+
+        // Clean replicated data
+        for (int replicaNumber : replicatedData.keySet()) {
+            replicatedData.get(replicaNumber).cleanUp();
+        }
+        replicatedData.clear();
+        // Shutdown timers
+        timeoutThreadpool.shutdownNow();
     }
 }

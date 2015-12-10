@@ -134,7 +134,9 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             return server.moveData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
             return server.update(kvAdminMessage.getMetadata());
-        } else {
+        }
+        // TODO: Handle cases where ring changes and it affects replicass
+        else {
             logger.error(String.format("ECSImpl: Invalid message from ECSImpl: %s", kvAdminMessage.toString()));
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         }
@@ -156,7 +158,8 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
             server.heartbeatReceived(kvServerMessage.getSourceIP(), kvServerMessage.getReplicaNumber());
             return null;
-        } else {
+        }
+        else {
             logger.error(String.format("Server: Invalid message from ECSImpl: %s", kvServerMessage.toString()));
             response = new KVServerMessageImpl(KVServerMessage.StatusType.GENERAL_ERROR);
         }

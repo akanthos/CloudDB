@@ -23,7 +23,7 @@ public class Replica {
         return replicaNumber;
     }
 
-    public void heartbeat(Date timeStamp) throws TimeoutException {
+    public void heartbeat(Date timeStamp) {
         timer.heartbeat(timeStamp);
     }
 
@@ -33,19 +33,25 @@ public class Replica {
     }
 
     private class ReplicaTimer {
-        private SimpleDateFormat dateFormat;
         private Date currentTimestamp;
         private final long HEARTBEAT_PERIOD = 5000; // In milliseconds
 
         public ReplicaTimer() {
             this.currentTimestamp = new Date();
+            // TODO: Spawn thread to compare currentTimestamp and throw exception if exceeded
+                // TODO: replica died, deregister it and inform ECS.
+                // replicaHandler.deregisterReplica(replicaNumber);
+                // messenger.sendToECS(sourceIP, replicaNumber);
         }
 
-        public void heartbeat(Date newTimestamp) throws TimeoutException {
-            long diff = newTimestamp.getTime() - currentTimestamp.getTime();
-            long milliseconds = TimeUnit.MILLISECONDS.toMillis(diff);
-            if (milliseconds > HEARTBEAT_PERIOD) {
-                throw new TimeoutException();
+        public void heartbeat(Date newTimestamp) {
+//            long diff = newTimestamp.getTime() - currentTimestamp.getTime();
+//            long milliseconds = TimeUnit.MILLISECONDS.toMillis(diff);
+//            if (milliseconds > HEARTBEAT_PERIOD) {
+//                throw new TimeoutException();
+//            }
+            synchronized (currentTimestamp) {
+               currentTimestamp = newTimestamp;
             }
         }
     }

@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -362,18 +363,11 @@ public class SocketServer {
     }
 
     public KVServerMessageImpl newReplica(String sourceIP, int replicaNumber, List<KVPair> kvPairs) {
-        replicaHandler.registerReplica(replicaNumber, sourceIP);
-        this.insertNewDataToCache(kvPairs);
+        replicaHandler.registerReplica(replicaNumber, sourceIP, kvPairs);
         return null; // TODO: Send appropriate response?? New ServerMessage status??
     }
 
     public void heartbeatReceived(String sourceIP, int replicaNumber) {
-        try {
-            replicaHandler.heartbeat(sourceIP, replicaNumber);
-        } catch (TimeoutException e) {
-            // TODO: replica died, deregister it and inform ECS.
-            replicaHandler.deregisterReplica(replicaNumber);
-            messenger.sendToECS(sourceIP, replicaNumber);
-        }
+        replicaHandler.heartbeat(sourceIP, replicaNumber);
     }
 }

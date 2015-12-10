@@ -27,15 +27,28 @@ public class KVPersistenceEngine {
 
     public KVPersistenceEngine(){
     }
+
+
+    public KVPersistenceEngine(int replicaNumber) throws StorageException {
+        initialization(fileNamePrefix + "_replica_" + String.valueOf(replicaNumber));
+    }
     /**
      *
      * @throws StorageException
      * indicating problems accessing the persistant file
      */
     public KVPersistenceEngine(ServerInfo info) throws StorageException {
+        initialization(fileNamePrefix + String.valueOf(info.getServerPort()));
+    }
+
+    /**
+     * Initialization of storage file
+     * @param persistenceFileName name used for the storage file
+     * @throws StorageException
+     */
+    private void initialization(String persistenceFileName) throws StorageException {
+        fileName = persistenceFileName;
         try {
-            // Initialize properties file
-            fileName = fileNamePrefix + String.valueOf(info.getServerPort());
             File storeFile = new File(fileName);
             prop = new Properties();
             if(storeFile.exists()) {
@@ -50,16 +63,6 @@ public class KVPersistenceEngine {
             logger.error("Cannot initialize persistence file", e);
             throw new StorageException("Cannot initialize persistence file");
         }
-    }
-
-    private String randomSuffix(int suffixSize) {
-        Random r = new Random();
-        StringBuffer sb = new StringBuffer();
-        while(sb.length() < suffixSize){
-            sb.append(Integer.toHexString(r.nextInt()));
-        }
-
-        return sb.toString().substring(0, suffixSize);
     }
 
     /**

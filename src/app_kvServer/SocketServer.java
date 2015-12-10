@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Class handling all TCP  connections
@@ -29,6 +30,8 @@ public class SocketServer {
     private ServerSocket server;
     private int numOfClients;
     private List<ServerInfo> metadata;
+    private ReplicaHandler replicaHandler;
+    Messenger messenger;
 //    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
@@ -45,6 +48,8 @@ public class SocketServer {
                 /*writeLock*/ false,
                 /*stop*/ true
         );
+        replicaHandler = new ReplicaHandler();
+        messenger = new Messenger();
 //        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
 
@@ -119,12 +124,14 @@ public class SocketServer {
         setMetadata(metadata);
         state.setInitialized(true);
         info.setLaunched(true);
+
 //        logger.info("Just initialized myself!!!");
 //        logger.info("My Address is: " + this.info.getAddress());
 //        logger.info("My Port is: " + this.info.getServerPort());
 //        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
+
 
     /**
      * Starts the server
@@ -189,68 +196,7 @@ public class SocketServer {
 //        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
 //        logger.info("Move data called");
         ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
-        return sendToServer(pairsToSend, server);
-    }
-
-    private KVAdminMessageImpl sendToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
-        // Send ServerMessage "MOVE_DATA" message to "server" and wait for answer from that server
-        // If it's MOVE_DATA_SUCCESS => send back OPERATION_SUCCESS
-        // If it's MOVE_DATA_FAILURE => send back OPERATION_FAILED
-        KVAdminMessageImpl reply;
-        InputStream inStream = null;
-        OutputStream outStream = null;
-        Socket clientSocket = null;
-        try {
-            /***************************/
-            /* Connect to other server */
-            /***************************/
-
-            InetAddress address = InetAddress.getByName(server.getAddress());
-            clientSocket = new Socket(address, server.getServerPort());
-            inStream = clientSocket.getInputStream();
-            outStream = clientSocket.getOutputStream();
-
-            /*****************************************************/
-            /* Send MOVE_DATA server message to the other server */
-            /*****************************************************/
-
-            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(pairsToSend, KVServerMessage.StatusType.MOVE_DATA);
-            Utilities.send(bulkPutMessage, outStream);
-            byte[] bulkPutAnswerBytes = Utilities.receive(inStream);
-            KVServerMessageImpl bulkPutAnswer = (KVServerMessageImpl) Serializer.toObject(bulkPutAnswerBytes);
-            if (bulkPutAnswer.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_SUCCESS)) {
-                reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
-            }
-            else {
-                reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
-            }
-
-        } catch (UnknownHostException e) {
-            logger.error("KVServer hostname cannot be resolved", e);
-            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
-        } catch (IOException e) {
-            logger.error("Error while connecting to the server for bulk put.", e);
-            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
-        } catch (CannotConnectException e) {
-            logger.error("Error while connecting to the server.", e);
-            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
-        } finally {
-            /****************************************/
-            /* Tear down connection to other server */
-            /****************************************/
-            try {
-                if (inStream != null
-                    && outStream != null
-                    && clientSocket != null) {
-                    inStream.close();
-                    outStream.close();
-                    clientSocket.close();
-                }
-            } catch(IOException ioe){
-                logger.error("Error! Unable to tear down connection for bulk put!", ioe);
-            }
-        }
-        return reply;
+        return messenger.sendToServer(pairsToSend, server);
     }
 
     /**
@@ -413,5 +359,21 @@ public class SocketServer {
      */
     public void cleanUp() {
         this.kvCache.cleanUp();
+    }
+
+    public KVServerMessageImpl newReplica(String sourceIP, int replicaNumber, List<KVPair> kvPairs) {
+        replicaHandler.registerReplica(replicaNumber, sourceIP);
+        this.insertNewDataToCache(kvPairs);
+        return null; // TODO: Send appropriate response?? New ServerMessage status??
+    }
+
+    public void heartbeatReceived(String sourceIP, int replicaNumber) {
+        try {
+            replicaHandler.heartbeat(sourceIP, replicaNumber);
+        } catch (TimeoutException e) {
+            // TODO: replica died, deregister it and inform ECS.
+            replicaHandler.deregisterReplica(replicaNumber);
+            messenger.sendToECS(sourceIP, replicaNumber);
+        }
     }
 }

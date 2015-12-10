@@ -45,6 +45,14 @@ public class KVConnectionHandler implements ConnectionHandler {
         threadpool.shutdownNow();
     }
 
+    /**
+     * Wrapper for threadpool runnable submission
+     * @param runnable the runnable that needs to be scheduled in the thread pool
+     * @throws IOException
+     */
+    public void handleSimpleRunnable(Runnable runnable) {
+        threadpool.submit(runnable);
+    }
 
 }
 

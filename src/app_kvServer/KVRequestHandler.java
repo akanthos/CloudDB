@@ -83,7 +83,9 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                             } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
                                 kvServerMessage = (KVServerMessageImpl) abstractMessage;
                                 kvServerResponse = processServerMessage(kvServerMessage);
-                                Utilities.send(kvServerResponse, outputStream);
+                                if (kvServerResponse != null) {
+                                    Utilities.send(kvServerResponse, outputStream);
+                                }
                             } else {
                                 Utilities.send(new KVMessageImpl(KVMessage.StatusType.GENERAL_ERROR), outputStream);
                             }
@@ -103,16 +105,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } catch (Exception e) {
             logger.error(e);
         } finally {
-            try {
-                if (clientSocket != null) {
-                    inputStream.close();
-                    outputStream.close();
-                    clientSocket.close();
-//                    server.removeListener(this);
-                }
-            }catch(IOException ioe){
-                logger.error("Error! Unable to tear down connection!", ioe);
-            }
+            ConnectionHelper.connectionTearDown(inputStream, outputStream, clientSocket, logger);
         }
     }
 
@@ -158,9 +151,12 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         KVServerMessageImpl response;
         if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
             return server.insertNewDataToCache(kvServerMessage.getKVPairs());
-        } /*else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_SUCCESS)) {
-            return server.insertNewDataToCache(kvServerMessage.getKVPairs());
-        } */else {
+        } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
+            return server.newReplica(kvServerMessage.getSourceIP(), kvServerMessage.getReplicaNumber(), kvServerMessage.getKVPairs());
+        } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
+            server.heartbeatReceived(kvServerMessage.getSourceIP(), kvServerMessage.getReplicaNumber());
+            return null;
+        } else {
             logger.error(String.format("Server: Invalid message from ECSImpl: %s", kvServerMessage.toString()));
             response = new KVServerMessageImpl(KVServerMessage.StatusType.GENERAL_ERROR);
         }

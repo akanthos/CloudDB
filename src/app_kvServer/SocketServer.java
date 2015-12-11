@@ -190,6 +190,9 @@ public class SocketServer {
 //        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
 //        logger.info("Move data called");
         ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
+        for (KVPair pair : pairsToSend) {
+            kvCache.put(pair.getKey(), "null");
+        }
         return messenger.sendToServer(pairsToSend, server);
     }
 

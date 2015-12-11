@@ -50,7 +50,7 @@ public class ReplicationHandler {
     public synchronized void registerCoordinator(int replicaNumber,
                                                  String sourceIP,
                                                  List<KVPair> kvPairs, long heartbeatPeriod) {
-        if (coordinators.containsKey(replicaNumber)) {
+        if (!coordinators.containsKey(replicaNumber)) {
             Coordinator coordinator = new Coordinator(replicaNumber, sourceIP, heartbeatPeriod);
             coordinators.put(coordinator.getCoordinatorNumber(), coordinator);
             try {
@@ -102,6 +102,20 @@ public class ReplicationHandler {
 //            if (coordinator.timestampDiffExceededPeriod()) {
 //                throw new TimeoutException();
 //            }
+
+//            boolean sleep = true;
+//            while (sleep) {
+//                try {
+//                    sleep = false;
+//                    Thread.sleep(2000);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                    Check also current timestamp
+//                    // Restart sleep
+//                    sleep = true;
+//                }
+//            }
+            // It is dead
         }
     }
 

@@ -37,9 +37,6 @@ public class ConnectionHelper {
             inStream = clientSocket.getInputStream();
             outStream = clientSocket.getOutputStream();
 
-            /*****************************************************/
-            /* Send MOVE_DATA server message to the other server */
-            /*****************************************************/
             return new InOutClientPack(inStream, outStream, clientSocket);
 
 

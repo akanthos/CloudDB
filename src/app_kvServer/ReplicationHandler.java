@@ -17,71 +17,103 @@ import java.util.concurrent.Executors;
  */
 public class ReplicationHandler {
 
-    private HashMap<Integer, Coordinator> coordinators;
-    private HashMap<Integer, Replica> replicas;
-    private HashMap<Integer, KVPersistenceEngine> replicatedData;
+    private HashMap<String, Coordinator> coordinators;
+    private HashMap<String, Replica> replicas;
+    private final KVPersistenceEngine replicatedData;
     private ExecutorService timeoutThreadpool;
+    private long heartbeatPeriod;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
-    public ReplicationHandler(List<ServerInfo> metadata, KVRange range) {
-        coordinators = new HashMap<>();
-        replicas = new HashMap<>();
+
+    public ReplicationHandler(List<ServerInfo> metadata, KVRange range, long heartbeatPeriod) throws StorageException {
+        this.heartbeatPeriod = heartbeatPeriod;
+        this.coordinators = new HashMap<>();
+        this.replicas = new HashMap<>();
         findAndRegisterReplicas(metadata, range);
-        replicatedData = new HashMap<>();
-        timeoutThreadpool = Executors.newCachedThreadPool();
+        findAndRegisterCoordinators(metadata, range);
+        this.replicatedData = new KVPersistenceEngine("_replica");
+        this.timeoutThreadpool = Executors.newCachedThreadPool();
     }
 
-    private void findAndRegisterReplicas(List<ServerInfo> metadata, KVRange range) {
-        ServerInfo replica1=null, replica2=null;
-        for (int i=0; i<metadata.size(); i++) {
+    private void findAndRegisterCoordinators(List<ServerInfo> metadata, KVRange range) {
+        int size = metadata.size();
+        for (int i=0; i<size; i++) {
             ServerInfo info = metadata.get(i);
             if (info.getServerRange().equals(range)) {
-                int ii1 = (i+1)%(metadata.size());
-                int ii2 = (i+2)%(metadata.size());
-                replica1 = metadata.get(ii1);
-                replica2 = metadata.get(ii2);
-                logger.info("Found my place on the ring");
-                replicas.put(ii1, new Replica()); // TODO: Create proper Replica objects
-                replicas.put(ii2, new Replica());
+                String coordinator1ID, coordinator2ID;
+                int offset1 = getOffsetOnRing(i-1, size);
+                int offset2 = getOffsetOnRing(i-2, size);
+                coordinator1ID = metadata.get(offset1).getID();
+                coordinator2ID = metadata.get(offset2).getID();
+
+                coordinators.put(coordinator1ID, new Coordinator(coordinator1ID, heartbeatPeriod));
+                coordinators.put(coordinator2ID, new Coordinator(coordinator2ID, heartbeatPeriod));
+
+                // spawnTimeoutThread(coordinator); // TODO: Start heartbeats detection??
+
+                logger.info(info.getID() + ": Found my coordinators");
+                break;
             }
         }
     }
 
-    public synchronized void registerCoordinator(int replicaNumber,
-                                                 String sourceIP,
-                                                 List<KVPair> kvPairs, long heartbeatPeriod) {
-        if (!coordinators.containsKey(replicaNumber)) {
-            Coordinator coordinator = new Coordinator(replicaNumber, sourceIP, heartbeatPeriod);
-            coordinators.put(coordinator.getCoordinatorNumber(), coordinator);
-            try {
-                KVPersistenceEngine data = new KVPersistenceEngine(replicaNumber);
-                bulkInsert(data, kvPairs);
-                replicatedData.put(replicaNumber, data);
-                spawnTimeoutThread(coordinator);
-            } catch (StorageException e) {
-                logger.error("Cannot initialize persistence file for coordinator: " + replicaNumber);
+    private int getOffsetOnRing(int index, int size) {
+        int modulo = index % size;
+        return (modulo>0) ? modulo : (size+modulo);
+    }
+
+
+    private void findAndRegisterReplicas(List<ServerInfo> metadata, KVRange range) {
+        int size = metadata.size();
+        for (int i=0; i<size; i++) {
+            ServerInfo info = metadata.get(i);
+            if (info.getServerRange().equals(range)) {
+                String replica1ID, replica2ID;
+                int offset1 = (i+1)%(metadata.size());
+                int offset2 = (i+2)%(metadata.size());
+                replica1ID = metadata.get(offset1).getID();
+                replica2ID = metadata.get(offset2).getID();
+
+                replicas.put(replica1ID, new Replica()); // TODO: Create proper Replica objects
+                replicas.put(replica2ID, new Replica());
+
+                // spawnTimeoutThread(coordinator); // TODO: Start heartbeats detection??
+
+                logger.info(info.getID() + ": Found my replicas");
+                break;
             }
         }
-        else {
-            bulkInsert(replicatedData.get(replicaNumber), kvPairs);
-        }
     }
+
+//    public synchronized void registerCoordinator(int replicaNumber,
+//                                                 String sourceIP,
+//                                                 List<KVPair> kvPairs, long heartbeatPeriod) {
+//        bulkInsert(replicatedData, kvPairs);
+//    }
 
     private void spawnTimeoutThread(Coordinator coordinator) {
         timeoutThreadpool.submit(new TimeoutWatch(coordinator));
     }
 
     private void bulkInsert(KVPersistenceEngine kvPersistenceEngine, List<KVPair> kvPairs) {
-        for (KVPair pair : kvPairs) {
-            kvPersistenceEngine.put(pair.getKey(), pair.getValue());
+        synchronized (replicatedData) {
+            for (KVPair pair : kvPairs) {
+                kvPersistenceEngine.put(pair.getKey(), pair.getValue());
+            }
         }
     }
 
-    public synchronized void deregisterCoordinator(int replicaNumber) {
+    private void bulkRemove(KVPersistenceEngine kvPersistenceEngine, List<KVPair> kvPairs) {
+        synchronized (replicatedData) {
+            for (KVPair pair : kvPairs) {
+                kvPersistenceEngine.remove(pair.getKey());
+            }
+        }
+    }
+
+    public synchronized void deregisterCoordinator(String replicaID) {
         // TODO: To be used in TimeoutException, when it occurs
-        coordinators.remove(replicaNumber);
-        replicatedData.get(replicaNumber).cleanUp();
-        replicatedData.remove(replicaNumber);
+        coordinators.remove(replicaID);
     }
 
 
@@ -126,10 +158,7 @@ public class ReplicationHandler {
         /* Remove replica information */
         replicas.clear();
         /* Clean replicated data */
-        for (int replicaNumber : replicatedData.keySet()) {
-            replicatedData.get(replicaNumber).cleanUp();
-        }
-        replicatedData.clear();
+        replicatedData.cleanUp();
         /* Shutdown timers */
         timeoutThreadpool.shutdownNow();
     }

@@ -118,7 +118,11 @@ public class SocketServer {
         setMetadata(metadata);
         state.setInitialized(true);
         info.setLaunched(true);
-        replicationHandler = new ReplicationHandler(metadata, info.getServerRange());
+        try {
+            replicationHandler = new ReplicationHandler(metadata, info.getServerRange(), heartbeatPeriod);
+        } catch (StorageException e) {
+            return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        }
 //        logger.info("Just initialized myself!!!");
 //        logger.info("My Address is: " + this.info.getAddress());
 //        logger.info("My Port is: " + this.info.getServerPort());
@@ -359,7 +363,8 @@ public class SocketServer {
     }
 
     public KVServerMessageImpl newReplica(String sourceIP, int replicaNumber, List<KVPair> kvPairs) {
-        replicationHandler.registerCoordinator(replicaNumber, sourceIP, kvPairs, heartbeatPeriod);
+        // TODO: ???
+//        replicationHandler.registerCoordinator(replicaNumber, sourceIP, kvPairs, heartbeatPeriod);
         return null; // TODO: Send appropriate response?? New ServerMessage status??
     }
 

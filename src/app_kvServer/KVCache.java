@@ -27,7 +27,7 @@ public class KVCache {
     private ServerInfo server;
     private LinkedHashMap<String,String> map;
     private LFUCache lfu;
-    private KVPersistenceEngine persistence = new KVPersistenceEngine();
+    private KVPersistenceEngine persistence;
     final Integer cacheSize;
     CachePolicy policy;
     private static Logger logger = Logger.getLogger(KVCache.class);

@@ -24,11 +24,9 @@ public class KVPersistenceEngine {
     private OutputStream output = null;
     private static Logger logger = Logger.getLogger(KVPersistenceEngine.class);
 
-
-    public KVPersistenceEngine(){
+    public KVPersistenceEngine(String suffix) throws StorageException {
+        initialization(fileNamePrefix + suffix);
     }
-
-
     public KVPersistenceEngine(int replicaNumber) throws StorageException {
         initialization(fileNamePrefix + "_replica_" + String.valueOf(replicaNumber));
     }

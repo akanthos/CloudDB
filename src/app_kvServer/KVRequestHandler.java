@@ -209,6 +209,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     return new KVMessageImpl(KVMessage.StatusType.SERVER_WRITE_LOCK);
                 } else {
                     // Do the PUT
+                    // TODO: Update replicas?? Or wait for bulk update??
                     return server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
                 }
             } else {

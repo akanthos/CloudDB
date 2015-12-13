@@ -19,16 +19,21 @@ public class ReplicationHandler {
 
     private HashMap<String, Coordinator> coordinators;
     private HashMap<String, Replica> replicas;
+    private HashMap<String, TimeoutWatch> timeoutWatches;
+
     private final KVPersistenceEngine replicatedData;
+    private SocketServer server;
     private ExecutorService timeoutThreadpool;
     private long heartbeatPeriod;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
 
-    public ReplicationHandler(List<ServerInfo> metadata, KVRange range, long heartbeatPeriod) throws StorageException {
+    public ReplicationHandler(SocketServer server, List<ServerInfo> metadata, KVRange range, long heartbeatPeriod) throws StorageException {
+        this.server = server;
         this.heartbeatPeriod = heartbeatPeriod;
         this.coordinators = new HashMap<>();
         this.replicas = new HashMap<>();
+        this.timeoutWatches = new HashMap<>();
         findAndRegisterReplicas(metadata, range);
         findAndRegisterCoordinators(metadata, range);
         this.replicatedData = new KVPersistenceEngine("_replica");
@@ -43,13 +48,15 @@ public class ReplicationHandler {
                 String coordinator1ID, coordinator2ID;
                 int offset1 = getOffsetOnRing(i-1, size);
                 int offset2 = getOffsetOnRing(i-2, size);
-                coordinator1ID = metadata.get(offset1).getID();
-                coordinator2ID = metadata.get(offset2).getID();
+                ServerInfo coordinator1Info = metadata.get(offset1);
+                ServerInfo coordinator2Info = metadata.get(offset2);
+                coordinator1ID = coordinator1Info.getID();
+                coordinator2ID = coordinator2Info.getID();
 
-                coordinators.put(coordinator1ID, new Coordinator(coordinator1ID, heartbeatPeriod));
-                coordinators.put(coordinator2ID, new Coordinator(coordinator2ID, heartbeatPeriod));
+                coordinators.put(coordinator1ID, new Coordinator(coordinator1ID, coordinator1Info, heartbeatPeriod));
+                coordinators.put(coordinator2ID, new Coordinator(coordinator2ID, coordinator2Info, heartbeatPeriod));
 
-                // spawnTimeoutThread(coordinator); // TODO: Start heartbeats detection??
+                spawnTimeoutThreads(); // TODO: Start heartbeats detection??
 
                 logger.info(info.getID() + ": Found my coordinators");
                 break;
@@ -69,15 +76,13 @@ public class ReplicationHandler {
             ServerInfo info = metadata.get(i);
             if (info.getServerRange().equals(range)) {
                 String replica1ID, replica2ID;
-                int offset1 = (i+1)%(metadata.size());
-                int offset2 = (i+2)%(metadata.size());
+                int offset1 = getOffsetOnRing(i+1, size);
+                int offset2 = getOffsetOnRing(i+2, size);
                 replica1ID = metadata.get(offset1).getID();
                 replica2ID = metadata.get(offset2).getID();
 
                 replicas.put(replica1ID, new Replica()); // TODO: Create proper Replica objects
                 replicas.put(replica2ID, new Replica());
-
-                // spawnTimeoutThread(coordinator); // TODO: Start heartbeats detection??
 
                 logger.info(info.getID() + ": Found my replicas");
                 break;
@@ -91,8 +96,21 @@ public class ReplicationHandler {
 //        bulkInsert(replicatedData, kvPairs);
 //    }
 
-    private void spawnTimeoutThread(Coordinator coordinator) {
-        timeoutThreadpool.submit(new TimeoutWatch(coordinator));
+    private void spawnTimeoutThreads() {
+        for (String coordinatorID : coordinators.keySet()) {
+            spawnTimeoutThread(coordinatorID);
+        }
+    }
+    private void spawnTimeoutThread(String coordinatorID) {
+        Coordinator c = coordinators.get(coordinatorID);
+        TimeoutWatch t = new TimeoutWatch(this, c);
+        timeoutWatches.put(coordinatorID, t);
+        timeoutThreadpool.submit(t);
+    }
+    private void stopTimeoutThread(String coordinatorID) {
+        TimeoutWatch t = timeoutWatches.get(coordinatorID);
+        // TODO: How can we shut it down ??
+        timeoutWatches.remove(coordinatorID);
     }
 
     private void bulkInsert(KVPersistenceEngine kvPersistenceEngine, List<KVPair> kvPairs) {
@@ -111,9 +129,8 @@ public class ReplicationHandler {
         }
     }
 
-    public synchronized void deregisterCoordinator(String replicaID) {
-        // TODO: To be used in TimeoutException, when it occurs
-        coordinators.remove(replicaID);
+    public synchronized void deregisterCoordinator(String coordinatorID) {
+        coordinators.remove(coordinatorID);
     }
 
 
@@ -123,36 +140,41 @@ public class ReplicationHandler {
 
     private class TimeoutWatch implements Runnable {
         Coordinator coordinator;
-        public TimeoutWatch(Coordinator coordinator) {
+        ReplicationHandler replicationHandler;
+        public TimeoutWatch(ReplicationHandler replicationHandler, Coordinator coordinator) {
+            this.replicationHandler = replicationHandler;
             this.coordinator = coordinator;
         }
         @Override
         public void run() {
-            // TODO: Wait for period
-            // TODO: then check the new currentTimestamp of the coordinator
-            // TODO: if old, then somehow raise trigger the timeout exception
-//            if (coordinator.timestampDiffExceededPeriod()) {
-//                throw new TimeoutException();
-//            }
-
-//            boolean sleep = true;
-//            while (sleep) {
-//                try {
-//                    sleep = false;
-//                    Thread.sleep(2000);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                    Check also current timestamp
-//                    // Restart sleep
-//                    sleep = true;
-//                }
-//            }
-            // It is dead
+            try {
+                Thread.sleep(60 * 1000); // Sleep for 1 minute initially
+            } catch (InterruptedException e) { }
+            boolean sleep = true;
+            while (sleep) {
+                try {
+                    sleep = false;
+                    Thread.sleep(60 * 000); // Sleep for 1 minute
+                } catch (InterruptedException e) {
+                    sleep = true;
+                }
+                if (!coordinator.timestampDiffExceededPeriod()) {
+                    // Continue sleeping
+                    sleep = true;
+                }
+            }
+            // Timestamp too old, node is dead
+            logger.info("Detected Failure for Coordinator " + coordinator.getCoordinatorID());
+            replicationHandler.coordinatorFailed(coordinator.getCoordinatorID());
         }
     }
 
+    private synchronized void coordinatorFailed(String coordinatorID) {
+        server.reportFailureToECS(coordinators.get(coordinatorID));
+        deregisterCoordinator(coordinatorID);
+    }
+
     public void cleanup() {
-        // TODO: To be called when we receive changes in the ring with new replicas and new coordinators
         /* Remove coordinators */
         coordinators.clear();
         /* Remove replica information */

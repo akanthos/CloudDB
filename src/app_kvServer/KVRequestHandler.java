@@ -77,6 +77,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                                 kvResponse = processMessage(kvMessage);
                                 Utilities.send(kvResponse, outputStream);
                             } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
+                                server.registerECS(clientSocket.getInetAddress());
                                 kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
                                 kvAdminResponse = processAdminMessage(kvAdminMessage);
                                 Utilities.send(kvAdminResponse, outputStream);

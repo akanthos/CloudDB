@@ -72,6 +72,47 @@ public class Messenger {
         return reply;
     }
 
+    /**
+     * Reports to the ECS that a specific server has failed
+     * @param failedCoordinator the information about the failed server
+     * @param ecsInfo the ecs contact information
+     */
+    public void reportFailureToECS(ServerInfo failedCoordinator, ServerInfo ecsInfo) {
+        KVAdminMessageImpl reply;
+        InputStream inStream = null;
+        OutputStream outStream = null;
+        Socket clientSocket = null;
+        try {
+            /***************************/
+            /*     Connect to ECS      */
+            /***************************/
+
+            InetAddress address = InetAddress.getByName(ecsInfo.getAddress());
+            clientSocket = new Socket(address, ecsInfo.getServerPort());
+            inStream = clientSocket.getInputStream();
+            outStream = clientSocket.getOutputStream();
+
+            /*****************************************************/
+            /*       Send SERVER_FAILURE message to the ECS      */
+            /*****************************************************/
+
+            KVAdminMessageImpl failureMessage = new KVAdminMessageImpl(KVAdminMessage.StatusType.SERVER_FAILURE, failedCoordinator);
+            Utilities.send(failureMessage, outStream);
+
+        } catch (UnknownHostException e) {
+            logger.error("ECS hostname cannot be resolved", e);
+        } catch (IOException e) {
+            logger.error("Error while sending failure message to ECS", e);
+        } catch (CannotConnectException e) {
+            logger.error("Error while connecting to the ECS", e);
+        } finally {
+            /****************************************/
+            /* Tear down connection to other server */
+            /****************************************/
+            ConnectionHelper.connectionTearDown(inStream, outStream, clientSocket, logger);
+        }
+    }
+
 //    public void sendToECS(String sourceIP, int replicaNumber) {
 //        InputStream inStream = null;
 //        OutputStream outStream = null;

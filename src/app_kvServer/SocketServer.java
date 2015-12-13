@@ -18,6 +18,7 @@ import java.util.List;
  */
 public class SocketServer {
     private ServerInfo info;
+    private ServerInfo ecsInfo;
     private volatile ServerState state;
     private ConnectionHandler handler;
     private KVCache kvCache;
@@ -29,6 +30,7 @@ public class SocketServer {
     final long heartbeatPeriod = 5000; // In milliseconds
 //    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
+    private boolean ECSRegistered;
 
 
     /**
@@ -37,6 +39,9 @@ public class SocketServer {
      */
     public SocketServer(ServerInfo info) {
         this.info = info;
+        this.ecsInfo = new ServerInfo();
+        ecsInfo.setServerPort(50036);
+        this.ECSRegistered = false;
         this.state = new ServerState(
                 /*init*/ false,
                 /*open*/ false,
@@ -102,6 +107,16 @@ public class SocketServer {
     /*                      Administrative Commands                     */
     /********************************************************************/
     /**
+     * Registers ECS info
+     * @param inetAddress ECS IP address
+     */
+    public void registerECS(InetAddress inetAddress) {
+        if (!ECSRegistered) {
+            ecsInfo.setAddress(inetAddress.getHostAddress());
+            ECSRegistered = true;
+        }
+    }
+    /**
      * Initializes the server
      * @param metadata metadata for initialization
      * @param cacheSize cache size for initialization
@@ -119,7 +134,7 @@ public class SocketServer {
         state.setInitialized(true);
         info.setLaunched(true);
         try {
-            replicationHandler = new ReplicationHandler(metadata, info.getServerRange(), heartbeatPeriod);
+            replicationHandler = new ReplicationHandler(this, metadata, info.getServerRange(), heartbeatPeriod);
         } catch (StorageException e) {
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
         }
@@ -371,5 +386,10 @@ public class SocketServer {
     public void heartbeatReceived(String sourceIP, int replicaNumber) {
         replicationHandler.heartbeat(sourceIP, replicaNumber);
     }
+
+    public void reportFailureToECS(Coordinator coordinator) {
+        messenger.reportFailureToECS(coordinator.getInfo(), ecsInfo);
+    }
+
 
 }

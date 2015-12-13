@@ -136,10 +136,17 @@ public class ReplicationHandler {
         }
     }
 
+    public void removeRange(KVRange range) {
+        synchronized (replicatedData) {
+            replicatedData.remove(range);
+        }
+    }
+
     // TODO: Add/Remove replicas/coordinators ??
     private synchronized void deregisterCoordinator(String coordinatorID) {
         timeoutWatches.get(coordinatorID).stop();
         timeoutWatches.remove(coordinatorID);
+        removeRange(coordinators.get(coordinatorID).getInfo().getServerRange());
         coordinators.remove(coordinatorID);
     }
     private synchronized void deregisterReplica(String replicaID) {

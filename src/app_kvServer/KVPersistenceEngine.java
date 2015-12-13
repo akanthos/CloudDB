@@ -3,10 +3,13 @@ package app_kvServer;
 import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
+import common.utils.KVRange;
+import hashing.MD5Hash;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
 import java.io.*;
+import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Random;
 
@@ -126,6 +129,20 @@ public class KVPersistenceEngine {
         }
 
 
+    }
+
+    /**
+     * Removes a whole key range from the persistence file.
+     * @param range the range of keys that need to be removed
+     */
+    public void remove (KVRange range){
+        for (String key : prop.stringPropertyNames()) {
+            MD5Hash md5 = new MD5Hash();
+            Long hashedKey = md5.hash(key);
+            if (range.isIndexInRange(hashedKey)) {
+                this.remove(key);
+            }
+        }
     }
 
     /**

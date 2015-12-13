@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -99,7 +100,6 @@ public class SocketServer {
             server.close();
             System.out.println("socket closed");
         } catch (IOException e) {
-            return;
         }
     }
 
@@ -382,8 +382,8 @@ public class SocketServer {
         return null; // TODO: Send appropriate response?? New ServerMessage status??
     }
 
-    public void heartbeatReceived(String coordinatorID) {
-        replicationHandler.heartbeat(coordinatorID);
+    public void heartbeatReceived(String coordinatorID, Date timeOfSendingMessage) {
+        replicationHandler.heartbeat(coordinatorID, timeOfSendingMessage);
     }
 
     public void reportFailureToECS(Coordinator coordinator) {

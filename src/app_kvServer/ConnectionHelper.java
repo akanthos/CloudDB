@@ -22,8 +22,6 @@ import java.net.UnknownHostException;
 public class ConnectionHelper {
 
     public static InOutClientPack connectionSetup(String serverAddress, Integer serverPort, Logger logger, KVAdminMessageImpl failureMessage) {
-        // new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED)
-        KVAdminMessageImpl reply;
         InputStream inStream;
         OutputStream outStream;
         Socket clientSocket;

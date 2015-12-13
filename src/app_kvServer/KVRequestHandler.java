@@ -63,7 +63,6 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     logger.error("\n\n########################################\n\n");
                     byteMessage = Utilities.receive(inputStream);
                     if (!Thread.currentThread().isInterrupted()) {
-                        String hello = new String(byteMessage, "UTF-8");
 
                         if (byteMessage[0] == -1) {
                             clientConnected = false;
@@ -157,7 +156,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
             return server.newReplicatedData(kvServerMessage.getCoordinatorID(), kvServerMessage.getKVPairs());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
-            server.heartbeatReceived(kvServerMessage.getCoordinatorID());
+            server.heartbeatReceived(kvServerMessage.getCoordinatorID(), kvServerMessage.getTimeOfSendingMsg());
             return null;
         }
         else {

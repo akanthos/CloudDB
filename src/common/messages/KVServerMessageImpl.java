@@ -30,6 +30,7 @@ public class KVServerMessageImpl implements KVServerMessage {
 
     /**
      * Constructor which sets the status for simple messages
+     * like MOVE_DATA_SUCCESS or error message
      *
      * @param status the status of the message
      */
@@ -39,7 +40,7 @@ public class KVServerMessageImpl implements KVServerMessage {
 
     /**
      * Constructor which sets the status and the key-value pairs
-     * to be sent
+     * to be sent - To be used for MOVE_DATA command
      *
      * @param kvPairs the key-value pairs of the message
      * @param status the status of the message
@@ -49,8 +50,30 @@ public class KVServerMessageImpl implements KVServerMessage {
         this.status = status;
     }
 
-    public KVServerMessageImpl(String coordinatorID, StatusType status) {
+    /**
+     * Constructor which sets the status and the relevant information for
+     * a HEARTBEAT message
+     * @param coordinatorID the server that sends the heartbeat
+     * @param timeOfSendingMsg timestamp of sending the message
+     * @param status the status of the message
+     */
+    public KVServerMessageImpl(String coordinatorID, Date timeOfSendingMsg, StatusType status) {
         this.coordinatorID = coordinatorID;
+        this.timeOfSendingMsg = timeOfSendingMsg;
+        this.status = status;
+    }
+
+    /**
+     * Constructor which sets the status and the key-value pairs
+     * to be sent - To be used for REPLICATE command
+     * @param coordinatorID the server that owns the data
+     *                      and wants to replicate them
+     * @param kvPairs the key-value pairs to be replicated
+     * @param status the status of the message
+     */
+    public KVServerMessageImpl(String coordinatorID, List<KVPair> kvPairs, StatusType status) {
+        this.coordinatorID = coordinatorID;
+        this.kvPairs = kvPairs;
         this.status = status;
     }
 
@@ -87,10 +110,12 @@ public class KVServerMessageImpl implements KVServerMessage {
         this.kvPairs = kvPairs;
     }
 
+    @Override
     public Date getTimeOfSendingMsg() {
         return timeOfSendingMsg;
     }
 
+    @Override
     public void setTimeOfSendingMsg(Date timeOfSendingMsg) {
         this.timeOfSendingMsg = timeOfSendingMsg;
     }

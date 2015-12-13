@@ -14,6 +14,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by akanthos on 10.12.15.
@@ -130,7 +131,7 @@ public class Messenger {
             /*     Send HEARTBEAT message to the other server    */
             /*****************************************************/
 
-            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(server.getID(), KVServerMessage.StatusType.HEARTBEAT);
+            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(server.getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT);
             Utilities.send(bulkPutMessage, outStream);
 
         } catch (UnknownHostException e) {

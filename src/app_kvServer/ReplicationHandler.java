@@ -141,8 +141,8 @@ public class ReplicationHandler {
     }
 
 
-    public void heartbeat(String replicaID) {
-        coordinators.get(replicaID).heartbeat(new Date());
+    public void heartbeat(String replicaID, Date timeOfSendingMessage) {
+        coordinators.get(replicaID).heartbeat(timeOfSendingMessage);
     }
 
     private synchronized void coordinatorFailed(String coordinatorID) {
@@ -186,22 +186,24 @@ public class ReplicationHandler {
             try {
                 Thread.sleep(60 * 1000); // Sleep for 1 minute initially
             } catch (InterruptedException e) { }
-            boolean sleep = true;
-            while ( sleep && continueChecking ) {
+            boolean noTimeExceeded = true;
+            while ( noTimeExceeded && continueChecking ) {
                 try {
-                    sleep = false;
+                    noTimeExceeded = false;
                     Thread.sleep(60 * 1000); // Sleep for 1 minute
                 } catch (InterruptedException e) {
-                    sleep = true;
                 }
                 if (!coordinator.timestampDiffExceededPeriod()) {
                     // Continue sleeping
-                    sleep = true;
+                    noTimeExceeded = true;
                 }
             }
-            // Timestamp too old, node is dead
-            logger.info("Detected Failure for Coordinator " + coordinator.getCoordinatorID());
-            replicationHandler.coordinatorFailed(coordinator.getCoordinatorID());
+            if (continueChecking) {
+                // We were not stopped from outside
+                // Timestamp too old, node is dead
+                logger.info("Detected Failure for Coordinator " + coordinator.getCoordinatorID());
+                replicationHandler.coordinatorFailed(coordinator.getCoordinatorID());
+            }
         }
     }
 

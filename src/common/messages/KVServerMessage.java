@@ -3,6 +3,7 @@ package common.messages;
 import common.ServerInfo;
 import common.utils.KVRange;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -46,4 +47,7 @@ public interface KVServerMessage extends AbstractMessage {
     String getCoordinatorID();
 
     void setCoordinatorID(String replicaID);
+
+    Date getTimeOfSendingMsg();
+    void setTimeOfSendingMsg(Date timeOfSendingMsg);
 }

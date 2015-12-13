@@ -59,7 +59,7 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
     }
 
     public String getID() {
-        return new String(address+":"+serverPort);
+        return address + ":" + serverPort;
     }
 
     /**

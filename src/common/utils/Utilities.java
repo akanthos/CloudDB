@@ -73,7 +73,7 @@ public class Utilities {
     public static byte[] receive(InputStream input) throws CannotConnectException, IOException {
 
         int index = 0;
-        byte[] msgBytes = null, tmp = null;
+        byte[] msgBytes = null, tmp;
         byte[] bufferBytes = new byte[BUFFER_SIZE];
 
 		/* read first char from stream */
@@ -121,7 +121,6 @@ public class Utilities {
             System.arraycopy(msgBytes, 0, tmp, 0, msgBytes.length);
             System.arraycopy(bufferBytes, 0, tmp, msgBytes.length, index);
         }
-        String tt = new String(tmp, "US-ASCII").trim();
 
         return tmp;
 

@@ -14,6 +14,7 @@ public class Coordinator {
     private final String ID;
     private long HEARTBEAT_PERIOD; // In milliseconds
     private Date currentTimestamp;
+    private long timeDiff;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
 
@@ -21,6 +22,7 @@ public class Coordinator {
         this.ID = ID;
         this.info = info;
         this.currentTimestamp = new Date();
+        this.timeDiff = 0;
         this.HEARTBEAT_PERIOD = heartbeatPeriod;
     }
 
@@ -29,23 +31,13 @@ public class Coordinator {
     }
     public ServerInfo getInfo() { return info; }
 
-    public void heartbeat(Date newTimestamp) {
-        synchronized (currentTimestamp) {
-            currentTimestamp = newTimestamp;
-        }
+    public synchronized void heartbeat(Date newTimestamp) {
+        this.timeDiff = TimeUnit.MILLISECONDS.toMillis(newTimestamp.getTime() - currentTimestamp.getTime());
+        this.currentTimestamp = newTimestamp;
     }
 
-    public void periodExpired() {
-        // To be called from thread waiting for period
-    }
-
-    public boolean timestampDiffExceededPeriod() {
-        Date newTimestamp = new Date();
-        long diff;
-        synchronized (currentTimestamp) {
-            diff = newTimestamp.getTime() - currentTimestamp.getTime();
-        }
-        long milliseconds = TimeUnit.MILLISECONDS.toMillis(diff);
-        return (milliseconds > HEARTBEAT_PERIOD);
+    public synchronized boolean timestampDiffExceededPeriod() {
+        return (timeDiff > HEARTBEAT_PERIOD);
     }
 }
+

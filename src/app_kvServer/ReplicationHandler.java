@@ -136,8 +136,16 @@ public class ReplicationHandler {
         }
     }
 
+    // TODO: Add/Remove replicas/coordinators ??
     private synchronized void deregisterCoordinator(String coordinatorID) {
+        timeoutWatches.get(coordinatorID).stop();
+        timeoutWatches.remove(coordinatorID);
         coordinators.remove(coordinatorID);
+    }
+    private synchronized void deregisterReplica(String replicaID) {
+        heartbeatSenders.get(replicaID).stop();
+        heartbeatSenders.remove(replicaID);
+        replicas.remove(replicaID);
     }
 
 
@@ -152,7 +160,6 @@ public class ReplicationHandler {
     private void sendHeartbeat(String replicaID) {
         server.sendHeartbeatToServer(replicas.get(replicaID));
     }
-    // TODO: Add/Remove replicas??
 
     public void cleanup() {
         /* Remove coordinators */

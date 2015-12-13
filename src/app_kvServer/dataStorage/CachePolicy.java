@@ -1,4 +1,4 @@
-package app_kvServer;
+package app_kvServer.dataStorage;
 
 /**
  * enumeration for available

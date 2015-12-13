@@ -1,6 +1,5 @@
 package testing;
 
-import app_kvServer.KVCache;
 import client.KVStore;
 import common.messages.KVMessage;
 import org.junit.Test;
@@ -9,7 +8,6 @@ import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.*;
 
 public class AdditionalTest extends TestCase {

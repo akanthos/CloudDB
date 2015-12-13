@@ -1,4 +1,4 @@
-package app_kvServer;
+package app_kvServer.dataStorage;
 
 /**
  * Value Entry type in an LFU Cache

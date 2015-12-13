@@ -1,4 +1,4 @@
-package app_kvServer;
+package app_kvServer.dataStorage;
 
 import common.ServerInfo;
 import common.messages.KVMessage;
@@ -9,9 +9,7 @@ import helpers.StorageException;
 import org.apache.log4j.Logger;
 
 import java.io.*;
-import java.util.Enumeration;
 import java.util.Properties;
-import java.util.Random;
 
 
 /**

@@ -1,9 +1,7 @@
-package app_kvServer;
+package app_kvServer.replication;
 
 import common.ServerInfo;
 import org.apache.log4j.Logger;
-
-import java.util.Date;
 
 /**
  * Created by akanthos on 10.12.15.

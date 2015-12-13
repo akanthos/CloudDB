@@ -1,4 +1,4 @@
-package app_kvServer;
+package app_kvServer.replication;
 
 /**
  * Created by akanthos on 13.12.15.

@@ -1,4 +1,4 @@
-package app_kvServer;
+package app_kvServer.replication;
 
 import org.apache.log4j.Logger;
 
@@ -23,7 +23,8 @@ public class TimeoutWatch implements Runnable {
     @Override
     public void run() {
         try {
-            Thread.sleep(60 * 1000); // Sleep for 1 minute initially
+            // TODO: Initial wait for everybody to settle? Sleep for 1 minute initially
+            Thread.sleep(60 * 1000);
         } catch (InterruptedException e) { }
         boolean noTimeExceeded = true;
         while ( noTimeExceeded && continueChecking ) {

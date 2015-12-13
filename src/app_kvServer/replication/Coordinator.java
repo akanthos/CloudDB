@@ -1,5 +1,6 @@
-package app_kvServer;
+package app_kvServer.replication;
 
+import app_kvServer.SocketServer;
 import common.ServerInfo;
 import org.apache.log4j.Logger;
 

@@ -1,16 +1,12 @@
 package testing;
 
 
-import app_kvServer.KVCache;
-import app_kvServer.LFUCache;
-import app_kvServer.LfuCacheEntry;
-import common.messages.KVMessage;
+import app_kvServer.dataStorage.KVCache;
+import app_kvServer.dataStorage.LfuCacheEntry;
 import common.messages.KVMessageImpl;
 import helpers.StorageException;
 import junit.framework.TestCase;
 import org.junit.Test;
-
-import java.util.*;
 
 /**
  * Test Class for KVCache

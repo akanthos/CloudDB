@@ -9,20 +9,19 @@ import java.util.List;
  */
 public class KVServerMessageImpl implements KVServerMessage {
 
-    List<KVPair> kvPairs;
-    StatusType status;
+    private List<KVPair> kvPairs;
+    private StatusType status;
 
     /**
      * Information related to heartbeat messages
      */
-    String sourceIP;
-    Date timeOfSendingMsg;
+    private Date timeOfSendingMsg;
 
     /**
      * Information related to replica messages.
      * Other variables used: sourceIP (coordinator IP), kvPairs (list of pairs that needs to be replicated)
      */
-    int replicaNumber;
+    private String coordinatorID;
 
     /**
      * Default constructor
@@ -47,6 +46,11 @@ public class KVServerMessageImpl implements KVServerMessage {
      */
     public KVServerMessageImpl(ArrayList<KVPair> kvPairs, StatusType status) {
         this.kvPairs = kvPairs;
+        this.status = status;
+    }
+
+    public KVServerMessageImpl(String coordinatorID, StatusType status) {
+        this.coordinatorID = coordinatorID;
         this.status = status;
     }
 
@@ -83,14 +87,6 @@ public class KVServerMessageImpl implements KVServerMessage {
         this.kvPairs = kvPairs;
     }
 
-    public String getSourceIP() {
-        return sourceIP;
-    }
-
-    public void setSourceIP(String sourceIP) {
-        this.sourceIP = sourceIP;
-    }
-
     public Date getTimeOfSendingMsg() {
         return timeOfSendingMsg;
     }
@@ -99,11 +95,11 @@ public class KVServerMessageImpl implements KVServerMessage {
         this.timeOfSendingMsg = timeOfSendingMsg;
     }
 
-    public int getReplicaNumber() {
-        return replicaNumber;
+    public String getCoordinatorID() {
+        return coordinatorID;
     }
 
-    public void setReplicaNumber(int replicaNumber) {
-        this.replicaNumber = replicaNumber;
+    public void setCoordinatorID(String coordinatorID) {
+        this.coordinatorID = coordinatorID;
     }
 }

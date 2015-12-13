@@ -43,15 +43,7 @@ public interface KVServerMessage extends AbstractMessage {
      * The replica number of the server if the server message is of REPLICATE type
      * @return
      */
-    int getReplicaNumber();
+    String getCoordinatorID();
 
-    void setReplicaNumber(int replicaNumber);
-
-    /**
-     * The IP of the coordinator if the server message is of REPLICATE type
-     * @return
-     */
-    String getSourceIP();
-
-    void setSourceIP(String sourceIP);
+    void setCoordinatorID(String replicaID);
 }

@@ -1,7 +1,6 @@
 package common;
 
 
-import app_kvEcs.ECSCommand;
 import common.messages.*;
 import common.utils.KVRange;
 import helpers.Constants;
@@ -15,7 +14,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 public class Serializer {
@@ -91,7 +89,7 @@ public class Serializer {
                 messageStr.append(HEAD_DLM).append(pair.getKey() + SUB_DLM1 + pair.getValue());
             }
             messageStr.append(HEAD_DLM);
-            messageStr.append(message.getReplicaNumber());
+            messageStr.append(message.getCoordinatorID());
             messageStr.append(HEAD_DLM);
             messageStr.append(message.getSourceIP());
         }
@@ -272,7 +270,7 @@ public class Serializer {
                                 }
                             }
                             ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
-                            ((KVServerMessage) retrievedMessage).setReplicaNumber(Integer.parseInt(tokens[3+dataLength].trim()));
+                            ((KVServerMessage) retrievedMessage).setCoordinatorID(Integer.parseInt(tokens[3+dataLength].trim()));
                             ((KVServerMessage) retrievedMessage).setSourceIP(tokens[3+dataLength+1].trim());
                         }
                     }
@@ -363,7 +361,7 @@ public class Serializer {
         // kvServerMessage.setTimeOfSendingMsg(new Date());
         kvServerMessage.setSourceIP("1.1.1.1");
         kvServerMessage.setKvPairs(Arrays.asList(new KVPair("foo", "bar"), new KVPair("boo", "far")));
-        kvServerMessage.setReplicaNumber(1);
+        kvServerMessage.setCoordinatorID(1);
         byte[] bytes = toByteArray(kvServerMessage);
 
         // String hehe = "0####127.0.0.1&&50000&&3706585719&&897794963%%127.0.0.1&&50001&&897794963&&3706585719%%";

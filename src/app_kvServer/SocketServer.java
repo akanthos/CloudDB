@@ -377,14 +377,13 @@ public class SocketServer {
         this.kvCache.cleanUp();
     }
 
-    public KVServerMessageImpl newReplica(String sourceIP, int replicaNumber, List<KVPair> kvPairs) {
-        // TODO: ???
-//        replicationHandler.registerCoordinator(replicaNumber, sourceIP, kvPairs, heartbeatPeriod);
+    public KVServerMessageImpl newReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
+        replicationHandler.bulkInsert(coordinatorID, kvPairs);
         return null; // TODO: Send appropriate response?? New ServerMessage status??
     }
 
-    public void heartbeatReceived(String sourceIP, int replicaNumber) {
-        replicationHandler.heartbeat(sourceIP, replicaNumber);
+    public void heartbeatReceived(String coordinatorID) {
+        replicationHandler.heartbeat(coordinatorID);
     }
 
     public void reportFailureToECS(Coordinator coordinator) {
@@ -392,4 +391,7 @@ public class SocketServer {
     }
 
 
+    public void sendHeartbeatToServer(Replica replica) {
+        messenger.sendHeartBeatToServer(replica.getInfo());
+    }
 }

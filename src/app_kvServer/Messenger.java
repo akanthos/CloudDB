@@ -78,7 +78,6 @@ public class Messenger {
      * @param ecsInfo the ecs contact information
      */
     public void reportFailureToECS(ServerInfo failedCoordinator, ServerInfo ecsInfo) {
-        KVAdminMessageImpl reply;
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -105,6 +104,41 @@ public class Messenger {
             logger.error("Error while sending failure message to ECS", e);
         } catch (CannotConnectException e) {
             logger.error("Error while connecting to the ECS", e);
+        } finally {
+            /****************************************/
+            /* Tear down connection to other server */
+            /****************************************/
+            ConnectionHelper.connectionTearDown(inStream, outStream, clientSocket, logger);
+        }
+    }
+
+    public void sendHeartBeatToServer(ServerInfo server) {
+        InputStream inStream = null;
+        OutputStream outStream = null;
+        Socket clientSocket = null;
+        try {
+            /***************************/
+            /* Connect to other server */
+            /***************************/
+
+            InetAddress address = InetAddress.getByName(server.getAddress());
+            clientSocket = new Socket(address, server.getServerPort());
+            inStream = clientSocket.getInputStream();
+            outStream = clientSocket.getOutputStream();
+
+            /*****************************************************/
+            /*     Send HEARTBEAT message to the other server    */
+            /*****************************************************/
+
+            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(server.getID(), KVServerMessage.StatusType.HEARTBEAT);
+            Utilities.send(bulkPutMessage, outStream);
+
+        } catch (UnknownHostException e) {
+            logger.error("KVServer hostname cannot be resolved", e);
+        } catch (IOException e) {
+            logger.error("Error while connecting to the server for heartbeat", e);
+        } catch (CannotConnectException e) {
+            logger.error("Error while connecting to the server.", e);
         } finally {
             /****************************************/
             /* Tear down connection to other server */

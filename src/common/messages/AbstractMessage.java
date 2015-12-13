@@ -9,7 +9,7 @@ public interface AbstractMessage {
 
 
     enum MessageType {
-        CLIENT_MESSAGE, ECS_MESSAGE, SERVER_MESSAGE;
+        CLIENT_MESSAGE, ECS_MESSAGE, SERVER_MESSAGE
     }
 
     /**

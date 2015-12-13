@@ -11,19 +11,23 @@ import java.util.concurrent.TimeUnit;
  */
 public class Coordinator {
     private final ServerInfo info;
+    private final ReplicationHandler handler;
     private final String ID;
     private long HEARTBEAT_PERIOD; // In milliseconds
     private Date currentTimestamp;
     private long timeDiff;
+    private TimeoutWatch timeoutWatch;
     private static Logger logger = Logger.getLogger(SocketServer.class);
 
 
-    public Coordinator(String ID, ServerInfo info, long heartbeatPeriod) {
+    public Coordinator(String ID, ServerInfo info, long heartbeatPeriod, ReplicationHandler handler) {
         this.ID = ID;
+        this.handler = handler;
         this.info = info;
         this.currentTimestamp = new Date();
         this.timeDiff = 0;
         this.HEARTBEAT_PERIOD = heartbeatPeriod;
+        spawnTimeoutThread();
     }
 
     public String getCoordinatorID() {
@@ -38,6 +42,15 @@ public class Coordinator {
 
     public synchronized boolean timestampDiffExceededPeriod() {
         return (timeDiff > HEARTBEAT_PERIOD);
+    }
+
+    private void spawnTimeoutThread() {
+        timeoutWatch= new TimeoutWatch(handler, this);
+        handler.submit(timeoutWatch);
+    }
+
+    public void stop() {
+        timeoutWatch.stop();
     }
 }
 

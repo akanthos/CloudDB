@@ -1,5 +1,6 @@
 package app_kvServer;
 
+import com.sun.corba.se.spi.activation.Server;
 import common.ServerInfo;
 import common.messages.*;
 import common.utils.KVRange;
@@ -379,8 +380,18 @@ public class SocketServer {
     }
 
     public KVServerMessageImpl newReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
-        replicationHandler.insertReplicatedData(coordinatorID, kvPairs);
-        return null; // TODO: Send appropriate response?? New ServerMessage status??
+        ServerInfo coordinatorInfo = null;
+        for (ServerInfo info : metadata) {
+            if (info.getID().equals(coordinatorID))
+                coordinatorInfo = info;
+        }
+        if (coordinatorInfo != null) {
+            replicationHandler.insertReplicatedData(coordinatorID, coordinatorInfo, kvPairs);
+            return null; // TODO: Send appropriate response?? New ServerMessage status??
+        }
+        else {
+            return null; // TODO: Error message "cannot find metadata" ?
+        }
     }
 
     public void heartbeatReceived(String coordinatorID, Date timeOfSendingMessage) {

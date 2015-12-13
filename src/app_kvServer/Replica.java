@@ -22,4 +22,6 @@ public class Replica {
         return ID;
     }
     public ServerInfo getInfo() { return info; }
+
+
 }

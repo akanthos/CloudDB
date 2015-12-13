@@ -7,6 +7,7 @@ import common.utils.KVRange;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
+import java.sql.Time;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -18,10 +19,10 @@ import java.util.concurrent.Executors;
  */
 public class ReplicationHandler {
 
-    private final HashMap<String, Coordinator> coordinators;
-    private final HashMap<String, Replica> replicas;
-    private final HashMap<String, TimeoutWatch> timeoutWatches;
-    private final HashMap<String, HeartbeatSender> heartbeatSenders;
+    private HashMap<String, Coordinator> coordinators;
+    private HashMap<String, Replica> replicas;
+    private HashMap<String, TimeoutWatch> timeoutWatches;
+    private HashMap<String, HeartbeatSender> heartbeatSenders;
 
     private final KVPersistenceEngine replicatedData;
     private final SocketServer server;
@@ -33,14 +34,23 @@ public class ReplicationHandler {
     public ReplicationHandler(SocketServer server, List<ServerInfo> metadata, KVRange range, long heartbeatPeriod) throws StorageException {
         this.server = server;
         this.heartbeatPeriod = heartbeatPeriod;
+        this.replicatedData = new KVPersistenceEngine("_replica");
+        findCoordsAndReplicas(metadata, range);
+    }
+
+    public void updateMetadata(List<ServerInfo> metadata, KVRange range) {
+        cleanupNoData();
+        findCoordsAndReplicas(metadata, range);
+    }
+
+    private void findCoordsAndReplicas(List<ServerInfo> metadata, KVRange range) {
+        this.timeoutThreadpool = Executors.newCachedThreadPool();
         this.coordinators = new HashMap<>();
         this.replicas = new HashMap<>();
         this.timeoutWatches = new HashMap<>();
         this.heartbeatSenders = new HashMap<>();
         findAndRegisterReplicas(metadata, range);
         findAndRegisterCoordinators(metadata, range);
-        this.replicatedData = new KVPersistenceEngine("_replica");
-        this.timeoutThreadpool = Executors.newCachedThreadPool();
     }
 
     private void findAndRegisterCoordinators(List<ServerInfo> metadata, KVRange range) {
@@ -120,7 +130,10 @@ public class ReplicationHandler {
         timeoutThreadpool.submit(h);
     }
 
-    public void bulkInsert(String coordinatorID, List<KVPair> kvPairs) {
+    public void insertReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
+        if (!timeoutWatches.containsKey(coordinatorID)) {
+            spawnTimeoutThread(coordinatorID);
+        }
         synchronized (replicatedData) {
             for (KVPair pair : kvPairs) {
                 replicatedData.put(pair.getKey(), pair.getValue());
@@ -128,7 +141,7 @@ public class ReplicationHandler {
         }
     }
 
-    public void bulkRemove(String coordinatorID, List<KVPair> kvPairs) {
+    public void removeReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
         synchronized (replicatedData) {
             for (KVPair pair : kvPairs) {
                 replicatedData.remove(pair.getKey());
@@ -142,7 +155,7 @@ public class ReplicationHandler {
         }
     }
 
-    // TODO: Add/Remove replicas/coordinators ??
+    // TODO: Add/Remove replicas/coordinators ?? Not needed if we find all again with update metadata
     private synchronized void deregisterCoordinator(String coordinatorID) {
         timeoutWatches.get(coordinatorID).stop();
         timeoutWatches.remove(coordinatorID);
@@ -168,18 +181,40 @@ public class ReplicationHandler {
         server.sendHeartbeatToServer(replicas.get(replicaID));
     }
 
-    public void cleanup() {
-        /* Remove coordinators */
-        coordinators.clear();
-        /* Remove replica information */
-        replicas.clear();
-        /* Clean replicated data */
-        replicatedData.cleanUp();
-        /* Shutdown timers and heartbeats */
+    private void shutdownWatchesAndHeartbeats() {
+        for (String key : timeoutWatches.keySet()) {
+            timeoutWatches.get(key).stop();
+        }
+        for (String key : heartbeatSenders.keySet()) {
+            heartbeatSenders.get(key).stop();
+        }
         timeoutThreadpool.shutdownNow();
         timeoutWatches.clear();
         heartbeatSenders.clear();
     }
+
+    public void cleanupNoData() {
+        /* Remove coordinators */
+        coordinators.clear();
+        /* Remove replica information */
+        replicas.clear();
+        /* Shutdown timers and heartbeats */
+        shutdownWatchesAndHeartbeats();
+
+    }
+
+    public void cleanupAll() {
+        /* Remove coordinators */
+        coordinators.clear();
+        /* Remove replica information */
+        replicas.clear();
+        /* Shutdown timers and heartbeats */
+        shutdownWatchesAndHeartbeats();
+        /* Clean replicated data */
+        replicatedData.cleanUp();
+    }
+
+
 
     private class TimeoutWatch implements Runnable {
         final Coordinator coordinator;

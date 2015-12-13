@@ -222,6 +222,7 @@ public class SocketServer {
      */
     public synchronized KVAdminMessageImpl update(List<ServerInfo> metadata) {
         setMetadata(metadata);
+        replicationHandler.updateMetadata(metadata, this.info.getServerRange());
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
@@ -378,7 +379,7 @@ public class SocketServer {
     }
 
     public KVServerMessageImpl newReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
-        replicationHandler.bulkInsert(coordinatorID, kvPairs);
+        replicationHandler.insertReplicatedData(coordinatorID, kvPairs);
         return null; // TODO: Send appropriate response?? New ServerMessage status??
     }
 

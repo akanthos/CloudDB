@@ -353,9 +353,19 @@ public class Serializer {
      */
     public static void main (String[] args) throws UnsupportedEncodingException, UnsupportedDataTypeException {
         // ServerInfo failedServerInfo = new ServerInfo("1.1.1.1", 1234, new KVRange(0L, 2000L));
-        List<KVPair> pairs = Arrays.asList(new KVPair("foo", "bar"), new KVPair("boo", "far"));
-        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("1", pairs, KVServerMessage.StatusType.REPLICATE);
-        byte[] bytes = toByteArray(kvServerMessage);
+//        List<KVPair> pairs = Arrays.asList(new KVPair("foo", "bar"), new KVPair("boo", "far"));
+//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("1", pairs, KVServerMessage.StatusType.REPLICATE);
+//        byte[] bytes = toByteArray(kvServerMessage);
+
+        KVAdminMessageImpl m = new KVAdminMessageImpl(KVAdminMessage.StatusType.SERVER_FAILURE, new ServerInfo("localhost", 500));
+        byte[] bytes = toByteArray(m);
+        System.out.println(new String(bytes,"UTF-8"));
+        System.out.println("PART_2");
+        AbstractMessage abstractMessage = Serializer.toObject(bytes);
+        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
+            m = (KVAdminMessageImpl) abstractMessage;
+        }
+
 
 
 
@@ -366,12 +376,12 @@ public class Serializer {
         // byte[] arr = hehe.toString().getBytes();
         //byte[] arr = toByteArray(hehe);
 
-        System.out.println(new String(bytes,"UTF-8"));
-        System.out.println("PART_2");
-        AbstractMessage abstractMessage = Serializer.toObject(bytes);
-        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
-            kvServerMessage = (KVServerMessageImpl) abstractMessage;
-        }
+//        System.out.println(new String(bytes,"UTF-8"));
+//        System.out.println("PART_2");
+//        AbstractMessage abstractMessage = Serializer.toObject(bytes);
+//        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
+//            kvServerMessage = (KVServerMessageImpl) abstractMessage;
+//        }
 
 
     }

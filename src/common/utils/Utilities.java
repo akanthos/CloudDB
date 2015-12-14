@@ -137,7 +137,7 @@ public class Utilities {
      *          if 2 nodes in ring, list with the other node
      *          if more than 2 nodes in ring, list with the 2 following nodes
      */
-    public List<ServerInfo> getReplicas(List<ServerInfo> metadata, ServerInfo node) {
+    public static List<ServerInfo> getReplicas(List<ServerInfo> metadata, ServerInfo node) {
         // TODO: Use Spyros's algorithm
         return Arrays.asList();
     }
@@ -150,7 +150,7 @@ public class Utilities {
      *          if 2 nodes in ring, list with the other node
      *          if more than 2 nodes in ring, list with the 2 preceding nodes
      */
-    public List<ServerInfo> getCoordinators(List<ServerInfo> metadata, ServerInfo node) {
+    public static List<ServerInfo> getCoordinators(List<ServerInfo> metadata, ServerInfo node) {
         // TODO: Use Spyros's algorithm
         return Arrays.asList();
     }

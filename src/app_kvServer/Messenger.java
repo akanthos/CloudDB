@@ -1,5 +1,6 @@
 package app_kvServer;
 
+import app_kvServer.replication.Coordinator;
 import common.Serializer;
 import common.ServerInfo;
 import common.messages.*;
@@ -12,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,7 +22,12 @@ import java.util.Date;
  * Created by akanthos on 10.12.15.
  */
 public class Messenger {
+    private SocketServer server;
     private static Logger logger = Logger.getLogger(Messenger.class);
+
+    public Messenger(SocketServer server) {
+        this.server = server;
+    }
 
     public KVAdminMessageImpl sendToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
         // Send ServerMessage "MOVE_DATA" message to "server" and wait for answer from that server
@@ -113,7 +120,7 @@ public class Messenger {
         }
     }
 
-    public void sendHeartBeatToServer(ServerInfo server) {
+    public void sendHeartBeatToServer(ServerInfo serverInfo) throws SocketTimeoutException {
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -122,8 +129,8 @@ public class Messenger {
             /* Connect to other server */
             /***************************/
 
-            InetAddress address = InetAddress.getByName(server.getAddress());
-            clientSocket = new Socket(address, server.getServerPort());
+            InetAddress address = InetAddress.getByName(serverInfo.getAddress());
+            clientSocket = new Socket(address, serverInfo.getServerPort());
             inStream = clientSocket.getInputStream();
             outStream = clientSocket.getOutputStream();
 
@@ -131,8 +138,53 @@ public class Messenger {
             /*     Send HEARTBEAT message to the other server    */
             /*****************************************************/
 
-            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(server.getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT);
-            Utilities.send(bulkPutMessage, outStream);
+            KVServerMessageImpl heartbeatMessage = new KVServerMessageImpl(serverInfo.getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT);
+            Utilities.send(heartbeatMessage, outStream);
+
+            // TODO: Wait for answer with timeout
+            clientSocket.setSoTimeout(5000); // 5 seconds timeout
+            byte[] answerBytes = Utilities.receive(inStream);
+            KVServerMessageImpl heartbeatAnswer = (KVServerMessageImpl) Serializer.toObject(answerBytes);
+            if (!heartbeatAnswer.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT_RESPONSE)) {
+                throw new SocketTimeoutException();
+            }
+
+
+
+        } catch (UnknownHostException e) {
+            logger.error("KVServer hostname cannot be resolved", e);
+        } catch (IOException e) {
+            logger.error("Error while connecting to the server for heartbeat", e);
+        } catch (CannotConnectException e) {
+            logger.error("Error while connecting to the server.", e);
+        } finally {
+            /****************************************/
+            /* Tear down connection to other server */
+            /****************************************/
+            ConnectionHelper.connectionTearDown(inStream, outStream, clientSocket, logger);
+        }
+    }
+
+    public void respondToHeartbeatRequest(ServerInfo serverInfo) {
+        InputStream inStream = null;
+        OutputStream outStream = null;
+        Socket clientSocket = null;
+        try {
+            /***************************/
+            /* Connect to other server */
+            /***************************/
+
+            InetAddress address = InetAddress.getByName(serverInfo.getAddress());
+            clientSocket = new Socket(address, serverInfo.getServerPort());
+            inStream = clientSocket.getInputStream();
+            outStream = clientSocket.getOutputStream();
+
+            /********************************************************/
+            /*  Send HEARTBEAT_RESPONSE message to the other server */
+            /********************************************************/
+
+            KVServerMessageImpl heartResponseMessage = new KVServerMessageImpl(serverInfo.getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT_RESPONSE);
+            Utilities.send(heartResponseMessage, outStream);
 
         } catch (UnknownHostException e) {
             logger.error("KVServer hostname cannot be resolved", e);

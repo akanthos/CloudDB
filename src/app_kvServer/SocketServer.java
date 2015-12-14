@@ -53,7 +53,7 @@ public class SocketServer {
                 /*writeLock*/ false,
                 /*stop*/ true
         );
-        messenger = new Messenger();
+        messenger = new Messenger(this);
 //        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
 
@@ -397,16 +397,28 @@ public class SocketServer {
         }
     }
 
-    public void heartbeatReceived(String coordinatorID, Date timeOfSendingMessage) {
-        replicationHandler.heartbeat(coordinatorID, timeOfSendingMessage);
+    public void heartbeatReceived(String replicaID, Date timeOfSendingMessage) {
+        replicationHandler.heartbeatReceived(replicaID);
     }
+
 
     public void reportFailureToECS(Coordinator coordinator) {
         messenger.reportFailureToECS(coordinator.getInfo(), ecsInfo);
     }
 
 
-    public void sendHeartbeatToServer(Replica replica) {
-        messenger.sendHeartBeatToServer(replica.getInfo());
+    public void sendHeartbeatToServer(Coordinator coordinator) {
+        try {
+            messenger.sendHeartBeatToServer(coordinator.getInfo());
+        } catch (SocketTimeoutException e) {
+            reportFailureToECS(coordinator);
+            replicationHandler.coordinatorFailed(coordinator);
+        }
     }
+    public void answerHeartbeat(Replica replica) {
+        messenger.respondToHeartbeatRequest(replica.getInfo());
+    }
+
+
+
 }

@@ -42,6 +42,7 @@ public class Coordinator {
     }
 
     public synchronized boolean timestampDiffExceededPeriod() {
+        // TODO: Check with current Date
         return (timeDiff > HEARTBEAT_PERIOD);
     }
 

@@ -22,7 +22,7 @@ public class HeartbeatSender implements Runnable {
     public void run() {
         while (continueHeartbeating) {
             try {
-                Thread.sleep(30 * 1000); // Sleep for 1 minute
+                Thread.sleep(30 * 1000); // Sleep for 1 minute TODO: add proper heartbeat period
             } catch (InterruptedException e) {
             }
             replicationHandler.sendHeartbeat(replica.getReplicaID());

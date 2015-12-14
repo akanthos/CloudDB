@@ -2,6 +2,7 @@ package common.utils;
 
 import app_kvServer.KVServer;
 import common.Serializer;
+import common.ServerInfo;
 import common.messages.*;
 import helpers.CannotConnectException;
 import helpers.ErrorMessages;
@@ -13,6 +14,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class Utilities {
@@ -126,4 +129,29 @@ public class Utilities {
 
     }
 
+    /**
+     *
+     * @param metadata
+     * @param node
+     * @return If single node in ring, list with just node
+     *          if 2 nodes in ring, list with the other node
+     *          if more than 2 nodes in ring, list with the 2 following nodes
+     */
+    public List<ServerInfo> getReplicas(List<ServerInfo> metadata, ServerInfo node) {
+        // TODO: Use Spyros's algorithm
+        return Arrays.asList();
+    }
+
+    /**
+     *
+     * @param metadata
+     * @param node
+     * @return If single node in ring, list with just node
+     *          if 2 nodes in ring, list with the other node
+     *          if more than 2 nodes in ring, list with the 2 preceding nodes
+     */
+    public List<ServerInfo> getCoordinators(List<ServerInfo> metadata, ServerInfo node) {
+        // TODO: Use Spyros's algorithm
+        return Arrays.asList();
+    }
 }

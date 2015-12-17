@@ -17,6 +17,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 
 /**
  * Created by akanthos on 10.12.15.
@@ -96,7 +97,7 @@ public class Messenger {
             outStream = clientSocket.getOutputStream();
 
             /*****************************************************/
-            /* Send MOVE_DATA server message to the other server */
+            /* Send REPLICATE server message to the other server */
             /*****************************************************/
 
             KVServerMessageImpl bulkReplicateMessage = new KVServerMessageImpl(pairsToSend, KVServerMessage.StatusType.REPLICATE);
@@ -248,6 +249,51 @@ public class Messenger {
         }
     }
 
+    public boolean gossip(ServerInfo replicaInfo, Integer serialNumber, LinkedList<KVPair> list) {
+        InputStream inStream = null;
+        OutputStream outStream = null;
+        Socket clientSocket = null;
+        try {
+            /***************************/
+            /* Connect to other server */
+            /***************************/
+
+            InetAddress address = InetAddress.getByName(replicaInfo.getAddress());
+            clientSocket = new Socket(address, replicaInfo.getServerPort());
+            inStream = clientSocket.getInputStream();
+            outStream = clientSocket.getOutputStream();
+
+            /********************************************************/
+            /*    Send GOSSIP_MESSAGE message to the other server   */
+            /********************************************************/
+
+            KVServerMessageImpl gossipMessage = new KVServerMessageImpl(serialNumber, list, KVServerMessage.StatusType.GOSSIP);
+            Utilities.send(gossipMessage, outStream);
+
+            byte[] gossipMessageAnswerBytes = Utilities.receive(inStream);
+            KVServerMessageImpl gossipMessageAnswer = (KVServerMessageImpl) Serializer.toObject(gossipMessageAnswerBytes);
+            if (gossipMessageAnswer.getStatus().equals(KVServerMessage.StatusType.GOSSIP_SUCCESS)) {
+                return true;
+            }
+            else
+                return false;
+
+        } catch (UnknownHostException e) {
+            logger.error("KVServer hostname cannot be resolved", e);
+            return false;
+        } catch (IOException e) {
+            logger.error("Error while connecting to the server for heartbeat", e);
+            return false;
+        } catch (CannotConnectException e) {
+            logger.error("Error while connecting to the server.", e);
+            return false;
+        } finally {
+            /****************************************/
+            /* Tear down connection to other server */
+            /****************************************/
+            ConnectionHelper.connectionTearDown(inStream, outStream, clientSocket, logger);
+        }
+    }
 
 
 //    public void sendToECS(String sourceIP, int replicaNumber) {

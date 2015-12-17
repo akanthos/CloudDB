@@ -19,9 +19,12 @@ public interface KVServerMessage extends AbstractMessage {
         SERVER_FAILURE,             /* Message to ECS informing about a possible server failure */
         HEARTBEAT,                  /* Heartbeats between coordinators and replicas */
         HEARTBEAT_RESPONSE,
-        REPLICATE,           /* Coordinator message from coordinator to replicas */
+        REPLICATE,                  /* Coordinator message from coordinator to replicas */
         REPLICATE_SUCCESS,
-        REPLICATE_FAILURE
+        REPLICATE_FAILURE,
+        GOSSIP,
+        GOSSIP_SUCCESS,
+        GOSSIP_FAILURE
     }
 
     /**
@@ -30,6 +33,9 @@ public interface KVServerMessage extends AbstractMessage {
      */
     List<KVPair> getKVPairs();
     void setKVPairs(List<KVPair> kvPairs);
+
+    Integer getSerialNumber();
+    void setSerialNumber(Integer serialNumber);
 
     /**
      * @return a status string that is used to identify request types,

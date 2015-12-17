@@ -2,6 +2,7 @@ package common.messages;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -11,6 +12,7 @@ public class KVServerMessageImpl implements KVServerMessage {
 
     private List<KVPair> kvPairs;
     private StatusType status;
+    private Integer serialNumber;
 
     /**
      * Information related to heartbeat messages
@@ -77,6 +79,19 @@ public class KVServerMessageImpl implements KVServerMessage {
         this.status = status;
     }
 
+    /**
+     * Constructor which sets the status and the key-value pairs
+     * to be sent - To be used for GOSSIP update to replicas
+     * @param serialNumber serial number of the updates
+     * @param list list with the key-value pair update events
+     * @param gossip the status of the message (GOSSIP)
+     */
+    public KVServerMessageImpl(Integer serialNumber, LinkedList<KVPair> list, StatusType gossip) {
+        this.status = gossip;
+        this.serialNumber = serialNumber;
+        kvPairs = list;
+    }
+
     @Override
     public List<KVPair> getKVPairs() {
         return kvPairs;
@@ -85,6 +100,16 @@ public class KVServerMessageImpl implements KVServerMessage {
     @Override
     public void setKVPairs(List<KVPair> kvPair) {
         this.kvPairs = kvPair;
+    }
+
+    @Override
+    public Integer getSerialNumber() {
+        return serialNumber;
+    }
+
+    @Override
+    public void setSerialNumber(Integer serialNumber) {
+        this.serialNumber = serialNumber;
     }
 
     @Override

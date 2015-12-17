@@ -14,10 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class Serializer {
 
@@ -76,6 +73,12 @@ public class Serializer {
 
         StringBuilder messageStr = new StringBuilder(SERVER_MESSAGE + HEAD_DLM + message.getStatus().ordinal());
         if (message.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
+            messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
+            for (KVPair pair : message.getKVPairs()) {
+                messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
+            }
+        } else if (message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
+            messageStr.append(HEAD_DLM).append(message.getSerialNumber());
             messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
             for (KVPair pair : message.getKVPairs()) {
                 messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
@@ -215,7 +218,7 @@ public class Serializer {
                             ((KVAdminMessageImpl)retrievedMessage).setDisplacementStrategy(tokens[4]);
                         }
                     } else if (((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)
-                            || ((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.REPLICATE)) {
+                            || ((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.REPLICATE_DATA)) {
                         if (tokens.length>= 3 && tokens[2] != null) {
                             //((KVAdminMessageImpl) retrievedMessage).setRange(new KVRange());
                             ((KVAdminMessageImpl) retrievedMessage).setLow(Long.valueOf(tokens[2].trim()));
@@ -261,6 +264,20 @@ public class Serializer {
                         if (tokens[3] != null) { // Data length and data
                             int dataLength = Integer.parseInt(tokens[3]);
                             ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
+                            for (int i = 0; i < dataLength; i++) {
+                                String[] kv = tokens[i + 4].split(SUB_DLM1);
+                                if (kv.length == 2) {
+                                    kvPairs.add(new KVPair(kv[0], kv[1]));
+                                }
+                            }
+                            ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
+                        }
+                    } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.GOSSIP)))) {
+                        Integer serialNumber = Integer.parseInt(tokens[2]);
+                        ((KVServerMessageImpl) retrievedMessage).setSerialNumber(serialNumber);
+                        if (tokens[3] != null) { // Data length and data
+                            int dataLength = Integer.parseInt(tokens[3]);
+                            LinkedList<KVPair> kvPairs = new LinkedList<>();
                             for (int i = 0; i < dataLength; i++) {
                                 String[] kv = tokens[i + 4].split(SUB_DLM1);
                                 if (kv.length == 2) {

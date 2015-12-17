@@ -9,8 +9,8 @@ import common.utils.Utilities;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,9 +20,11 @@ import java.util.concurrent.Executors;
  */
 public class ReplicationHandler {
 
+    private Integer serialNumber;
     private HashMap<String, Coordinator> coordinators;
     private HashMap<String, Replica> replicas;
     private ExecutorService timeoutThreadpool;
+    private UpdateManager updateManager;
 
     private final KVPersistenceEngine replicatedData;
     private final SocketServer server;
@@ -39,11 +41,14 @@ public class ReplicationHandler {
         this.heartbeatPeriod = heartbeatPeriod;
         this.replicatedData = new KVPersistenceEngine("_replica");
         findCoordsAndReplicas(metadata, range);
+        this.updateManager = new UpdateManager(this);
+        this.serialNumber = 0;
     }
 
     public void updateMetadata(List<ServerInfo> metadata, KVRange range) {
         cleanupNoData();
         findCoordsAndReplicas(metadata, range);
+        updateManager.refresh();
     }
 
     private void findCoordsAndReplicas(List<ServerInfo> metadata, KVRange range) {
@@ -121,6 +126,12 @@ public class ReplicationHandler {
         }
     }
 
+    public synchronized void gossip(LinkedList<KVPair> list) {
+        for (Replica replica : replicas.values())
+            server.gossip(replica.getInfo(), serialNumber, list);
+        serialNumber++;
+    }
+
 
     /*****************************************************************/
     /*                  Heartbeat and Failure handling               */
@@ -155,7 +166,7 @@ public class ReplicationHandler {
         replicas.clear();
     }
 
-    public void cleanupAll() {
+    public void shutdown() {
         /* Shutdown timers and heartbeats*/
         shutdownHeartbeats();
         /* Remove coordinators */
@@ -164,5 +175,9 @@ public class ReplicationHandler {
         replicas.clear();
         /* Clean replicated data */
         replicatedData.cleanUp();
+        /* Shutdown the replica updater */
+        updateManager.shutdown();
     }
+
+
 }

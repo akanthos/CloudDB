@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -437,5 +438,7 @@ public class SocketServer {
     }
 
 
-
+    public void gossip(ServerInfo replicaInfo, Integer serialNumber, LinkedList<KVPair> list) {
+        messenger.gossip(replicaInfo, serialNumber, list);
+    }
 }

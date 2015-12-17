@@ -31,7 +31,8 @@ public class HeartbeatSender implements Runnable {
                 Thread.sleep(heartbeatPeriod);
             } catch (InterruptedException e) {
             }
-            coordinator.sendHeartbeat();
+            if (continueHeartbeating)
+                coordinator.sendHeartbeat();
         }
     }
 }

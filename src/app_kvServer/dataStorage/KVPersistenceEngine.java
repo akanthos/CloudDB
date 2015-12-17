@@ -3,12 +3,15 @@ package app_kvServer.dataStorage;
 import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
+import common.messages.KVPair;
 import common.utils.KVRange;
 import hashing.MD5Hash;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 
@@ -141,6 +144,20 @@ public class KVPersistenceEngine {
                 this.remove(key);
             }
         }
+    }
+
+    public List<KVPair> get (KVRange range){
+        List<KVPair> pairs = new ArrayList<>();
+        for (String key : prop.stringPropertyNames()) {
+            MD5Hash md5 = new MD5Hash();
+            Long hashedKey = md5.hash(key);
+            if (range.isIndexInRange(hashedKey)) {
+                String resultValue = prop.getProperty(key);
+                if (resultValue != null)
+                    pairs.add(new KVPair(key, resultValue));
+            }
+        }
+        return pairs;
     }
 
     /**

@@ -402,6 +402,18 @@ public class SocketServer {
         }
     }
 
+    public KVAdminMessageImpl removeReplicatedData(KVRange range, ServerInfo serverInfo) {
+        replicationHandler.removeRange(range);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
+    }
+
+    public KVAdminMessageImpl restoreData(KVRange range, ServerInfo serverInfo) {
+        List<KVPair> pairsToRestore = replicationHandler.getData(range);
+        replicationHandler.removeRange(range);
+        this.insertNewDataToCache(pairsToRestore);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
+    }
+
     public void heartbeatReceived(String replicaID, Date timeOfSendingMessage) {
         replicationHandler.heartbeatReceived(replicaID);
     }

@@ -23,7 +23,9 @@ public interface KVAdminMessage extends AbstractMessage {
         OPERATION_FAILED,       /* Operation requested by the ECS failed */
         GENERAL_ERROR,          /* For other types of errors */
         SERVER_FAILURE,         /* Message to ECS informing about a possible server failure */
-        REPLICATE               /* Replicate subrange to another server and notify ECSImpl when complete */
+        REPLICATE_DATA,         /* Replicate subrange to another server and notify ECSImpl when complete */
+        REMOVE_DATA,
+        RESTORE_DATA
     }
 
     /**r

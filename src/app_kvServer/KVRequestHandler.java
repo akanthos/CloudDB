@@ -132,8 +132,14 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             return server.writeUnlock();
         } else if (kvAdminMessage.getStatus().equals(StatusType.MOVE_DATA)) {
             return server.moveData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
-        } else if (kvAdminMessage.getStatus().equals(StatusType.REPLICATE)) {
+        } else if (kvAdminMessage.getStatus().equals(StatusType.REPLICATE_DATA)) {
             return server.replicateData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
+        }
+        else if (kvAdminMessage.getStatus().equals(StatusType.REMOVE_DATA)) {
+            return server.removeReplicatedData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
+        }
+        else if (kvAdminMessage.getStatus().equals(StatusType.RESTORE_DATA)) {
+            return server.restoreData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
             return server.update(kvAdminMessage.getMetadata());
         }

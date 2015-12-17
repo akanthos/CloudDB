@@ -3,14 +3,13 @@ package app_kvServer.replication;
 import app_kvServer.dataStorage.KVPersistenceEngine;
 import app_kvServer.SocketServer;
 import common.ServerInfo;
-import common.messages.KVMessage;
-import common.messages.KVMessageImpl;
-import common.messages.KVPair;
+import common.messages.*;
 import common.utils.KVRange;
 import common.utils.Utilities;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -109,13 +108,13 @@ public class ReplicationHandler {
         }
         return true;
     }
-    public void removeReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
+
+    public List<KVPair> getData(KVRange range) {
         synchronized (replicatedData) {
-            for (KVPair pair : kvPairs) {
-                replicatedData.remove(pair.getKey());
-            }
+            return replicatedData.get(range);
         }
     }
+
     public void removeRange(KVRange range) {
         synchronized (replicatedData) {
             replicatedData.remove(range);
@@ -166,7 +165,4 @@ public class ReplicationHandler {
         /* Clean replicated data */
         replicatedData.cleanUp();
     }
-
-
-
 }

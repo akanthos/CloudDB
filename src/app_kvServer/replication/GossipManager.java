@@ -7,23 +7,24 @@ import java.util.LinkedList;
 /**
  * Created by akanthos on 17.12.15.
  */
-public class UpdateManager {
+public class GossipManager {
     private Updater updater;
     private ReplicationHandler replicationHandler;
     private LinkedList<KVPair> events;
 
-    public UpdateManager(ReplicationHandler replicationHandler) {
+    public GossipManager(ReplicationHandler replicationHandler) {
         this.replicationHandler = replicationHandler;
         this.events = new LinkedList<>();
         this.updater = new Updater(false, this);
         new Thread(updater).start();
     }
 
+    // TODO: Use this method in (successful) put requests
     public synchronized void enqueuePutEvent(KVPair pair) {
         this.events.add(pair);
     }
 
-    private void triggerUpdateReplicas() {
+    private synchronized void triggerUpdateReplicas() {
         LinkedList<KVPair> list = new LinkedList<>();
         for (KVPair element : this.events) {
             list.add(element);
@@ -35,18 +36,19 @@ public class UpdateManager {
         shutdown();
         this.updater = new Updater(false, this);
         new Thread(updater).start();
+        // TODO: Also restart serial numbers??
     }
 
-    public void shutdown() {
+    public synchronized void shutdown() {
         this.updater.stop();
         this.events.clear();
     }
 
     class Updater implements Runnable {
         private volatile boolean stop = false;
-        private UpdateManager manager;
+        private GossipManager manager;
 
-        public Updater(boolean stop, UpdateManager manager) {
+        public Updater(boolean stop, GossipManager manager) {
             this.stop = stop;
             this.manager = manager;
         }
@@ -60,6 +62,7 @@ public class UpdateManager {
             while (!stop) {
                 try {
                     Thread.sleep(60*1000); // sleep for 1 minute
+                    // TODO: Also could wait until size of list becomes greater than a number
                 } catch (InterruptedException e) { }
                 if (!stop)
                     manager.triggerUpdateReplicas();

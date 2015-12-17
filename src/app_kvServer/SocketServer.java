@@ -441,4 +441,9 @@ public class SocketServer {
     public void gossip(ServerInfo replicaInfo, Integer serialNumber, LinkedList<KVPair> list) {
         messenger.gossip(replicaInfo, serialNumber, list);
     }
+
+    public KVServerMessageImpl updateReplicatedData(Integer serialNumber, List<KVPair> kvPairs) {
+        replicationHandler.updateReplicatedData(serialNumber, kvPairs);
+        return new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_SUCCESS); // TODO: Return proper message
+    }
 }

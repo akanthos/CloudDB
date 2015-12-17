@@ -9,9 +9,7 @@ import common.utils.Utilities;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,7 +22,8 @@ public class ReplicationHandler {
     private HashMap<String, Coordinator> coordinators;
     private HashMap<String, Replica> replicas;
     private ExecutorService timeoutThreadpool;
-    private UpdateManager updateManager;
+    private GossipManager gossipManager;
+    private PriorityQueue<UpdateEvent> updateEvents;
 
     private final KVPersistenceEngine replicatedData;
     private final SocketServer server;
@@ -41,14 +40,15 @@ public class ReplicationHandler {
         this.heartbeatPeriod = heartbeatPeriod;
         this.replicatedData = new KVPersistenceEngine("_replica");
         findCoordsAndReplicas(metadata, range);
-        this.updateManager = new UpdateManager(this);
+        this.gossipManager = new GossipManager(this);
         this.serialNumber = 0;
+        this.updateEvents = new PriorityQueue<>();
     }
 
     public void updateMetadata(List<ServerInfo> metadata, KVRange range) {
         cleanupNoData();
         findCoordsAndReplicas(metadata, range);
-        updateManager.refresh();
+        gossipManager.refresh();
     }
 
     private void findCoordsAndReplicas(List<ServerInfo> metadata, KVRange range) {
@@ -132,6 +132,15 @@ public class ReplicationHandler {
         serialNumber++;
     }
 
+    public void updateReplicatedData(Integer serialNumber, List<KVPair> kvPairs) {
+        this.updateEvents.add(new UpdateEvent(serialNumber, (LinkedList<KVPair>) kvPairs));
+        executeUpdates();
+    }
+
+    private void executeUpdates() {
+        // TODO: run updates in the correct order
+    }
+
 
     /*****************************************************************/
     /*                  Heartbeat and Failure handling               */
@@ -176,8 +185,9 @@ public class ReplicationHandler {
         /* Clean replicated data */
         replicatedData.cleanUp();
         /* Shutdown the replica updater */
-        updateManager.shutdown();
+        gossipManager.shutdown();
     }
+
 
 
 }

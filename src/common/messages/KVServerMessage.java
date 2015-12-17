@@ -19,7 +19,9 @@ public interface KVServerMessage extends AbstractMessage {
         SERVER_FAILURE,             /* Message to ECS informing about a possible server failure */
         HEARTBEAT,                  /* Heartbeats between coordinators and replicas */
         HEARTBEAT_RESPONSE,
-        REPLICATE                   /* Coordinator message from coordinator to replicas */
+        REPLICATE,           /* Coordinator message from coordinator to replicas */
+        REPLICATE_SUCCESS,
+        REPLICATE_FAILURE
     }
 
     /**

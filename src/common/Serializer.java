@@ -214,7 +214,8 @@ public class Serializer {
                         if (tokens.length>= 5 && tokens[4] != null) {
                             ((KVAdminMessageImpl)retrievedMessage).setDisplacementStrategy(tokens[4]);
                         }
-                    } else if (((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)) {
+                    } else if (((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)
+                            || ((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.REPLICATE)) {
                         if (tokens.length>= 3 && tokens[2] != null) {
                             //((KVAdminMessageImpl) retrievedMessage).setRange(new KVRange());
                             ((KVAdminMessageImpl) retrievedMessage).setLow(Long.valueOf(tokens[2].trim()));

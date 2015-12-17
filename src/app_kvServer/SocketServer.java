@@ -218,6 +218,10 @@ public class SocketServer {
         }
         return messenger.sendToServer(pairsToSend, server);
     }
+    public KVAdminMessageImpl replicateData(KVRange range, ServerInfo server) {
+        ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
+        return messenger.replicateToServer(pairsToSend, server);
+    }
 
     /**
      * Update the server's metadata
@@ -389,11 +393,12 @@ public class SocketServer {
                 coordinatorInfo = info;
         }
         if (coordinatorInfo != null) {
-            replicationHandler.insertReplicatedData(coordinatorID, coordinatorInfo, kvPairs);
-            return null; // TODO: Send appropriate response?? New ServerMessage status??
+            boolean status = replicationHandler.insertReplicatedData(coordinatorID, coordinatorInfo, kvPairs);
+            return status ? new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_SUCCESS)
+                    : new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE) ;
         }
         else {
-            return null; // TODO: Error message "cannot find metadata" ?
+            return new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE);
         }
     }
 

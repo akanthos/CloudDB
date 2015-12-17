@@ -80,6 +80,54 @@ public class Messenger {
         return reply;
     }
 
+    public KVAdminMessageImpl replicateToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
+        KVAdminMessageImpl reply;
+        InputStream inStream = null;
+        OutputStream outStream = null;
+        Socket clientSocket = null;
+        try {
+            /***************************/
+            /* Connect to other server */
+            /***************************/
+
+            InetAddress address = InetAddress.getByName(server.getAddress());
+            clientSocket = new Socket(address, server.getServerPort());
+            inStream = clientSocket.getInputStream();
+            outStream = clientSocket.getOutputStream();
+
+            /*****************************************************/
+            /* Send MOVE_DATA server message to the other server */
+            /*****************************************************/
+
+            KVServerMessageImpl bulkReplicateMessage = new KVServerMessageImpl(pairsToSend, KVServerMessage.StatusType.REPLICATE);
+            Utilities.send(bulkReplicateMessage, outStream);
+            byte[] bulkReplicateAnswerBytes = Utilities.receive(inStream);
+            KVServerMessageImpl bulkPutAnswer = (KVServerMessageImpl) Serializer.toObject(bulkReplicateAnswerBytes);
+            if (bulkPutAnswer.getStatus().equals(KVServerMessage.StatusType.REPLICATE_SUCCESS)) {
+                reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
+            }
+            else {
+                reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+            }
+
+        } catch (UnknownHostException e) {
+            logger.error("KVServer hostname cannot be resolved", e);
+            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        } catch (IOException e) {
+            logger.error("Error while connecting to the server for replication.", e);
+            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        } catch (CannotConnectException e) {
+            logger.error("Error while connecting to the server.", e);
+            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        } finally {
+            /****************************************/
+            /* Tear down connection to other server */
+            /****************************************/
+            ConnectionHelper.connectionTearDown(inStream, outStream, clientSocket, logger);
+        }
+        return reply;
+    }
+
     /**
      * Reports to the ECS that a specific server has failed
      * @param failedCoordinator the information about the failed server
@@ -199,6 +247,8 @@ public class Messenger {
             ConnectionHelper.connectionTearDown(inStream, outStream, clientSocket, logger);
         }
     }
+
+
 
 //    public void sendToECS(String sourceIP, int replicaNumber) {
 //        InputStream inStream = null;

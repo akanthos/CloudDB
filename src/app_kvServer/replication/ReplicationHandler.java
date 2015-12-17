@@ -3,6 +3,8 @@ package app_kvServer.replication;
 import app_kvServer.dataStorage.KVPersistenceEngine;
 import app_kvServer.SocketServer;
 import common.ServerInfo;
+import common.messages.KVMessage;
+import common.messages.KVMessageImpl;
 import common.messages.KVPair;
 import common.utils.KVRange;
 import common.utils.Utilities;
@@ -93,15 +95,19 @@ public class ReplicationHandler {
     /*****************************************************************/
     /*                   Replicated Data Manipulation                */
     /*****************************************************************/
-    public void insertReplicatedData(String coordinatorID, ServerInfo coordinatorInfo, List<KVPair> kvPairs) {
+    public boolean insertReplicatedData(String coordinatorID, ServerInfo coordinatorInfo, List<KVPair> kvPairs) {
         if (!coordinators.containsKey(coordinatorID)) {
             coordinators.put(coordinatorID, new Coordinator(coordinatorID, coordinatorInfo, heartbeatPeriod, this));
         }
         synchronized (replicatedData) {
             for (KVPair pair : kvPairs) {
-                replicatedData.put(pair.getKey(), pair.getValue());
+                KVMessageImpl status = replicatedData.put(pair.getKey(), pair.getValue());
+                if ( ! (status.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS) ||
+                        status.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) )
+                    return false;
             }
         }
+        return true;
     }
     public void removeReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
         synchronized (replicatedData) {

@@ -27,6 +27,7 @@ public class FailDetection implements Runnable {
     private OutputStream out;
     private InputStream in;
     private Socket client;
+    private ECSImpl ecs;
 
     public boolean isRunning() {
         return running;
@@ -36,13 +37,15 @@ public class FailDetection implements Runnable {
         this.running = running;
     }
 
-    public FailDetection(int port){
+    public FailDetection(int port, ECSImpl ecsServer){
         this.port = port;
+        this.ecs = ecsServer;
         //initialize the newly created socket server
         try {
             ServerSocket serverSocket = new ServerSocket(port);
             logger.info("Server listening on port " + port);
             logger.debug("Start listening for Failure reports from KVStore Servers.");
+            //accept a new connection
             client = serverSocket.accept();
             running = true;
         } catch (IOException e) {
@@ -61,7 +64,7 @@ public class FailDetection implements Runnable {
             out = client.getOutputStream();
             byte[] byteMessage = new byte[0];
             boolean clientConnected = true;
-            KVAdminMessage kvAdminMessage;
+            KVAdminMessageImpl kvAdminMessage;
 
             while(running && clientConnected){
                 try {
@@ -72,7 +75,9 @@ public class FailDetection implements Runnable {
                         AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
                         if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
                             kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
-                            //if kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.GENERAL_ERROR);
+                            if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.SERVER_FAILURE)){
+                                ecs.handleFailure(kvAdminMessage.getFailedServerInfo());
+                            }
                             //kvAdminResponse = processAdminMessage(kvAdminMessage);
                             //Utilities.send(kvAdminResponse, outputStream);
                         }

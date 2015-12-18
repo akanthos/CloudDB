@@ -44,7 +44,7 @@ public class SshCaller implements SshCommunication {
      * @return
      */
     @Override
-    public int invokeProcessRemotely(String host, String command, String[] arguments) {
+    public int RunRemoteProcess(String host, String command, String[] arguments) {
 
         boolean waiting;
         String tmpResponse = "";
@@ -115,16 +115,14 @@ public class SshCaller implements SshCommunication {
      * @return
      */
     @Override
-    public int invokeProcessLocally(String command, String[] arguments) {
+    public int RunLocalProcess(String command, String[] arguments) {
 
         //ERROR & -> dont write standard error in nohup.out
         try {
             // adding the arguments to the command
             for (String argument : arguments)
                 command += " " + argument;
-            // logger.debug("<<<<<<" + command + ">>>>>");
-            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar",
-                    "ms3-server.jar", arguments[0], "&");
+            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar", "ms3-server.jar", arguments[0], "&");
             String path = System.getProperty("user.dir");
 
             processb.directory(new File(path));

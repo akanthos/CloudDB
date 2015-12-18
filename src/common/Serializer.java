@@ -77,8 +77,8 @@ public class Serializer {
             for (KVPair pair : message.getKVPairs()) {
                 messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
             }
-        } else if (message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
-            messageStr.append(HEAD_DLM).append(message.getSerialNumber());
+        } else if (message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)
+                || message.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
             messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
             for (KVPair pair : message.getKVPairs()) {
                 messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
@@ -88,14 +88,6 @@ public class Serializer {
             messageStr.append(message.getCoordinatorID());
             messageStr.append(HEAD_DLM);
             messageStr.append(df.format(message.getTimeOfSendingMsg()));
-        } else if (message.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
-            messageStr.append(HEAD_DLM);
-            messageStr.append(message.getCoordinatorID());
-            messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
-            for (KVPair pair : message.getKVPairs()) {
-                messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
-            }
-
         }
 
 
@@ -264,27 +256,13 @@ public class Serializer {
                             logger.error(String.format("Unsupported date format in message. Complete message: %s", tokens[3].trim()), e);
                             throw new UnsupportedDataTypeException("Unable to parse heartbeat message");
                         }
-                    } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.REPLICATE)))) {
-                        ((KVServerMessageImpl) retrievedMessage).setCoordinatorID(tokens[2].trim());
-                        if (tokens[3] != null) { // Data length and data
-                            int dataLength = Integer.parseInt(tokens[3]);
-                            ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
-                            for (int i = 0; i < dataLength; i++) {
-                                String[] kv = tokens[i + 4].split(SUB_DLM1);
-                                if (kv.length == 2) {
-                                    kvPairs.add(new KVPair(kv[0], kv[1]));
-                                }
-                            }
-                            ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
-                        }
-                    } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.GOSSIP)))) {
-                        Integer serialNumber = Integer.parseInt(tokens[2]);
-                        ((KVServerMessageImpl) retrievedMessage).setSerialNumber(serialNumber);
-                        if (tokens[3] != null) { // Data length and data
-                            int dataLength = Integer.parseInt(tokens[3]);
+                    } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.GOSSIP)))
+                            || ((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.REPLICATE)))) {
+                        if (tokens[2] != null) { // Data length and data
+                            int dataLength = Integer.parseInt(tokens[2]);
                             LinkedList<KVPair> kvPairs = new LinkedList<>();
                             for (int i = 0; i < dataLength; i++) {
-                                String[] kv = tokens[i + 4].split(SUB_DLM1);
+                                String[] kv = tokens[i + 3].split(SUB_DLM1);
                                 if (kv.length == 2) {
                                     kvPairs.add(new KVPair(kv[0], kv[1]));
                                 }

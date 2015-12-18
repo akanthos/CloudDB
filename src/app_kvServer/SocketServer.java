@@ -209,16 +209,19 @@ public class SocketServer {
      * @return a status message
      */
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
-//        logger.info("My Address is: " + this.info.getAddress());
-//        logger.info("My Port is: " + this.info.getServerPort());
-//        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
-//        logger.info("Move data called");
         ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
         for (KVPair pair : pairsToSend) {
             kvCache.put(pair.getKey(), "null");
         }
         return messenger.sendToServer(pairsToSend, server);
     }
+
+    /**
+     * Replicates the key-value pairs that belong to a range to another server
+     * @param range range that the replicated data should belong to
+     * @param server server to replicate the data to
+     * @return a status message
+     */
     public KVAdminMessageImpl replicateData(KVRange range, ServerInfo server) {
         ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
         return messenger.replicateToServer(pairsToSend, server);
@@ -244,12 +247,11 @@ public class SocketServer {
      * @return
      */
     public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs) {
-//        logger.info("My Address is: " + this.info.getAddress());
-//        logger.info("My Port is: " + this.info.getServerPort());
-//        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
-//        logger.info("Inserting new data");
         for (KVPair kv : kvPairs) {
-            kvCache.put(kv.getKey(), kv.getValue());
+            KVMessageImpl response = kvCache.put(kv.getKey(), kv.getValue());
+            if (response.getStatus().equals(KVMessage.StatusType.PUT_ERROR)) {
+                return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_FAILURE);
+            }
         }
         return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_SUCCESS);
         // If it fails, respond with MOVE_FAILURE ???
@@ -379,6 +381,9 @@ public class SocketServer {
         this.kvCache = kvCache;
     }
 
+    public ReplicationHandler getReplicationHandler() {
+        return this.replicationHandler;
+    }
 
     /**
      * Clears the cache
@@ -387,31 +392,38 @@ public class SocketServer {
         this.kvCache.cleanUp();
     }
 
-    public KVServerMessageImpl newReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
-        ServerInfo coordinatorInfo = null;
-        for (ServerInfo info : metadata) {
-            if (info.getID().equals(coordinatorID))
-                coordinatorInfo = info;
-        }
-        if (coordinatorInfo != null) {
-            boolean status = replicationHandler.insertReplicatedData(coordinatorID, coordinatorInfo, kvPairs);
-            return status ? new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_SUCCESS)
-                    : new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE) ;
-        }
-        else {
-            return new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE);
-        }
+    public KVServerMessageImpl newReplicatedData(List<KVPair> kvPairs) {
+        boolean status = replicationHandler.insertReplicatedData(kvPairs);
+        return status ? new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_SUCCESS)
+                : new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE) ;
+    }
+    public KVServerMessageImpl updateReplicatedData(List<KVPair> kvPairs) {
+        boolean status = replicationHandler.insertReplicatedData(kvPairs);
+        return status ? new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_SUCCESS)
+                : new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_FAILURE) ;
     }
 
     public KVAdminMessageImpl removeReplicatedData(KVRange range, ServerInfo serverInfo) {
-        replicationHandler.removeRange(range);
+        KVMessageImpl response = replicationHandler.removeRange(range);
+        if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
+            return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        }
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
     public KVAdminMessageImpl restoreData(KVRange range, ServerInfo serverInfo) {
+        // Get data to restore from the replicated data
         List<KVPair> pairsToRestore = replicationHandler.getData(range);
-        replicationHandler.removeRange(range);
-        this.insertNewDataToCache(pairsToRestore);
+        // Delete this range from the replicated data
+        KVMessageImpl response = replicationHandler.removeRange(range);
+        if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
+            return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        }
+        // Insert the restored data to the cache
+        KVServerMessageImpl response2 = this.insertNewDataToCache(pairsToRestore);
+        if (response2.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_FAILURE)) {
+            return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        }
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
@@ -438,12 +450,9 @@ public class SocketServer {
     }
 
 
-    public void gossip(ServerInfo replicaInfo, Integer serialNumber, LinkedList<KVPair> list) {
-        messenger.gossip(replicaInfo, serialNumber, list);
+    public void gossipToReplica(ServerInfo replicaInfo, ArrayList<KVPair> list) {
+        messenger.gossipToReplica(replicaInfo, list);
     }
 
-    public KVServerMessageImpl updateReplicatedData(Integer serialNumber, List<KVPair> kvPairs) {
-        replicationHandler.updateReplicatedData(serialNumber, kvPairs);
-        return new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_SUCCESS); // TODO: Return proper message
-    }
+
 }

@@ -1,35 +1,40 @@
 package app_kvServer.replication;
 
+import common.messages.KVMessage;
 import common.messages.KVPair;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
  * Created by akanthos on 17.12.15.
  */
-public class GossipManager {
+public class UpdateManager {
     private Updater updater;
     private ReplicationHandler replicationHandler;
-    private LinkedList<KVPair> events;
+    private final Journal events;
 
-    public GossipManager(ReplicationHandler replicationHandler) {
+    public UpdateManager(ReplicationHandler replicationHandler) {
         this.replicationHandler = replicationHandler;
-        this.events = new LinkedList<>();
+        this.events = new Journal(new ArrayList<>());
         this.updater = new Updater(false, this);
         new Thread(updater).start();
     }
 
     // TODO: Use this method in (successful) put requests
-    public synchronized void enqueuePutEvent(KVPair pair) {
-        this.events.add(pair);
+    public void enqueuePutEvent(KVMessage message) {
+        synchronized (events) {
+            this.events.addEvent(message);
+        }
     }
 
-    private synchronized void triggerUpdateReplicas() {
-        LinkedList<KVPair> list = new LinkedList<>();
-        for (KVPair element : this.events) {
-            list.add(element);
+    private void triggerUpdateReplicas() {
+        ArrayList<KVPair> list;
+        synchronized (events) {
+            list = this.events.getPairs();
+            this.events.clear();
         }
-        replicationHandler.gossip(list);
+        replicationHandler.gossipToReplicas(list);
     }
 
     public synchronized void refresh() {
@@ -44,11 +49,11 @@ public class GossipManager {
         this.events.clear();
     }
 
-    class Updater implements Runnable {
+    private class Updater implements Runnable {
         private volatile boolean stop = false;
-        private GossipManager manager;
+        private UpdateManager manager;
 
-        public Updater(boolean stop, GossipManager manager) {
+        public Updater(boolean stop, UpdateManager manager) {
             this.stop = stop;
             this.manager = manager;
         }
@@ -61,7 +66,7 @@ public class GossipManager {
         public void run() {
             while (!stop) {
                 try {
-                    Thread.sleep(60*1000); // sleep for 1 minute
+                    Thread.sleep(10*1000); // sleep for 10 sec
                     // TODO: Also could wait until size of list becomes greater than a number
                 } catch (InterruptedException e) { }
                 if (!stop)

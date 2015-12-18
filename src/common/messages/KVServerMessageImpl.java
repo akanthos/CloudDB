@@ -68,28 +68,12 @@ public class KVServerMessageImpl implements KVServerMessage {
     /**
      * Constructor which sets the status and the key-value pairs
      * to be sent - To be used for REPLICATE command
-     * @param coordinatorID the server that owns the data
-     *                      and wants to replicate them
      * @param kvPairs the key-value pairs to be replicated
-     * @param status the status of the message
+     * @param status the status of the message (REPLICATE or GOSSIP)
      */
-    public KVServerMessageImpl(String coordinatorID, List<KVPair> kvPairs, StatusType status) {
-        this.coordinatorID = coordinatorID;
+    public KVServerMessageImpl(List<KVPair> kvPairs, StatusType status) {
         this.kvPairs = kvPairs;
         this.status = status;
-    }
-
-    /**
-     * Constructor which sets the status and the key-value pairs
-     * to be sent - To be used for GOSSIP update to replicas
-     * @param serialNumber serial number of the updates
-     * @param list list with the key-value pair update events
-     * @param gossip the status of the message (GOSSIP)
-     */
-    public KVServerMessageImpl(Integer serialNumber, LinkedList<KVPair> list, StatusType gossip) {
-        this.status = gossip;
-        this.serialNumber = serialNumber;
-        kvPairs = list;
     }
 
     @Override
@@ -100,16 +84,6 @@ public class KVServerMessageImpl implements KVServerMessage {
     @Override
     public void setKVPairs(List<KVPair> kvPair) {
         this.kvPairs = kvPair;
-    }
-
-    @Override
-    public Integer getSerialNumber() {
-        return serialNumber;
-    }
-
-    @Override
-    public void setSerialNumber(Integer serialNumber) {
-        this.serialNumber = serialNumber;
     }
 
     @Override

@@ -134,17 +134,13 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             return server.moveData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
         } else if (kvAdminMessage.getStatus().equals(StatusType.REPLICATE_DATA)) {
             return server.replicateData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
-        }
-        else if (kvAdminMessage.getStatus().equals(StatusType.REMOVE_DATA)) {
+        } else if (kvAdminMessage.getStatus().equals(StatusType.REMOVE_DATA)) {
             return server.removeReplicatedData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
-        }
-        else if (kvAdminMessage.getStatus().equals(StatusType.RESTORE_DATA)) {
+        } else if (kvAdminMessage.getStatus().equals(StatusType.RESTORE_DATA)) {
             return server.restoreData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
             return server.update(kvAdminMessage.getMetadata());
-        }
-        // TODO: Handle cases where ring changes and it affects replicass
-        else {
+        } else {
             logger.error(String.format("ECSImpl: Invalid message from ECSImpl: %s", kvAdminMessage.toString()));
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         }
@@ -162,9 +158,9 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
             return server.insertNewDataToCache(kvServerMessage.getKVPairs());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
-            return server.newReplicatedData(kvServerMessage.getCoordinatorID(), kvServerMessage.getKVPairs());
+            return server.newReplicatedData(kvServerMessage.getKVPairs());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
-            return server.updateReplicatedData(kvServerMessage.getSerialNumber(), kvServerMessage.getKVPairs());
+            return server.updateReplicatedData(kvServerMessage.getKVPairs());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
             server.heartbeatReceived(kvServerMessage.getCoordinatorID(), kvServerMessage.getTimeOfSendingMsg());
             return null;
@@ -218,8 +214,9 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     return new KVMessageImpl(KVMessage.StatusType.SERVER_WRITE_LOCK);
                 } else {
                     // Do the PUT
-                    // TODO: Update replicas?? Or wait for bulk update??
-                    return server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
+                    KVMessageImpl response = server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
+                    // TODO: Call enqueuePutEvent to replicationHandler, server.getReplicationHandler()
+                    return response;
                 }
             } else {
                 logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
@@ -227,6 +224,11 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             }
         }
         else {
+            if (kvMessage.getStatus().equals(KVMessage.StatusType.GET) &&
+                server.getReplicationHandler().isResponsibleForHash(kvMessage)) {
+                return server.getReplicationHandler().get(kvMessage.getKey());
+            }
+
             // Server not responsible for key
             return new KVMessageImpl(server.getMetadata(), KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
         }

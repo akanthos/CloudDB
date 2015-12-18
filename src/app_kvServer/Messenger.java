@@ -190,7 +190,6 @@ public class Messenger {
             KVServerMessageImpl heartbeatMessage = new KVServerMessageImpl(serverInfo.getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT);
             Utilities.send(heartbeatMessage, outStream);
 
-            // TODO: Wait for answer with timeout
             clientSocket.setSoTimeout(5000); // 5 seconds timeout
             byte[] answerBytes = Utilities.receive(inStream);
             KVServerMessageImpl heartbeatAnswer = (KVServerMessageImpl) Serializer.toObject(answerBytes);
@@ -199,7 +198,8 @@ public class Messenger {
             }
 
 
-
+        } catch (SocketTimeoutException e) {
+                throw e;
         } catch (UnknownHostException e) {
             logger.error("KVServer hostname cannot be resolved", e);
         } catch (IOException e) {
@@ -249,7 +249,7 @@ public class Messenger {
         }
     }
 
-    public boolean gossip(ServerInfo replicaInfo, Integer serialNumber, LinkedList<KVPair> list) {
+    public boolean gossipToReplica(ServerInfo replicaInfo, ArrayList<KVPair> list) {
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -267,7 +267,7 @@ public class Messenger {
             /*    Send GOSSIP_MESSAGE message to the other server   */
             /********************************************************/
 
-            KVServerMessageImpl gossipMessage = new KVServerMessageImpl(serialNumber, list, KVServerMessage.StatusType.GOSSIP);
+            KVServerMessageImpl gossipMessage = new KVServerMessageImpl(list, KVServerMessage.StatusType.GOSSIP);
             Utilities.send(gossipMessage, outStream);
 
             byte[] gossipMessageAnswerBytes = Utilities.receive(inStream);

@@ -136,14 +136,15 @@ public class KVPersistenceEngine {
      * Removes a whole key range from the persistence file.
      * @param range the range of keys that need to be removed
      */
-    public void remove (KVRange range){
+    public KVMessageImpl remove (KVRange range){
         for (String key : prop.stringPropertyNames()) {
             MD5Hash md5 = new MD5Hash();
             Long hashedKey = md5.hash(key);
             if (range.isIndexInRange(hashedKey)) {
-                this.remove(key);
+                return this.remove(key);
             }
         }
+        return new KVMessageImpl(KVMessage.StatusType.DELETE_ERROR);
     }
 
     public List<KVPair> get (KVRange range){

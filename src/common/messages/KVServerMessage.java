@@ -34,9 +34,6 @@ public interface KVServerMessage extends AbstractMessage {
     List<KVPair> getKVPairs();
     void setKVPairs(List<KVPair> kvPairs);
 
-    Integer getSerialNumber();
-    void setSerialNumber(Integer serialNumber);
-
     /**
      * @return a status string that is used to identify request types,
      * response types and error types associated to the message.

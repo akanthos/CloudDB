@@ -1,19 +1,20 @@
 package app_kvServer;
 
-import common.Serializer;
+import app_kvServer.replication.Coordinator;
+import app_kvServer.replication.Replica;
+import app_kvServer.replication.ReplicationHandler;
+import app_kvServer.dataStorage.KVCache;
 import common.ServerInfo;
 import common.messages.*;
 import common.utils.KVRange;
-import common.utils.Utilities;
-import helpers.CannotConnectException;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -23,14 +24,19 @@ import java.util.List;
  */
 public class SocketServer {
     private ServerInfo info;
+    private ServerInfo ecsInfo;
     private volatile ServerState state;
     private ConnectionHandler handler;
     private KVCache kvCache;
     private ServerSocket server;
     private int numOfClients;
     private List<ServerInfo> metadata;
+    private ReplicationHandler replicationHandler;
+    Messenger messenger;
+    final long heartbeatPeriod = 5000; // In milliseconds
 //    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
+    private boolean ECSRegistered;
 
 
     /**
@@ -39,12 +45,16 @@ public class SocketServer {
      */
     public SocketServer(ServerInfo info) {
         this.info = info;
+        this.ecsInfo = new ServerInfo();
+        ecsInfo.setServerPort(50036);
+        this.ECSRegistered = false;
         this.state = new ServerState(
                 /*init*/ false,
                 /*open*/ false,
                 /*writeLock*/ false,
                 /*stop*/ true
         );
+        messenger = new Messenger(this);
 //        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
 
@@ -95,13 +105,22 @@ public class SocketServer {
             server.close();
             System.out.println("socket closed");
         } catch (IOException e) {
-            return;
         }
     }
 
     /********************************************************************/
     /*                      Administrative Commands                     */
     /********************************************************************/
+    /**
+     * Registers ECS info
+     * @param inetAddress ECS IP address
+     */
+    public void registerECS(InetAddress inetAddress) {
+        if (!ECSRegistered) {
+            ecsInfo.setAddress(inetAddress.getHostAddress());
+            ECSRegistered = true;
+        }
+    }
     /**
      * Initializes the server
      * @param metadata metadata for initialization
@@ -119,12 +138,18 @@ public class SocketServer {
         setMetadata(metadata);
         state.setInitialized(true);
         info.setLaunched(true);
+        try {
+            replicationHandler = new ReplicationHandler(this, metadata, info.getServerRange(), heartbeatPeriod);
+        } catch (StorageException e) {
+            return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
+        }
 //        logger.info("Just initialized myself!!!");
 //        logger.info("My Address is: " + this.info.getAddress());
 //        logger.info("My Port is: " + this.info.getServerPort());
 //        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
+
 
     /**
      * Starts the server
@@ -189,68 +214,14 @@ public class SocketServer {
 //        logger.info("My Range is: " + this.info.getFromIndex() + ":" + this.info.getToIndex());
 //        logger.info("Move data called");
         ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
-        return sendToServer(pairsToSend, server);
-    }
-
-    private KVAdminMessageImpl sendToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
-        // Send ServerMessage "MOVE_DATA" message to "server" and wait for answer from that server
-        // If it's MOVE_DATA_SUCCESS => send back OPERATION_SUCCESS
-        // If it's MOVE_DATA_FAILURE => send back OPERATION_FAILED
-        KVAdminMessageImpl reply;
-        InputStream inStream = null;
-        OutputStream outStream = null;
-        Socket clientSocket = null;
-        try {
-            /***************************/
-            /* Connect to other server */
-            /***************************/
-
-            InetAddress address = InetAddress.getByName(server.getAddress());
-            clientSocket = new Socket(address, server.getServerPort());
-            inStream = clientSocket.getInputStream();
-            outStream = clientSocket.getOutputStream();
-
-            /*****************************************************/
-            /* Send MOVE_DATA server message to the other server */
-            /*****************************************************/
-
-            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(pairsToSend, KVServerMessage.StatusType.MOVE_DATA);
-            Utilities.send(bulkPutMessage, outStream);
-            byte[] bulkPutAnswerBytes = Utilities.receive(inStream);
-            KVServerMessageImpl bulkPutAnswer = (KVServerMessageImpl) Serializer.toObject(bulkPutAnswerBytes);
-            if (bulkPutAnswer.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_SUCCESS)) {
-                reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
-            }
-            else {
-                reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
-            }
-
-        } catch (UnknownHostException e) {
-            logger.error("KVServer hostname cannot be resolved", e);
-            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
-        } catch (IOException e) {
-            logger.error("Error while connecting to the server for bulk put.", e);
-            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
-        } catch (CannotConnectException e) {
-            logger.error("Error while connecting to the server.", e);
-            reply = new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
-        } finally {
-            /****************************************/
-            /* Tear down connection to other server */
-            /****************************************/
-            try {
-                if (inStream != null
-                    && outStream != null
-                    && clientSocket != null) {
-                    inStream.close();
-                    outStream.close();
-                    clientSocket.close();
-                }
-            } catch(IOException ioe){
-                logger.error("Error! Unable to tear down connection for bulk put!", ioe);
-            }
+        for (KVPair pair : pairsToSend) {
+            kvCache.put(pair.getKey(), "null");
         }
-        return reply;
+        return messenger.sendToServer(pairsToSend, server);
+    }
+    public KVAdminMessageImpl replicateData(KVRange range, ServerInfo server) {
+        ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
+        return messenger.replicateToServer(pairsToSend, server);
     }
 
     /**
@@ -260,6 +231,7 @@ public class SocketServer {
      */
     public synchronized KVAdminMessageImpl update(List<ServerInfo> metadata) {
         setMetadata(metadata);
+        replicationHandler.updateMetadata(metadata, this.info.getServerRange());
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
@@ -413,5 +385,65 @@ public class SocketServer {
      */
     public void cleanUp() {
         this.kvCache.cleanUp();
+    }
+
+    public KVServerMessageImpl newReplicatedData(String coordinatorID, List<KVPair> kvPairs) {
+        ServerInfo coordinatorInfo = null;
+        for (ServerInfo info : metadata) {
+            if (info.getID().equals(coordinatorID))
+                coordinatorInfo = info;
+        }
+        if (coordinatorInfo != null) {
+            boolean status = replicationHandler.insertReplicatedData(coordinatorID, coordinatorInfo, kvPairs);
+            return status ? new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_SUCCESS)
+                    : new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE) ;
+        }
+        else {
+            return new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE);
+        }
+    }
+
+    public KVAdminMessageImpl removeReplicatedData(KVRange range, ServerInfo serverInfo) {
+        replicationHandler.removeRange(range);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
+    }
+
+    public KVAdminMessageImpl restoreData(KVRange range, ServerInfo serverInfo) {
+        List<KVPair> pairsToRestore = replicationHandler.getData(range);
+        replicationHandler.removeRange(range);
+        this.insertNewDataToCache(pairsToRestore);
+        return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
+    }
+
+    public void heartbeatReceived(String replicaID, Date timeOfSendingMessage) {
+        replicationHandler.heartbeatReceived(replicaID);
+    }
+
+
+    public void reportFailureToECS(Coordinator coordinator) {
+        messenger.reportFailureToECS(coordinator.getInfo(), ecsInfo);
+    }
+
+
+    public void sendHeartbeatToServer(Coordinator coordinator) {
+        try {
+            messenger.sendHeartBeatToServer(coordinator.getInfo());
+        } catch (SocketTimeoutException e) {
+            reportFailureToECS(coordinator);
+            replicationHandler.coordinatorFailed(coordinator);
+        }
+    }
+    public void answerHeartbeat(Replica replica) {
+        messenger.respondToHeartbeatRequest(replica.getInfo());
+    }
+
+
+    public void gossip(ServerInfo replicaInfo, Integer serialNumber, LinkedList<KVPair> list) {
+        messenger.gossip(replicaInfo, serialNumber, list);
+    }
+
+    public KVServerMessageImpl updateReplicatedData(Integer serialNumber, List<KVPair> kvPairs) {
+        replicationHandler.updateReplicatedData(serialNumber, kvPairs);
+        return new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_SUCCESS); // TODO: Return proper message
     }
 }

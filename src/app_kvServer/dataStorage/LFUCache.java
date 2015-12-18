@@ -1,12 +1,10 @@
-package app_kvServer;
+package app_kvServer.dataStorage;
 
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
 import org.apache.log4j.Logger;
 
 import java.util.*;
-
-import static app_kvServer.CachePolicy.LFU;
 
 /**
  * Class representing the LFU Cache

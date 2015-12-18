@@ -2,6 +2,7 @@ package common.utils;
 
 import app_kvServer.KVServer;
 import common.Serializer;
+import common.ServerInfo;
 import common.messages.*;
 import helpers.CannotConnectException;
 import helpers.ErrorMessages;
@@ -13,6 +14,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class Utilities {
@@ -73,7 +76,7 @@ public class Utilities {
     public static byte[] receive(InputStream input) throws CannotConnectException, IOException {
 
         int index = 0;
-        byte[] msgBytes = null, tmp = null;
+        byte[] msgBytes = null, tmp;
         byte[] bufferBytes = new byte[BUFFER_SIZE];
 
 		/* read first char from stream */
@@ -121,10 +124,34 @@ public class Utilities {
             System.arraycopy(msgBytes, 0, tmp, 0, msgBytes.length);
             System.arraycopy(bufferBytes, 0, tmp, msgBytes.length, index);
         }
-        String tt = new String(tmp, "US-ASCII").trim();
 
         return tmp;
 
     }
 
+    /**
+     *
+     * @param metadata
+     * @param node
+     * @return If single node in ring, list with just node
+     *          if 2 nodes in ring, list with the other node
+     *          if more than 2 nodes in ring, list with the 2 following nodes
+     */
+    public static List<ServerInfo> getReplicas(List<ServerInfo> metadata, ServerInfo node) {
+        // TODO: Use Spyros's algorithm
+        return Arrays.asList();
+    }
+
+    /**
+     *
+     * @param metadata
+     * @param node
+     * @return If single node in ring, list with just node
+     *          if 2 nodes in ring, list with the other node
+     *          if more than 2 nodes in ring, list with the 2 preceding nodes
+     */
+    public static List<ServerInfo> getCoordinators(List<ServerInfo> metadata, ServerInfo node) {
+        // TODO: Use Spyros's algorithm
+        return Arrays.asList();
+    }
 }

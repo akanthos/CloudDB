@@ -117,18 +117,12 @@ public class KVServer {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if (true) {
-                            /*
-                             * informing the ProcessInvoker of the ECS Machine that the
-                             * KVServer process started successfully
-                             */
-                    System.out.write("SUCCESS".getBytes());
-                    System.out.flush();
-                } else {
-                    System.out.write("ERROR".getBytes());
-                    System.out.flush();
-                    System.exit(-1);
-                }
+                /*
+                 * informing the ProcessInvoker of the ECS Machine that the
+                 * KVServer process started successfully
+                 */
+                System.out.write("SUCCESS".getBytes());
+                System.out.flush();
             }
             catch (IOException e) {
 
@@ -158,12 +152,7 @@ public class KVServer {
         if ((displacementStrategy.equals("FIFO") || displacementStrategy.equals("LRU") || displacementStrategy.equals("LFU"))
                 && cacheSize > 0 && metadata != null) {
             System.out.println("Binding KVServer:");
-            try {
-                KVCache kvCache = new KVCache(cacheSize, displacementStrategy, server.getInfo());
-                server.initKVServer(metadata, cacheSize, displacementStrategy);
-            } catch (StorageException e) {
-                logger.error("Cannot create KVCache instance", e);
-            }
+            server.initKVServer(metadata, cacheSize, displacementStrategy);
         } else {
             System.out.println("Please give a valid cache displacement strategy");
             printHelp();

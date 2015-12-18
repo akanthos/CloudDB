@@ -55,7 +55,7 @@ public class MeasureSuite {
         try {
             /* Output file and client threadpool initialization */
             SimpleDateFormat currentTimeAndDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-            resultsFile = new PrintWriter("GET_results_" +  currentTimeAndDate.format(new Date()).toString() + ".txt" , "UTF-8");
+            resultsFile = new PrintWriter("GET_results_" + currentTimeAndDate.format(new Date()) + ".txt" , "UTF-8");
             threadpool = Executors.newCachedThreadPool();
 
             /* Service administration initialization */
@@ -117,7 +117,7 @@ public class MeasureSuite {
         try {
             /* Output file and client threadpool initialization */
             SimpleDateFormat currentTimeAndDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-            resultsFile = new PrintWriter("PUT_results_" +  currentTimeAndDate.format(new Date()).toString() + ".txt" , "UTF-8");
+            resultsFile = new PrintWriter("PUT_results_" + currentTimeAndDate.format(new Date()) + ".txt" , "UTF-8");
             threadpool = Executors.newCachedThreadPool();
 
             /* Service administration initialization */

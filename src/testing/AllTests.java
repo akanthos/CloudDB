@@ -68,10 +68,10 @@ public class AllTests {
 		TestSuite clientSuite = new TestSuite("Basic Storage ServerTest-Suite");
 		clientSuite.addTestSuite(ConnectionTest.class);
 		clientSuite.addTestSuite(InteractionTest.class);
-		clientSuite.addTestSuite(AdditionalTest.class);
-		clientSuite.addTestSuite(KVCacheTest.class);
-		clientSuite.addTestSuite(KVServiceBasicTest.class);
-		clientSuite.addTestSuite(KVServiceStressTest.class);
+//		clientSuite.addTestSuite(AdditionalTest.class);
+//		clientSuite.addTestSuite(KVCacheTest.class);
+//		clientSuite.addTestSuite(KVServiceBasicTest.class);
+//		clientSuite.addTestSuite(KVServiceStressTest.class);
 		return clientSuite;
 	}
 	

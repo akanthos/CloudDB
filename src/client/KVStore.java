@@ -119,7 +119,7 @@ public class KVStore implements KVCommInterface {
                     throw new Exception("Client is disconnected");
                 }
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-                byte[] response = null;
+                byte[] response;
                 try {
                     response = send(kvMessage.getMsgBytes(), connection);
                     if (response[0] == -1) {
@@ -189,7 +189,7 @@ public class KVStore implements KVCommInterface {
                     throw new Exception("Client is disconnected");
                 }
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
-                byte[] response = null;
+                byte[] response;
                 try {
                     response = send(kvMessage.getMsgBytes(), connection);
                     if (response[0] == -1) {

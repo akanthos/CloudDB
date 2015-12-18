@@ -3,6 +3,7 @@ package common.messages;
 import common.ServerInfo;
 import common.utils.KVRange;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -17,7 +18,13 @@ public interface KVServerMessage extends AbstractMessage {
         GENERAL_ERROR,
         SERVER_FAILURE,             /* Message to ECS informing about a possible server failure */
         HEARTBEAT,                  /* Heartbeats between coordinators and replicas */
-        REPLICATE                   /* Replica message from coordinator to replicas */
+        HEARTBEAT_RESPONSE,
+        REPLICATE,                  /* Coordinator message from coordinator to replicas */
+        REPLICATE_SUCCESS,
+        REPLICATE_FAILURE,
+        GOSSIP,
+        GOSSIP_SUCCESS,
+        GOSSIP_FAILURE
     }
 
     /**
@@ -26,6 +33,9 @@ public interface KVServerMessage extends AbstractMessage {
      */
     List<KVPair> getKVPairs();
     void setKVPairs(List<KVPair> kvPairs);
+
+    Integer getSerialNumber();
+    void setSerialNumber(Integer serialNumber);
 
     /**
      * @return a status string that is used to identify request types,
@@ -43,15 +53,10 @@ public interface KVServerMessage extends AbstractMessage {
      * The replica number of the server if the server message is of REPLICATE type
      * @return
      */
-    int getReplicaNumber();
+    String getCoordinatorID();
 
-    void setReplicaNumber(int replicaNumber);
+    void setCoordinatorID(String replicaID);
 
-    /**
-     * The IP of the coordinator if the server message is of REPLICATE type
-     * @return
-     */
-    String getSourceIP();
-
-    void setSourceIP(String sourceIP);
+    Date getTimeOfSendingMsg();
+    void setTimeOfSendingMsg(Date timeOfSendingMsg);
 }

@@ -971,7 +971,7 @@ public class ECSImpl implements ECS {
                                Long fromIndex, Long toIndex){
 
         KVAdminMessageImpl deleteDataMsg = new KVAdminMessageImpl();
-        deleteDataMsg.setStatus(KVAdminMessage.StatusType.DELETE_DATA);
+        deleteDataMsg.setStatus(KVAdminMessage.StatusType.REMOVE_DATA);
         deleteDataMsg.setLow(fromIndex);
         deleteDataMsg.setHigh(toIndex);
         try {

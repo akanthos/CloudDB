@@ -1,4 +1,4 @@
-package app_kvServer;
+package app_kvServer.dataStorage;
 
 import common.ServerInfo;
 import common.messages.KVMessage;
@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
-import static app_kvServer.CachePolicy.*;
+import static app_kvServer.dataStorage.CachePolicy.*;
 
 /**
  * A KV cache implementation, based on LinkedHashMap.
@@ -27,7 +27,7 @@ public class KVCache {
     private ServerInfo server;
     private LinkedHashMap<String,String> map;
     private LFUCache lfu;
-    private KVPersistenceEngine persistence = new KVPersistenceEngine();
+    private KVPersistenceEngine persistence;
     final Integer cacheSize;
     CachePolicy policy;
     private static Logger logger = Logger.getLogger(KVCache.class);

@@ -1,9 +1,10 @@
 package common;
 
 
-import app_kvEcs.ECSCommand;
+import app_kvServer.KVServer;
 import common.messages.*;
 import common.utils.KVRange;
+import common.utils.Utilities;
 import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -13,10 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class Serializer {
 
@@ -53,8 +51,7 @@ public class Serializer {
             // add metadata
             messageStr.append(HEAD_DLM);
             for (ServerInfo server : message.getMetadata()) {
-                messageStr.append(server.getAddress()+SUB_DLM1+server.getServerPort()+SUB_DLM1
-                        +server.getFromIndex()+SUB_DLM1+server.getToIndex());
+                messageStr.append(server.getAddress()).append(SUB_DLM1).append(server.getServerPort()).append(SUB_DLM1).append(server.getFromIndex()).append(SUB_DLM1).append(server.getToIndex());
                 messageStr.append(SUB_DLM2);
             }
         }
@@ -76,24 +73,29 @@ public class Serializer {
 
         StringBuilder messageStr = new StringBuilder(SERVER_MESSAGE + HEAD_DLM + message.getStatus().ordinal());
         if (message.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
-            messageStr.append(HEAD_DLM + message.getKVPairs().size());
+            messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
             for (KVPair pair : message.getKVPairs()) {
-                messageStr.append(HEAD_DLM).append(pair.getKey() + SUB_DLM1 + pair.getValue());
+                messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
+            }
+        } else if (message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
+            messageStr.append(HEAD_DLM).append(message.getSerialNumber());
+            messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
+            for (KVPair pair : message.getKVPairs()) {
+                messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
             }
         } else if (message.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
             messageStr.append(HEAD_DLM);
-            messageStr.append(message.getSourceIP());
+            messageStr.append(message.getCoordinatorID());
             messageStr.append(HEAD_DLM);
             messageStr.append(df.format(message.getTimeOfSendingMsg()));
         } else if (message.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
-            messageStr.append(HEAD_DLM + message.getKVPairs().size());
+            messageStr.append(HEAD_DLM);
+            messageStr.append(message.getCoordinatorID());
+            messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
             for (KVPair pair : message.getKVPairs()) {
-                messageStr.append(HEAD_DLM).append(pair.getKey() + SUB_DLM1 + pair.getValue());
+                messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
             }
-            messageStr.append(HEAD_DLM);
-            messageStr.append(message.getReplicaNumber());
-            messageStr.append(HEAD_DLM);
-            messageStr.append(message.getSourceIP());
+
         }
 
 
@@ -123,8 +125,7 @@ public class Serializer {
             msg.append(HEAD_DLM);
             //Message_Data => MetaData(List)
             for (ServerInfo server : message.getMetadata()) {
-                msg.append( server.getAddress() + SUB_DLM1 + server.getServerPort() + SUB_DLM1
-                        + server.getFromIndex() + SUB_DLM1 + server.getToIndex() + SUB_DLM1 + SUB_DLM1 );
+                msg.append(server.getAddress()).append(SUB_DLM1).append(server.getServerPort()).append(SUB_DLM1).append(server.getFromIndex()).append(SUB_DLM1).append(server.getToIndex()).append(SUB_DLM1).append(SUB_DLM1);
                 msg.append(SUB_DLM2);
             }
 
@@ -137,20 +138,18 @@ public class Serializer {
             }
 
         } else if (message.getStatus() == KVAdminMessage.StatusType.MOVE_DATA
-                    || message.getStatus() == KVAdminMessage.StatusType.REPLICATE_DATA) {
+                    || message.getStatus() == KVAdminMessage.StatusType.REPLICATE_DATA
+                    || message.getStatus() == KVAdminMessage.StatusType.RESTORE_DATA
+                    || message.getStatus() == KVAdminMessage.StatusType.REMOVE_DATA) {
             // add the from and to and the server info
             ServerInfo server = message.getServerInfo();
             //Message_Data = Information for the move server
-            msg.append( HEAD_DLM + message.getRange().getLow() + HEAD_DLM
-                    + message.getRange().getHigh() + HEAD_DLM
-                    + server.getAddress() + HEAD_DLM + server.getServerPort() );
+            msg.append(HEAD_DLM).append(message.getRange().getLow()).append(HEAD_DLM).append(message.getRange().getHigh()).append(HEAD_DLM).append(server.getAddress()).append(HEAD_DLM).append(server.getServerPort());
 
         } else if (message.getStatus() == KVAdminMessage.StatusType.SERVER_FAILURE) {
             // add the failed message server details
             ServerInfo server = message.getFailedServerInfo();
-            msg.append( HEAD_DLM + server.getServerRange().getLow() + HEAD_DLM
-                    + server.getServerRange().getHigh() + HEAD_DLM
-                    + server.getAddress() + HEAD_DLM + server.getServerPort() );
+            msg.append(HEAD_DLM).append(server.getServerRange().getLow()).append(HEAD_DLM).append(server.getServerRange().getHigh()).append(HEAD_DLM).append(server.getAddress()).append(HEAD_DLM).append(server.getServerPort());
         }
         // in the case of start|stop| etc. messages we just have
         // a message : <TypeOfMessage>(int)-- <StatusType>(number)
@@ -222,7 +221,9 @@ public class Serializer {
                             ((KVAdminMessageImpl)retrievedMessage).setDisplacementStrategy(tokens[4]);
                         }
                     } else if (((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)
-                            || ((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.REPLICATE_DATA)) {
+                            || ((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.REPLICATE_DATA)
+                            || ((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.RESTORE_DATA)
+                            || ((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.REMOVE_DATA)) {
                         if (tokens.length>= 3 && tokens[2] != null) {
                             //((KVAdminMessageImpl) retrievedMessage).setRange(new KVRange());
                             ((KVAdminMessageImpl) retrievedMessage).setLow(Long.valueOf(tokens[2].trim()));
@@ -256,7 +257,7 @@ public class Serializer {
                         ((KVServerMessage)retrievedMessage).setStatus( KVServerMessage.StatusType.values()[statusNum] );
                     }
                     if ((((KVServerMessageImpl) retrievedMessage).getStatus() == (KVServerMessage.StatusType.HEARTBEAT))) {
-                        ((KVServerMessageImpl) retrievedMessage).setSourceIP(tokens[2].trim());
+                        ((KVServerMessageImpl) retrievedMessage).setCoordinatorID(tokens[2].trim());
                         try {
                             ((KVServerMessageImpl) retrievedMessage).setTimeOfSendingMsg(df.parse(tokens[3].trim()));
                         } catch (ParseException e) {
@@ -264,18 +265,31 @@ public class Serializer {
                             throw new UnsupportedDataTypeException("Unable to parse heartbeat message");
                         }
                     } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.REPLICATE)))) {
-                        if (tokens[2] != null) { // Data length and data
-                            int dataLength = Integer.parseInt(tokens[2]);
+                        ((KVServerMessageImpl) retrievedMessage).setCoordinatorID(tokens[2].trim());
+                        if (tokens[3] != null) { // Data length and data
+                            int dataLength = Integer.parseInt(tokens[3]);
                             ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
                             for (int i = 0; i < dataLength; i++) {
-                                String[] kv = tokens[i + 3].split(SUB_DLM1);
+                                String[] kv = tokens[i + 4].split(SUB_DLM1);
                                 if (kv.length == 2) {
                                     kvPairs.add(new KVPair(kv[0], kv[1]));
                                 }
                             }
                             ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
-                            ((KVServerMessage) retrievedMessage).setReplicaNumber(Integer.parseInt(tokens[3+dataLength].trim()));
-                            ((KVServerMessage) retrievedMessage).setSourceIP(tokens[3+dataLength+1].trim());
+                        }
+                    } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.GOSSIP)))) {
+                        Integer serialNumber = Integer.parseInt(tokens[2]);
+                        ((KVServerMessageImpl) retrievedMessage).setSerialNumber(serialNumber);
+                        if (tokens[3] != null) { // Data length and data
+                            int dataLength = Integer.parseInt(tokens[3]);
+                            LinkedList<KVPair> kvPairs = new LinkedList<>();
+                            for (int i = 0; i < dataLength; i++) {
+                                String[] kv = tokens[i + 4].split(SUB_DLM1);
+                                if (kv.length == 2) {
+                                    kvPairs.add(new KVPair(kv[0], kv[1]));
+                                }
+                            }
+                            ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
                         }
                     }
                     // TODO:Use status codes instead of token length.
@@ -296,7 +310,8 @@ public class Serializer {
                     }
                     break;
                 default:
-                    // TODO: Maybe return an error message instead of null??
+                    retrievedMessage = new KVServerMessageImpl();
+                    ((KVServerMessage) retrievedMessage).setStatus(KVServerMessage.StatusType.GENERAL_ERROR);
                     break;
 
             }
@@ -361,20 +376,37 @@ public class Serializer {
      */
     public static void main (String[] args) throws UnsupportedEncodingException, UnsupportedDataTypeException {
         // ServerInfo failedServerInfo = new ServerInfo("1.1.1.1", 1234, new KVRange(0L, 2000L));
-        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE);
-        // kvServerMessage.setTimeOfSendingMsg(new Date());
-        kvServerMessage.setSourceIP("1.1.1.1");
-        kvServerMessage.setKvPairs(Arrays.asList(new KVPair("foo", "bar"), new KVPair("boo", "far")));
-        kvServerMessage.setReplicaNumber(1);
-        byte[] bytes = toByteArray(kvServerMessage);
+//        List<KVPair> pairs = Arrays.asList(new KVPair("foo", "bar"), new KVPair("boo", "far"));
+//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("1", pairs, KVServerMessage.StatusType.REPLICATE);
+//        byte[] bytes = toByteArray(kvServerMessage);
+
+        KVAdminMessageImpl m = new KVAdminMessageImpl(KVAdminMessage.StatusType.SERVER_FAILURE, new ServerInfo("localhost", 500));
+        byte[] bytes = toByteArray(m);
+        System.out.println(new String(bytes,"UTF-8"));
+        System.out.println("PART_2");
+        AbstractMessage abstractMessage = Serializer.toObject(bytes);
+        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
+            m = (KVAdminMessageImpl) abstractMessage;
+        }
+
+
+
+
+//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("1", new Date(), KVServerMessage.StatusType.HEARTBEAT);
+//        byte[] bytes = toByteArray(kvServerMessage);
 
         // String hehe = "0####127.0.0.1&&50000&&3706585719&&897794963%%127.0.0.1&&50001&&897794963&&3706585719%%";
         // byte[] arr = hehe.toString().getBytes();
         //byte[] arr = toByteArray(hehe);
 
-        System.out.println(new String(bytes,"UTF-8"));
-        System.out.println("PART_2");
-        AbstractMessage abstractMessage = Serializer.toObject(bytes);
+//        System.out.println(new String(bytes,"UTF-8"));
+//        System.out.println("PART_2");
+//        AbstractMessage abstractMessage = Serializer.toObject(bytes);
+//        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
+//            kvServerMessage = (KVServerMessageImpl) abstractMessage;
+//        }
+
+
     }
 
 

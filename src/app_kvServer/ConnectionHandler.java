@@ -8,7 +8,7 @@ import java.net.Socket;
  */
 public interface ConnectionHandler {
 
-    public void handle(Socket client, int numOfClients) throws IOException;
-    public void shutDown();
+    void handle(Socket client, int numOfClients) throws IOException;
+    void shutDown();
 
 }

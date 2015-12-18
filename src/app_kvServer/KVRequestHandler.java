@@ -63,7 +63,6 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     logger.error("\n\n########################################\n\n");
                     byteMessage = Utilities.receive(inputStream);
                     if (!Thread.currentThread().isInterrupted()) {
-                        String hello = new String(byteMessage, "UTF-8");
 
                         if (byteMessage[0] == -1) {
                             clientConnected = false;
@@ -77,13 +76,16 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                                 kvResponse = processMessage(kvMessage);
                                 Utilities.send(kvResponse, outputStream);
                             } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
+                                server.registerECS(clientSocket.getInetAddress());
                                 kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
                                 kvAdminResponse = processAdminMessage(kvAdminMessage);
                                 Utilities.send(kvAdminResponse, outputStream);
                             } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
                                 kvServerMessage = (KVServerMessageImpl) abstractMessage;
                                 kvServerResponse = processServerMessage(kvServerMessage);
-                                Utilities.send(kvServerResponse, outputStream);
+                                if (kvServerResponse != null) {
+                                    Utilities.send(kvServerResponse, outputStream);
+                                }
                             } else {
                                 Utilities.send(new KVMessageImpl(KVMessage.StatusType.GENERAL_ERROR), outputStream);
                             }
@@ -103,16 +105,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } catch (Exception e) {
             logger.error(e);
         } finally {
-            try {
-                if (clientSocket != null) {
-                    inputStream.close();
-                    outputStream.close();
-                    clientSocket.close();
-//                    server.removeListener(this);
-                }
-            }catch(IOException ioe){
-                logger.error("Error! Unable to tear down connection!", ioe);
-            }
+            ConnectionHelper.connectionTearDown(inputStream, outputStream, clientSocket, logger);
         }
     }
 
@@ -139,9 +132,19 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             return server.writeUnlock();
         } else if (kvAdminMessage.getStatus().equals(StatusType.MOVE_DATA)) {
             return server.moveData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
+        } else if (kvAdminMessage.getStatus().equals(StatusType.REPLICATE_DATA)) {
+            return server.replicateData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
+        }
+        else if (kvAdminMessage.getStatus().equals(StatusType.REMOVE_DATA)) {
+            return server.removeReplicatedData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
+        }
+        else if (kvAdminMessage.getStatus().equals(StatusType.RESTORE_DATA)) {
+            return server.restoreData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
             return server.update(kvAdminMessage.getMetadata());
-        } else {
+        }
+        // TODO: Handle cases where ring changes and it affects replicass
+        else {
             logger.error(String.format("ECSImpl: Invalid message from ECSImpl: %s", kvAdminMessage.toString()));
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         }
@@ -158,9 +161,14 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         KVServerMessageImpl response;
         if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
             return server.insertNewDataToCache(kvServerMessage.getKVPairs());
-        } /*else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_SUCCESS)) {
-            return server.insertNewDataToCache(kvServerMessage.getKVPairs());
-        } */else {
+        } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
+            return server.newReplicatedData(kvServerMessage.getCoordinatorID(), kvServerMessage.getKVPairs());
+        } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
+            return server.updateReplicatedData(kvServerMessage.getSerialNumber(), kvServerMessage.getKVPairs());
+        } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
+            server.heartbeatReceived(kvServerMessage.getCoordinatorID(), kvServerMessage.getTimeOfSendingMsg());
+            return null;
+        } else {
             logger.error(String.format("Server: Invalid message from ECSImpl: %s", kvServerMessage.toString()));
             response = new KVServerMessageImpl(KVServerMessage.StatusType.GENERAL_ERROR);
         }
@@ -210,6 +218,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     return new KVMessageImpl(KVMessage.StatusType.SERVER_WRITE_LOCK);
                 } else {
                     // Do the PUT
+                    // TODO: Update replicas?? Or wait for bulk update??
                     return server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
                 }
             } else {

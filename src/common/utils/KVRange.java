@@ -76,4 +76,8 @@ public class KVRange {
         return String.valueOf(low) + "," + String.valueOf(high);
     }
 
+    public boolean equals(KVRange other) {
+        return (  (low == other.getLow()) && (high == other.getHigh())  );
+    }
+
 }

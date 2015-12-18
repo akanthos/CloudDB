@@ -113,7 +113,7 @@ public class KVStore implements KVCommInterface {
         KVMessageImpl kvMessage = new KVMessageImpl(key, value, KVMessage.StatusType.PUT);
         try {
             while (resendRequest) {
-                ServerConnection connection = getServerConnection(key);
+                ServerConnection connection = getServerConnection(key, false);
                 if (connection == null) {
                     logger.error(String.format("Put request cannot be performed. Key: %s, Value: %s", key, value));
                     throw new Exception("Client is disconnected");
@@ -183,7 +183,7 @@ public class KVStore implements KVCommInterface {
         KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.GET);
         try {
             while (resendRequest) {
-                ServerConnection connection = getServerConnection(key);
+                ServerConnection connection = getServerConnection(key, true);
                 if (connection == null) {
                     logger.error(String.format("Get request cannot be performed. Key: %s", key));
                     throw new Exception("Client is disconnected");
@@ -319,19 +319,22 @@ public class KVStore implements KVCommInterface {
     }
 
     /**
-     * For a given key, this function returns the serverconnection object.
+     * For a given key, this function returns the serverconnection object responsible for that key
      *
-     * @param key
+     * @param key: The key to be queried
+     * @param randomizeReplicas: If true, a randomly choosen node from the coordinator and replicas are returned. If false, the coordinator is returned.
      * @return
      * @throws Exception
      */
-    private ServerConnection getServerConnection(String key) throws Exception {
+    private ServerConnection getServerConnection(String key, boolean randomizeReplicas) throws Exception {
         Long keyValue = hash.hash(key);
         // Passing the key in the form of a dummy object
         // TODO: Is there a cleaner way to do this?
         for (ServerInfo m : metadataFromServer) {
-            if (m.getServerRange().isIndexInRange(keyValue)
-                    ) {
+            if (m.getServerRange().isIndexInRange(keyValue)) {
+                if (randomizeReplicas) {
+                    m = getRandomReplica(m);
+                }
                 if (currentServer != null && m.getAddress().equals(currentServer.getAddress()) && m.getServerPort().equals(currentServer.getServerPort())) {
                     return currentConnection;
                 } else {
@@ -380,6 +383,16 @@ public class KVStore implements KVCommInterface {
         return null;
     }
 
+    /**
+     * Returns a randomly chosen node from a coordiator and its replicas
+     *
+     * @param m
+     * @return
+     */
+    private ServerInfo getRandomReplica(ServerInfo m) {
+        List<ServerInfo> replicas = Utilities.getReplicas(metadataFromServer, m);
+        return replicas.get(new Random().nextInt(replicas.size()));
+    }
 
     class SearchComparator implements Comparator<ServerInfo> {
 

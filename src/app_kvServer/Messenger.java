@@ -135,6 +135,7 @@ public class Messenger {
      * @param ecsInfo the ecs contact information
      */
     public void reportFailureToECS(ServerInfo failedCoordinator, ServerInfo ecsInfo) {
+        logger.info(server.getInfo().getID() + " : Reporting failure to ECS for server: " + failedCoordinator.getID());
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -169,7 +170,7 @@ public class Messenger {
         }
     }
 
-    public void sendHeartBeatToServer(ServerInfo serverInfo) throws SocketTimeoutException {
+    public void askHeartbeatFromServer(ServerInfo serverInfo) throws SocketTimeoutException {
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -187,7 +188,7 @@ public class Messenger {
             /*     Send HEARTBEAT message to the other server    */
             /*****************************************************/
 
-            KVServerMessageImpl heartbeatMessage = new KVServerMessageImpl(serverInfo.getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT);
+            KVServerMessageImpl heartbeatMessage = new KVServerMessageImpl(server.getInfo().getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT);
             Utilities.send(heartbeatMessage, outStream);
 
             clientSocket.setSoTimeout(5000); // 5 seconds timeout
@@ -210,8 +211,10 @@ public class Messenger {
             logger.error("KVServer hostname cannot be resolved", e);
         } catch (IOException e) {
             logger.error("Error while connecting to the server for heartbeat", e);
+            throw new SocketTimeoutException();
         } catch (CannotConnectException e) {
             logger.error("Error while connecting to the server.", e);
+            throw new SocketTimeoutException();
         } finally {
             /****************************************/
             /* Tear down connection to other server */

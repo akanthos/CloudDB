@@ -162,7 +162,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
             return server.updateReplicatedData(kvServerMessage.getKVPairs());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
-            return server.heartbeatReceived(kvServerMessage.getCoordinatorID(), kvServerMessage.getTimeOfSendingMsg());
+            return server.heartbeatReceived(kvServerMessage.getReplicaID(), kvServerMessage.getTimeOfSendingMsg());
         } else {
             logger.error(String.format("Server: Invalid message from ECSImpl: %s", kvServerMessage.toString()));
             response = new KVServerMessageImpl(KVServerMessage.StatusType.GENERAL_ERROR);

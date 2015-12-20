@@ -2,7 +2,6 @@ package common.messages;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -23,7 +22,7 @@ public class KVServerMessageImpl implements KVServerMessage {
      * Information related to replica messages.
      * Other variables used: sourceIP (coordinator IP), kvPairs (list of pairs that needs to be replicated)
      */
-    private String coordinatorID;
+    private String replicaID;
 
     /**
      * Default constructor
@@ -60,7 +59,7 @@ public class KVServerMessageImpl implements KVServerMessage {
      * @param status the status of the message
      */
     public KVServerMessageImpl(String coordinatorID, Date timeOfSendingMsg, StatusType status) {
-        this.coordinatorID = coordinatorID;
+        this.replicaID = coordinatorID;
         this.timeOfSendingMsg = timeOfSendingMsg;
         this.status = status;
     }
@@ -119,11 +118,11 @@ public class KVServerMessageImpl implements KVServerMessage {
         this.timeOfSendingMsg = timeOfSendingMsg;
     }
 
-    public String getCoordinatorID() {
-        return coordinatorID;
+    public String getReplicaID() {
+        return replicaID;
     }
 
-    public void setCoordinatorID(String coordinatorID) {
-        this.coordinatorID = coordinatorID;
+    public void setReplicaID(String replicaID) {
+        this.replicaID = replicaID;
     }
 }

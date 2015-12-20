@@ -1,7 +1,6 @@
 package app_kvServer;
 
 import app_kvServer.replication.Coordinator;
-import app_kvServer.replication.Replica;
 import app_kvServer.replication.ReplicationHandler;
 import app_kvServer.dataStorage.KVCache;
 import common.ServerInfo;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -428,8 +426,8 @@ public class SocketServer {
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
-    public KVServerMessageImpl heartbeatReceived(String coordinatorID, Date timeOfSendingMessage) {
-        return replicationHandler.heartbeatReceived(coordinatorID);
+    public KVServerMessageImpl heartbeatReceived(String replicaID, Date timeOfSendingMessage) {
+        return replicationHandler.heartbeatReceived(replicaID);
     }
 
 
@@ -438,9 +436,9 @@ public class SocketServer {
     }
 
 
-    public void sendHeartbeatToServer(Coordinator coordinator) {
+    public void askHeartbeatFromServer(Coordinator coordinator) {
         try {
-            messenger.sendHeartBeatToServer(coordinator.getInfo());
+            messenger.askHeartbeatFromServer(coordinator.getInfo());
         } catch (SocketTimeoutException e) {
             reportFailureToECS(coordinator);
             replicationHandler.coordinatorFailed(coordinator);

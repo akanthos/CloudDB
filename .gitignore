@@ -24,4 +24,4 @@ GET_results_*.txt
 results_*.txt
 
 #jar files
-*.jar
+ms*.jar

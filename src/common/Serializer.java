@@ -1,10 +1,8 @@
 package common;
 
 
-import app_kvServer.KVServer;
 import common.messages.*;
 import common.utils.KVRange;
-import common.utils.Utilities;
 import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -87,7 +85,7 @@ public class Serializer {
             }
         } */else if (message.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
             messageStr.append(HEAD_DLM);
-            messageStr.append(message.getCoordinatorID());
+            messageStr.append(message.getReplicaID());
             messageStr.append(HEAD_DLM);
             messageStr.append(df.format(message.getTimeOfSendingMsg()));
         }
@@ -255,7 +253,7 @@ public class Serializer {
                     }
                     if ((((KVServerMessageImpl) retrievedMessage).getStatus() == (KVServerMessage.StatusType.HEARTBEAT))) {
                         logger.info("It's a heartbeat message");
-                        ((KVServerMessageImpl) retrievedMessage).setCoordinatorID(tokens[2].trim());
+                        ((KVServerMessageImpl) retrievedMessage).setReplicaID(tokens[2].trim());
                         try {
                             ((KVServerMessageImpl) retrievedMessage).setTimeOfSendingMsg(df.parse(tokens[3].trim()));
                             logger.info("Parsed heartbeat datetime");

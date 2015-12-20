@@ -50,9 +50,9 @@ public interface KVServerMessage extends AbstractMessage {
      * The replica number of the server if the server message is of REPLICATE type
      * @return
      */
-    String getCoordinatorID();
+    String getReplicaID();
 
-    void setCoordinatorID(String replicaID);
+    void setReplicaID(String replicaID);
 
     Date getTimeOfSendingMsg();
     void setTimeOfSendingMsg(Date timeOfSendingMsg);

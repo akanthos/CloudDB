@@ -259,21 +259,8 @@ public class Serializer {
                             throw new UnsupportedDataTypeException("Unable to parse heartbeat message");
                         }
                     } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.GOSSIP)))
-                            || ((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.REPLICATE)))) {
-                        if (tokens[2] != null) { // Data length and data
-                            int dataLength = Integer.parseInt(tokens[2]);
-                            LinkedList<KVPair> kvPairs = new LinkedList<>();
-                            for (int i = 0; i < dataLength; i++) {
-                                String[] kv = tokens[i + 3].split(SUB_DLM1);
-                                if (kv.length == 2) {
-                                    kvPairs.add(new KVPair(kv[0], kv[1]));
-                                }
-                            }
-                            ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
-                        }
-                    }
-                    // TODO:Use status codes instead of token length.
-                    else if (tokens.length >= 3) {
+                            || ((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.REPLICATE)))
+                            || ((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.MOVE_DATA)))) {
                         if (tokens[2] != null) { // Data length and data
                             int dataLength = Integer.parseInt(tokens[2]);
                             ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
@@ -288,6 +275,22 @@ public class Serializer {
                             ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
                         }
                     }
+                    // TODO:Use status codes instead of token length.
+                    /*else if (tokens.length >= 3) {
+                        if (tokens[2] != null) { // Data length and data
+                            int dataLength = Integer.parseInt(tokens[2]);
+                            ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
+                            if (tokens.length == dataLength + 3) {
+                                for (int i = 0; i < dataLength; i++) {
+                                    String[] kv = tokens[i + 3].split(SUB_DLM1);
+                                    if (kv.length == 2) {
+                                        kvPairs.add(new KVPair(kv[0], kv[1]));
+                                    }
+                                }
+                            }
+                            ((KVServerMessage) retrievedMessage).setKVPairs(kvPairs);
+                        }
+                    }*/
                     break;
                 default:
                     retrievedMessage = new KVServerMessageImpl();
@@ -377,7 +380,7 @@ public class Serializer {
         pairsTosend.add(new KVPair("asdf", "sdf"));
         pairsTosend.add(new KVPair("cbn", "sdf"));
         pairsTosend.add(new KVPair("rty", "sdf"));
-        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.GOSSIP);
+        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
         byte[] bytes = toByteArray(kvServerMessage);
 
         AbstractMessage abstractMessage = Serializer.toObject(bytes);

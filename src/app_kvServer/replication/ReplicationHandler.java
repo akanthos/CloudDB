@@ -171,9 +171,12 @@ public class ReplicationHandler {
     public void sendHeartbeat(String coordinatorID) {
         server.sendHeartbeatToServer(coordinators.get(coordinatorID));
     }
-    public void heartbeatReceived(String coordinatorID) {
-        logger.info("Received heartbeat from: " + coordinatorID);
-        server.answerHeartbeat(coordinators.get(coordinatorID));
+    public KVServerMessageImpl heartbeatReceived(String coordinatorID) {
+        logger.info(server.getInfo().getID() + " ---- Received heartbeat from: " + coordinatorID);
+        logger.info("Coords: " + coordinators.size());
+        logger.info("Replicas: " + replicas.size());
+        return new KVServerMessageImpl(KVServerMessage.StatusType.HEARTBEAT_RESPONSE);
+//        server.answerHeartbeat(coordinators.get(coordinatorID));
     }
     public synchronized void coordinatorFailed(Coordinator coordinator) {
         deregisterCoordinator(coordinator.getCoordinatorID());
@@ -191,6 +194,7 @@ public class ReplicationHandler {
     }
 
     public synchronized void cleanupNoData() {
+        logger.info("Cleaning UP DATA!!!!");
         /* Shutdown timers and heartbeats*/
         shutdownHeartbeats();
         /* Remove coordinators */

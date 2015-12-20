@@ -428,8 +428,8 @@ public class SocketServer {
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
-    public void heartbeatReceived(String replicaID, Date timeOfSendingMessage) {
-        replicationHandler.heartbeatReceived(replicaID);
+    public KVServerMessageImpl heartbeatReceived(String coordinatorID, Date timeOfSendingMessage) {
+        return replicationHandler.heartbeatReceived(coordinatorID);
     }
 
 
@@ -445,9 +445,6 @@ public class SocketServer {
             reportFailureToECS(coordinator);
             replicationHandler.coordinatorFailed(coordinator);
         }
-    }
-    public void answerHeartbeat(Coordinator coordinator) {
-        messenger.respondToHeartbeatRequest(coordinator.getInfo());
     }
 
 

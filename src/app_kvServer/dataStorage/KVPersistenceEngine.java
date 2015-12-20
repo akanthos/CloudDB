@@ -1,5 +1,6 @@
 package app_kvServer.dataStorage;
 
+import app_kvServer.SocketServer;
 import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
@@ -39,8 +40,8 @@ public class KVPersistenceEngine {
      * @throws StorageException
      * indicating problems accessing the persistant file
      */
-    public KVPersistenceEngine(ServerInfo info) throws StorageException {
-        initialization(fileNamePrefix + String.valueOf(info.getServerPort()));
+    public KVPersistenceEngine(SocketServer server) throws StorageException {
+        initialization(fileNamePrefix + String.valueOf(server.getInfo().getServerPort()));
     }
 
     /**

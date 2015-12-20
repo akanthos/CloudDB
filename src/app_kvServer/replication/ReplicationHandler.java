@@ -21,7 +21,6 @@ public class ReplicationHandler {
     private HashMap<String, Coordinator> coordinators;
     private HashMap<String, Replica> replicas;
     private ExecutorService timeoutThreadpool;
-    private final UpdateManager updateManager;
 
     private final KVPersistenceEngine replicatedData;
     private final SocketServer server;
@@ -38,13 +37,11 @@ public class ReplicationHandler {
         this.heartbeatPeriod = heartbeatPeriod;
         this.replicatedData = new KVPersistenceEngine("_replica");
         findCoordsAndReplicas(metadata, range);
-        this.updateManager = new UpdateManager(this);
     }
 
     public void updateMetadata(List<ServerInfo> metadata, KVRange range) {
         cleanupNoData();
         findCoordsAndReplicas(metadata, range);
-        updateManager.refresh();
     }
 
     private synchronized void findCoordsAndReplicas(List<ServerInfo> metadata, KVRange range) {
@@ -133,9 +130,12 @@ public class ReplicationHandler {
     }
 
 
-    public synchronized void gossipToReplicas(ArrayList<KVPair> list) {
-        for (Replica replica : replicas.values())
-            server.gossipToReplica(replica.getInfo(), list);
+    public synchronized boolean gossipToReplicas(ArrayList<KVPair> list) {
+        for (Replica replica : replicas.values()) {
+            if (!server.gossipToReplica(replica.getInfo(), list))
+                return false;
+        }
+        return true;
     }
 
     ///////////////////////////////////////////
@@ -192,8 +192,6 @@ public class ReplicationHandler {
         replicas.clear();
         /* Clean replicated data */
         replicatedData.cleanUp();
-        /* Shutdown the replica updater */
-        updateManager.shutdown();
     }
 
 

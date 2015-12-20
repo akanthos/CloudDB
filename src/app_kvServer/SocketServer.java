@@ -87,7 +87,7 @@ public class SocketServer {
      * Add the connection handler for the current socket server
      * @param handler is logic for servicing a network connection
      */
-    public void addHandler(ConnectionHandler handler) { this.handler = handler; }
+    public void addConnectionHandler(ConnectionHandler handler) { this.handler = handler; }
 
     /**
      * Stop the ServerSocket
@@ -130,7 +130,7 @@ public class SocketServer {
      */
     public synchronized KVAdminMessageImpl initKVServer(List<ServerInfo> metadata, Integer cacheSize, String displacementStrategy){
         try {
-            this.kvCache = new KVCache(cacheSize, displacementStrategy, info);
+            this.kvCache = new KVCache(cacheSize, displacementStrategy, this);
         } catch (StorageException e) {
             logger.error("Cannot create KVCache", e);
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.GENERAL_ERROR);
@@ -450,8 +450,8 @@ public class SocketServer {
     }
 
 
-    public void gossipToReplica(ServerInfo replicaInfo, ArrayList<KVPair> list) {
-        messenger.gossipToReplica(replicaInfo, list);
+    public boolean gossipToReplica(ServerInfo replicaInfo, ArrayList<KVPair> list) {
+        return messenger.gossipToReplica(replicaInfo, list);
     }
 
 

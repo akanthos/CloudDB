@@ -4,7 +4,6 @@ package app_kvServer;
 import common.ServerInfo;
 import common.utils.KVRange;
 import helpers.Constants;
-import helpers.StorageException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
@@ -35,7 +34,7 @@ public class KVServer {
         this.server = new SocketServer(this.info);
 
         ConnectionHandler handler = new KVConnectionHandler(server);
-        server.addHandler(handler);
+        server.addConnectionHandler(handler);
 
         try {
             server.connect();
@@ -55,7 +54,7 @@ public class KVServer {
 //        metadata.add(new ServerInfo(address, port, new KVRange(0, Long.MAX_VALUE)));
 
         ConnectionHandler handler = new KVConnectionHandler(server);
-        server.addHandler(handler);
+        server.addConnectionHandler(handler);
 //        server.initKVServer(metadata, cacheSize, displacementStrategy);
 
 
@@ -78,7 +77,7 @@ public class KVServer {
 //        metadata.add(new ServerInfo(address, port, new KVRange(0, Long.MAX_VALUE)));
 
         ConnectionHandler handler = new KVConnectionHandler(server);
-        server.addHandler(handler);
+        server.addConnectionHandler(handler);
 
         ArrayList<ServerInfo> metadata = new ArrayList<>();
         metadata.add(new ServerInfo(server.getInfo().getAddress(), server.getInfo().getServerPort(), new KVRange(0, 0)));

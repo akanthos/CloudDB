@@ -133,7 +133,7 @@ public class SshCaller implements SshCommunication {
             String s = "";
             char c;
             boolean waiting = true;
-            while (System.currentTimeMillis() < end && waiting) {
+            while (waiting) {
                 while (in.available() > 0) {
                     c = (char) in.read();
                     s += c;
@@ -148,11 +148,8 @@ public class SshCaller implements SshCommunication {
                     if ((int) c < 0)
                         break;
                 }
-
             }
-            logger.info("Local Server" + " has started! Listening on Port "
-                    + arguments[0]);
-
+            logger.info("Local Server on port " + arguments[0]);
             return 0;
         } catch (Exception e) {
             System.out.println(e);

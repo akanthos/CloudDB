@@ -23,11 +23,12 @@ public class FailDetection implements Runnable {
 
     private static Logger logger = Logger.getLogger(FailDetection.class);
     private int port;
-    private boolean running = true;
+    private boolean running;
     private OutputStream out;
     private InputStream in;
     private Socket client;
     private ECSImpl ecs;
+    ServerSocket serverSocket;
 
     public boolean isRunning() {
         return running;
@@ -37,17 +38,16 @@ public class FailDetection implements Runnable {
         this.running = running;
     }
 
-    public FailDetection(int port, ECSImpl ecsServer){
+    public FailDetection(int port, ServerSocket SSocket, ECSImpl ecsServer){
         this.port = port;
         this.ecs = ecsServer;
+        serverSocket = SSocket;
         //initialize the newly created socket server
         try {
-            ServerSocket serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(port);
             logger.info("Server listening on port " + port);
             logger.debug("Start listening for Failure reports from KVStore Servers.");
             //accept a new connection
-            client = serverSocket.accept();
-            running = true;
         } catch (IOException e) {
             logger.error("Error. Cannot open server socket for Failure detection.");
             if (e instanceof BindException) {
@@ -60,10 +60,11 @@ public class FailDetection implements Runnable {
     @Override
     public void run() {
         try {
+            running = true;
+            boolean clientConnected = true;
             in = client.getInputStream();
             out = client.getOutputStream();
             byte[] byteMessage = new byte[0];
-            boolean clientConnected = true;
             KVAdminMessageImpl kvAdminMessage;
 
             while(running && clientConnected){
@@ -84,6 +85,7 @@ public class FailDetection implements Runnable {
                     }
                 } catch (CannotConnectException e) {
                     logger.error("Error! Connection lost!");
+                    running = false;
                 }
             }
         }

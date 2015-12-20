@@ -11,6 +11,8 @@ import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
 
 public class ECSImpl implements ECS {
@@ -31,6 +33,8 @@ public class ECSImpl implements ECS {
     private SshCommunication runProcess;
     private FailDetection failHandler;
     private Map<ServerInfo, KVConnection> KVConnections;
+    private ServerSocket failSocket;
+    private boolean running=false;
 
     /**
      *
@@ -63,6 +67,7 @@ public class ECSImpl implements ECS {
         this.md5Hasher = new MD5Hash();
         runProcess = new SshCaller();
         this.KVConnections = new HashMap<ServerInfo, KVConnection>();
+        running=true;
 
         ServerInfo tmp;
         List<ServerInfo> startServers = new ArrayList<ServerInfo>();
@@ -82,9 +87,36 @@ public class ECSImpl implements ECS {
         logger.info("ECS launching " + numberOfNodes + " servers.");
         //start the store servers
         startServers = launchNodes(startServers, cacheSize, displacementStrategy);
-        ECSImpl curr=this;
-        failHandler = new FailDetection(50036, curr);
-        new Thread(failHandler).start();
+        final ECSImpl curr=this;
+        ////////
+        //failHandler = new FailDetection(50036, curr);
+        //new Thread(failHandler).start();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (failSocket != null) {
+                    while (running) {
+                        try {
+                            logger.debug("FAILURE: waiting for failure reports");
+                            Socket failClient = failSocket.accept();
+                            FailDetection connection = new FailDetection(50036, failSocket, curr);
+                            new Thread(connection).start();
+
+                            logger.info("FAILURE: new Connection: Connected to "
+                                    + failClient.getInetAddress().getHostName()
+                                    + " on port " + failClient.getPort());
+                        } catch (IOException e) {
+                            logger.error("FAILURE: Error! "
+                                    + "Unable to establish connection. \n", e);
+                        }
+                    }
+                }
+                logger.info("Server stopped.");
+            }
+        }).start();
+
+        ///////////
         //calculate the meta-data => List <ServerInfo>
         startServers = generateMetaData(startServers);
         activeServers = startServers;

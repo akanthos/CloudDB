@@ -103,7 +103,7 @@ public class KVServer {
      */
     public static void main(final String[] args) {
 
-        if( args.length == 1 ) {
+        if( args.length == 2 ) {
             try {
                 new Thread(new Runnable() {
                     public void run() {

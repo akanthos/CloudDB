@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -130,28 +131,87 @@ public class Utilities {
     }
 
     /**
-     *
-     * @param metadata
+     * Get the Replica Nodes for a given node.
+     * Those nodes are responsible for keeping replicated
+     * data of the given Node.
      * @param node
-     * @return If single node in ring, list with just node
-     *          if 2 nodes in ring, list with the other node
-     *          if more than 2 nodes in ring, list with the 2 following nodes
+     * @return
      */
-    public static List<ServerInfo> getReplicas(List<ServerInfo> metadata, ServerInfo node) {
-        // TODO: Use Spyros's algorithm
-        return Arrays.asList();
+    public static List<ServerInfo> getReplicas(List<ServerInfo> metadata, ServerInfo node){
+
+        if (!metadata.contains(node))
+            return null;
+        int replica1, replica2;
+        ArrayList<ServerInfo> replicas = new ArrayList<ServerInfo>();
+
+        if (metadata.size() == 1){
+            replicas.add(node);
+            return replicas;
+        }
+        if (metadata.size() == 2){
+            replicas.add(getSuccessor(metadata, node));
+            return replicas;
+        }
+
+        replica1 = (metadata.indexOf(node) +1) % metadata.size();
+        replica2 = (metadata.indexOf(node) +2) % metadata.size();
+        replicas.add(metadata.get(replica1));
+        replicas.add(metadata.get(replica2));
+        return replicas;
+
     }
 
     /**
-     *
-     * @param metadata
+     * Get the Coordinator Nodes for a given node.
+     * Those are the nodes whose replicated data is being
+     * held by the given node.
      * @param node
-     * @return If single node in ring, list with just node
-     *          if 2 nodes in ring, list with the other node
-     *          if more than 2 nodes in ring, list with the 2 preceding nodes
+     * @return
      */
-    public static List<ServerInfo> getCoordinators(List<ServerInfo> metadata, ServerInfo node) {
-        // TODO: Use Spyros's algorithm
-        return Arrays.asList();
+    public static List<ServerInfo> getCoordinators(List<ServerInfo> metadata, ServerInfo node){
+
+        if (!metadata.contains(node))
+            return null;
+        int coordinator1, coordinator2;
+        ArrayList <ServerInfo> coordinators = new ArrayList<ServerInfo>();
+
+        if (metadata.size() == 1){
+            coordinators.add(node);
+            return coordinators;
+        }
+        if (metadata.size() == 2){
+            coordinators.add(getSuccessor(metadata,node));
+            return coordinators;
+        }
+
+        coordinator1 = metadata.indexOf(node)-1;
+        coordinator2 = metadata.indexOf(node)-2;
+        if (coordinator1 < 0)
+            coordinator1 += metadata.size();
+        if (coordinator2 < 0)
+            coordinator2 += metadata.size();
+        coordinators.add(metadata.get(coordinator2));
+        coordinators.add(metadata.get(coordinator1));
+        return coordinators;
+
+    }
+
+    /**
+     * returns the successor of the newServer
+     *
+     * @param newServer
+     * @return
+     */
+    private static ServerInfo getSuccessor(List<ServerInfo> metadata, ServerInfo newServer) {
+
+        ServerInfo successor;
+        int nodeIndex = metadata.indexOf(newServer);
+        try {
+            successor = metadata.get(nodeIndex + 1);
+        }// success is the first server on the ring
+        catch (IndexOutOfBoundsException e) {
+            successor = metadata.get(0);
+        }
+        return successor;
     }
 }

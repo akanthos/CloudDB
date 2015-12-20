@@ -1,7 +1,0 @@
-Manifest-Version: 1.0
-Ant-Version: Apache Ant 1.9.3
-Created-By: 1.8.0_60-b27 (Oracle Corporation)
-built-by: akanthos
-Main-Class: app_kvClient.KVClient
-Class-Path: libs/log4j-api-2.4.1.jar
-

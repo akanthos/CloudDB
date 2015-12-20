@@ -36,20 +36,29 @@ public class ReplicationHandler {
         this.server = server;
         this.heartbeatPeriod = heartbeatPeriod;
         this.replicatedData = new KVPersistenceEngine("_replica");
-        findCoordsAndReplicas(metadata, range);
+        findCoordinatorsAndReplicas(metadata, range);
     }
 
     public void updateMetadata(List<ServerInfo> metadata, KVRange range) {
         cleanupNoData();
-        findCoordsAndReplicas(metadata, range);
+        findCoordinatorsAndReplicas(metadata, range);
     }
 
-    private synchronized void findCoordsAndReplicas(List<ServerInfo> metadata, KVRange range) {
+    private synchronized void findCoordinatorsAndReplicas(List<ServerInfo> metadata, KVRange range) {
         this.timeoutThreadpool = Executors.newCachedThreadPool();
         this.coordinators = new HashMap<>();
         this.replicas = new HashMap<>();
         findAndRegisterReplicas(metadata, range);
         findAndRegisterCoordinators(metadata, range);
+        logger.info(server.getInfo().getID() + ": Just updated me metadata...");
+        logger.info(server.getInfo().getID() + ": My replicas are:");
+        for (Replica r : replicas.values()) {
+            logger.info(r.getReplicaID());
+        }
+        logger.info(server.getInfo().getID() + ": My coordinators are:");
+        for (Replica r : replicas.values()) {
+            logger.info(r.getReplicaID());
+        }
     }
 
     private void findAndRegisterCoordinators(List<ServerInfo> metadata, KVRange range) {

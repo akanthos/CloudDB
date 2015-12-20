@@ -72,18 +72,20 @@ public class Serializer {
     public static byte[] toByteArray(KVServerMessageImpl message) {
 
         StringBuilder messageStr = new StringBuilder(SERVER_MESSAGE + HEAD_DLM + message.getStatus().ordinal());
-        if (message.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
-            messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
-            for (KVPair pair : message.getKVPairs()) {
-                messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
-            }
-        } else if (message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)
+        if (message.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)
+                || message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)
                 || message.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
             messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
             for (KVPair pair : message.getKVPairs()) {
                 messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
             }
-        } else if (message.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
+        } /*else if (message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)
+                || message.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
+            messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
+            for (KVPair pair : message.getKVPairs()) {
+                messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
+            }
+        } */else if (message.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
             messageStr.append(HEAD_DLM);
             messageStr.append(message.getCoordinatorID());
             messageStr.append(HEAD_DLM);
@@ -358,31 +360,30 @@ public class Serializer {
 //        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("1", pairs, KVServerMessage.StatusType.REPLICATE);
 //        byte[] bytes = toByteArray(kvServerMessage);
 
-        KVAdminMessageImpl m = new KVAdminMessageImpl(KVAdminMessage.StatusType.SERVER_FAILURE, new ServerInfo("localhost", 500));
-        byte[] bytes = toByteArray(m);
-        System.out.println(new String(bytes,"UTF-8"));
-        System.out.println("PART_2");
-        AbstractMessage abstractMessage = Serializer.toObject(bytes);
-        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
-            m = (KVAdminMessageImpl) abstractMessage;
-        }
+//        KVAdminMessageImpl m = new KVAdminMessageImpl(KVAdminMessage.StatusType.RESTORE_DATA, new KVRange(0, 10), new ServerInfo("localhost", 500));
+//        byte[] bytes = toByteArray(m);
+//        System.out.println(new String(bytes,"UTF-8"));
+//        System.out.println("PART_2");
+//        AbstractMessage abstractMessage = Serializer.toObject(bytes);
+//        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
+//            m = (KVAdminMessageImpl) abstractMessage;
+//        }
 
 
 
 
 //        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("1", new Date(), KVServerMessage.StatusType.HEARTBEAT);
-//        byte[] bytes = toByteArray(kvServerMessage);
+        ArrayList<KVPair> pairsTosend = new ArrayList<>();
+        pairsTosend.add(new KVPair("asdf", "sdf"));
+        pairsTosend.add(new KVPair("cbn", "sdf"));
+        pairsTosend.add(new KVPair("rty", "sdf"));
+        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.GOSSIP);
+        byte[] bytes = toByteArray(kvServerMessage);
 
-        // String hehe = "0####127.0.0.1&&50000&&3706585719&&897794963%%127.0.0.1&&50001&&897794963&&3706585719%%";
-        // byte[] arr = hehe.toString().getBytes();
-        //byte[] arr = toByteArray(hehe);
-
-//        System.out.println(new String(bytes,"UTF-8"));
-//        System.out.println("PART_2");
-//        AbstractMessage abstractMessage = Serializer.toObject(bytes);
-//        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
-//            kvServerMessage = (KVServerMessageImpl) abstractMessage;
-//        }
+        AbstractMessage abstractMessage = Serializer.toObject(bytes);
+        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
+            kvServerMessage = (KVServerMessageImpl) abstractMessage;
+        }
 
 
     }

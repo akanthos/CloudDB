@@ -100,7 +100,7 @@ public class ECSImpl implements ECS {
                         try {
                             logger.debug("FAILURE: waiting for failure reports");
                             Socket failClient = failSocket.accept();
-                            FailDetection connection = new FailDetection(50036, failSocket, curr);
+                            FailDetection connection = new FailDetection(60036, failSocket, curr);
                             new Thread(connection).start();
 
                             logger.info("FAILURE: new Connection: Connected to "

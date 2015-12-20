@@ -33,7 +33,7 @@ public class SocketServer {
     private List<ServerInfo> metadata;
     private ReplicationHandler replicationHandler;
     Messenger messenger;
-    final long heartbeatPeriod = 5000; // In milliseconds
+    final long heartbeatPeriod = 2000; // In milliseconds
 //    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
     private boolean ECSRegistered;
@@ -349,6 +349,7 @@ public class SocketServer {
                 logger.info("Update my range to: " + this.info.getFromIndex() +":"+ this.info.getToIndex());
             }
         }
+        logger.info("DONE setting metadata");
     }
 
     /**
@@ -445,8 +446,8 @@ public class SocketServer {
             replicationHandler.coordinatorFailed(coordinator);
         }
     }
-    public void answerHeartbeat(Replica replica) {
-        messenger.respondToHeartbeatRequest(replica.getInfo());
+    public void answerHeartbeat(Coordinator coordinator) {
+        messenger.respondToHeartbeatRequest(coordinator.getInfo());
     }
 
 

@@ -172,6 +172,7 @@ public class Serializer {
         AbstractMessage retrievedMessage = null;
         // tokens[0] => message_type
         if (tokens[0] != null) {
+            logger.info("!!! Message type: " + tokens[0]);
             AbstractMessage.MessageType messageType = toMessageType(tokens[0]);
             switch (messageType) {
                 case CLIENT_MESSAGE:

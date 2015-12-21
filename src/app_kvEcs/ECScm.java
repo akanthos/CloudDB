@@ -1,6 +1,5 @@
 package app_kvEcs;
 
-import com.javafx.tools.doclets.internal.toolkit.util.Util;
 import common.Serializer;
 import common.ServerInfo;
 import common.messages.AbstractMessage;
@@ -21,7 +20,7 @@ public class ECScm implements ECSInterface {
 
 
     public enum TransferType {
-        MOVE, REPLICATE, RESTORE
+        MOVE, REPLICATE, RESTORE, REMOVE
     };
 
     private static Logger logger = Logger.getLogger(ECScm.class);
@@ -378,8 +377,9 @@ public class ECScm implements ECSInterface {
             kvconnection.disconnect();
             logger.info(initMsg.getStatus() + " operation on server " + newServer.getAddress()+":"
                     + newServer.getServerPort() + " failed due to Connection problem");
-            activeServers.remove(newServer);
-            KVConnections.remove(kvconnection);
+
+            removeFromRing(newServer);
+            removeFromConnections(newServer);
             generateMetaData(activeServers);
             return false;
         }
@@ -417,10 +417,12 @@ public class ECScm implements ECSInterface {
                     // if number of nodes after adding is greater
                     // equal of 4 we also have to delete some stale replicated data
                     if ( activeServers.size() >=4 ){
-                        if (deleteData(getSuccessor(replicas.get(1)), newServer.getFromIndex(), newServer.getToIndex())
-                               && deleteData(replicas.get(1), coordinators.get(1).getFromIndex(), coordinators.get(1).getToIndex())
-                                && deleteData(replicas.get(0), coordinators.get(0).getFromIndex(), coordinators.get(0).getToIndex())){
-
+                        if (moveData(getSuccessor(replicas.get(1)), getSuccessor(replicas.get(1)), newServer.getFromIndex(), newServer.getToIndex(), TransferType.REMOVE)
+                            && moveData(replicas.get(1), replicas.get(1), coordinators.get(1).getFromIndex(), coordinators.get(1).getToIndex(), TransferType.REMOVE)
+                            && moveData(replicas.get(0), replicas.get(0), coordinators.get(0).getFromIndex(), coordinators.get(0).getToIndex(), TransferType.REMOVE))
+                        {
+                            WriteLockNodes.add(KVConnections.get(replicas.get(1)));
+                            WriteLockNodes.add(KVConnections.get(replicas.get(0)));
                             logger.debug("Successfully removed staled replicated data to nodes.");
                         }
                         else{
@@ -453,9 +455,9 @@ public class ECScm implements ECSInterface {
                         + successor.getAddress() + ":" + successor.getServerPort() + " to "
                         + newServer.getAddress() + ":" + successor.getServerPort());
                 logger.error("Operation addNode Not Successfull.");
-                activeServers.remove(newServer);
+                removeFromRing(newServer);
                 kvconnection.disconnect();
-                KVConnections.remove(newServer);
+                removeFromConnections(newServer);
                 generateMetaData(activeServers);
             }
         }
@@ -484,9 +486,9 @@ public class ECScm implements ECSInterface {
             else {
                     logger.error("Data reallocations from " + successor.getAddress() +":"+ successor.getServerPort() +
                     " to " + newServer.getAddress() +":"+ newServer.getServerPort() + " failed.");
-                    activeServers.remove(newServer);
+                    removeFromRing(newServer);
                     kvconnection.disconnect();
-                    KVConnections.remove(newServer);
+                    removeFromConnections(newServer);
                     generateMetaData(activeServers);
                     addSuccess = false;
             }
@@ -513,6 +515,8 @@ public class ECScm implements ECSInterface {
     public void repairSystem(ServerInfo failedServer){
 
         boolean moveSuccess = true;
+        boolean found = false;
+        int index = -1;
         List<ServerInfo> WriteLockNodes = new ArrayList<>();
         ServerInfo successor = getSuccessor(failedServer);
         //only one activeServer and failed
@@ -525,8 +529,8 @@ public class ECScm implements ECSInterface {
             if (moveData(successor, successor, failedServer.getFromIndex(), failedServer.getToIndex(), TransferType.RESTORE)){
                 logger.info("Successfully recover data regarding the failed server.");
                 //remove failed server from the ring
-                activeServers.remove(failedServer);
-                KVConnections.remove(failedServer);
+                removeFromRing(failedServer);
+                removeFromConnections(failedServer);
                 UpdateMetaData();
 
                 // you also have to send the replicated data to each other
@@ -576,8 +580,8 @@ public class ECScm implements ECSInterface {
             //get it from the second
             if (moveData(replicas.get(0), replicas.get(0), failedServer.getFromIndex(), failedServer.getToIndex(), TransferType.RESTORE)){
                 logger.info("Data recovered from replica "
-                        + replicas.get(1).getAddress() + ":"
-                        + replicas.get(1).getServerPort() + " was sent to"
+                        + replicas.get(0).getAddress() + ":"
+                        + replicas.get(0).getServerPort() + " was sent to"
                         + successor.getServerPort());
             }else{
                 logger.error("Failed to recover data regarding the failed server from the successor of the failed Node.");
@@ -589,8 +593,9 @@ public class ECScm implements ECSInterface {
                 }
             }
             //send the new me†adata list
-            activeServers.remove(failedServer);
-            KVConnections.remove(failedServer);
+
+            removeFromRing(failedServer);
+            removeFromConnections(failedServer);
 
             if (UpdateMetaData()){
                 logger.info("Case of failure with more than 3 nodes. Successful update.");
@@ -633,6 +638,39 @@ public class ECScm implements ECSInterface {
         for (ServerInfo server: activeServers)
             logger.debug(server.getAddress() + ":" + server.getServerPort());
 
+
+    }
+
+    private void removeFromRing(ServerInfo failedServer) {
+
+        boolean found = false;
+        int index = -1;
+        Iterator<ServerInfo> it = KVConnections.keySet().iterator();
+
+        for (ServerInfo info : activeServers)
+            if (info.getServerPort().equals(failedServer.getServerPort()) && info.getAddress().equals(failedServer.getAddress())) {
+                found = true;
+                index = activeServers.indexOf(info);
+            }
+        if (found){
+            activeServers.remove(index);
+            logger.info("Removed FAILED server: " + failedServer.getAddress() +
+                    " : " + failedServer.getServerPort() + " from activeServers List.");
+        }
+    }
+
+    private void removeFromConnections(ServerInfo failedServer) {
+
+
+        for(Iterator<Map.Entry<ServerInfo, KVConnection>> it = KVConnections.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<ServerInfo, KVConnection> entry = it.next();
+            if(entry.getKey().getAddress().equals(failedServer.getAddress()) &&
+                    entry.getKey().getServerPort().equals(failedServer.getServerPort())) {
+                it.remove();
+                logger.info("Removed FAILED server: " + failedServer.getAddress() +
+                        " : " + failedServer.getServerPort() + " from KVConnections Map.");
+            }
+        }
 
     }
 
@@ -715,7 +753,7 @@ public class ECScm implements ECSInterface {
 
         //remove NodetoDelete from the active servers list
         //and recalculate the Metadata
-        this.activeServers.remove(deleteNode);
+        removeFromRing(deleteNode);
         logger.debug("System before removing Node.");
         for (ServerInfo s : activeServers)
             logger.debug(s.getAddress() + ":" + s.getServerPort());
@@ -907,7 +945,7 @@ public class ECScm implements ECSInterface {
 
         // if it is a replicate message no
         // need to lockWrite in the server
-        if (ttype == TransferType.MOVE) {
+        if (ttype == TransferType.MOVE || ttype == TransferType.REMOVE) {
             //KVConnection kvConnection = new KVConnection(fromNode);
             KVAdminMessageImpl lockMsg = new KVAdminMessageImpl();
             lockMsg.setStatus(KVAdminMessage.StatusType.LOCK_WRITE);
@@ -923,6 +961,10 @@ public class ECScm implements ECSInterface {
         KVAdminMessageImpl moveDataMsg = new KVAdminMessageImpl();
         if (ttype == TransferType.REPLICATE)
             moveDataMsg.setStatus(KVAdminMessage.StatusType.REPLICATE_DATA);
+        else if (ttype == TransferType.RESTORE)
+            moveDataMsg.setStatus(KVAdminMessage.StatusType.RESTORE_DATA);
+        else if (ttype == TransferType.REMOVE)
+            moveDataMsg.setStatus(KVAdminMessage.StatusType.REMOVE_DATA);
         else
             moveDataMsg.setStatus(KVAdminMessage.StatusType.MOVE_DATA);
         moveDataMsg.setLow(fromIndex);

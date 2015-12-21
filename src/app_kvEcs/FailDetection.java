@@ -58,11 +58,15 @@ public class FailDetection implements Runnable {
                         clientConnected = false;
                     }
                     else {
+                        logger.info("Got failure message on ECS" );
                         AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
                         if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
                             kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
                             if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.SERVER_FAILURE)){
                                 ecs.handleFailure(kvAdminMessage.getFailedServerInfo());
+                                logger.info("Failure reported on: " + kvAdminMessage.getFailedServerInfo().getAddress() +
+                                        " : " + kvAdminMessage.getFailedServerInfo().getServerPort());
+
                             }
                             //kvAdminResponse = processAdminMessage(kvAdminMessage);
                             //Utilities.send(kvAdminResponse, outputStream);

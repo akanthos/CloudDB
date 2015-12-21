@@ -37,6 +37,7 @@ public class ReplicationHandler {
         this.heartbeatPeriod = heartbeatPeriod;
         this.replicatedData = new KVPersistenceEngine("_replica");
         findCoordinatorsAndReplicas(metadata, range);
+        logger.info("Here");
     }
 
     public void updateMetadata(List<ServerInfo> metadata, KVRange range) {
@@ -48,16 +49,19 @@ public class ReplicationHandler {
         this.timeoutThreadpool = Executors.newCachedThreadPool();
         this.coordinators = new HashMap<>();
         this.replicas = new HashMap<>();
+        logger.info("Before finding replicas and coordinators");
         findAndRegisterReplicas(metadata, range);
+        logger.info("After finding replicas");
         findAndRegisterCoordinators(metadata, range);
+        logger.info("After finding coordinators");
         logger.info(server.getInfo().getID() + ": Just updated me metadata...");
         logger.info(server.getInfo().getID() + ": My replicas are:");
         for (Replica r : replicas.values()) {
             logger.info(r.getReplicaID());
         }
         logger.info(server.getInfo().getID() + ": My coordinators are:");
-        for (Replica r : replicas.values()) {
-            logger.info(r.getReplicaID());
+        for (Coordinator c : coordinators.values()) {
+            logger.info(c.getCoordinatorID());
         }
     }
 
@@ -65,6 +69,7 @@ public class ReplicationHandler {
         List<ServerInfo> coords = Utilities.getCoordinators(metadata, server.getInfo());
         logger.info(server.getInfo().getID() + ": Found my coordinators");
         for (ServerInfo coordInfo: coords) {
+            logger.info(server.getInfo().getID() + ": COORDINATOR : " + coordInfo.getID());
             String coordID = coordInfo.getID();
             coordinators.put(coordID, new Coordinator(coordID, coordInfo, heartbeatPeriod, this));
         }
@@ -73,6 +78,7 @@ public class ReplicationHandler {
         List<ServerInfo> repls = Utilities.getReplicas(metadata, server.getInfo());
         logger.info(server.getInfo().getID() + ": Found my replicas");
         for (ServerInfo replInfo: repls) {
+            logger.info(server.getInfo().getID() + ": REPLICA : " + replInfo.getID());
             String replID = replInfo.getID();
             replicas.put(replID, new Replica(this, replID, replInfo));
         }
@@ -107,12 +113,15 @@ public class ReplicationHandler {
     public boolean insertReplicatedData(List<KVPair> kvPairs) {
         synchronized (replicatedData) {
             for (KVPair pair : kvPairs) {
+                logger.info(server.getInfo().getID() + " : Inserting gossip pair ::: " + pair.getKey() +
+                        " , " + pair.getValue());
                 KVMessageImpl status = replicatedData.put(pair.getKey(), pair.getValue());
                 if ( ! (status.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS) ||
                         status.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) )
                     return false;
             }
         }
+        logger.info(server.getInfo().getID() + " : All gossips inserted!");
         return true;
     }
 
@@ -128,6 +137,7 @@ public class ReplicationHandler {
     ///////////////////////////////////////////
 
     public KVMessageImpl get(String key) {
+        logger.info(server.getInfo().getID() + " : Getting key from replicated data (" + key + ")");
         synchronized (replicatedData) {
             return replicatedData.get(key);
         }
@@ -140,6 +150,7 @@ public class ReplicationHandler {
 
 
     public synchronized boolean gossipToReplicas(ArrayList<KVPair> list) {
+        logger.info(server.getInfo().getID() + " : Sending gossip to replicas!");
         for (Replica replica : replicas.values()) {
             if (!server.gossipToReplica(replica.getInfo(), list))
                 return false;
@@ -163,10 +174,13 @@ public class ReplicationHandler {
     /*                  Heartbeat and Failure handling               */
     /*****************************************************************/
     public void sendHeartbeat(String coordinatorID) {
-        server.sendHeartbeatToServer(coordinators.get(coordinatorID));
+        server.askHeartbeatFromServer(coordinators.get(coordinatorID));
     }
-    public void heartbeatReceived(String replicaID) {
-        server.answerHeartbeat(replicas.get(replicaID));
+    public KVServerMessageImpl heartbeatReceived(String replicaID) {
+        logger.info(server.getInfo().getID() + " ---- Received heartbeat request from: " + replicaID);
+        logger.info("Coords: " + coordinators.size());
+        logger.info("Replicas: " + replicas.size());
+        return new KVServerMessageImpl(KVServerMessage.StatusType.HEARTBEAT_RESPONSE);
     }
     public synchronized void coordinatorFailed(Coordinator coordinator) {
         deregisterCoordinator(coordinator.getCoordinatorID());
@@ -184,6 +198,7 @@ public class ReplicationHandler {
     }
 
     public synchronized void cleanupNoData() {
+        logger.info("Cleaning UP DATA!!!!");
         /* Shutdown timers and heartbeats*/
         shutdownHeartbeats();
         /* Remove coordinators */

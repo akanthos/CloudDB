@@ -27,10 +27,6 @@ public class Utilities {
     private static final char LINE_FEED = 0x0A;
     private static final char RETURN = 0x0D;
 
-    static {
-        PropertyConfigurator.configure("conf/log.config");
-    }
-
     /**
      * This function sends a message to the server using the established connection.
      * @param msg
@@ -138,25 +134,38 @@ public class Utilities {
      * @return
      */
     public static List<ServerInfo> getReplicas(List<ServerInfo> metadata, ServerInfo node){
-
-        if (!metadata.contains(node))
+        logger.info("Getting replicas!!!");
+        int index = -1;
+        boolean found = false;
+        for (ServerInfo info : metadata)
+            if (info.getServerPort().equals(node.getServerPort()) && info.getAddress().equals(node.getAddress())) {
+                found = true;
+                index = metadata.indexOf(info);
+            }
+        if (!found)
             return null;
+        logger.info("Found myself");
         int replica1, replica2;
         ArrayList<ServerInfo> replicas = new ArrayList<ServerInfo>();
 
+
         if (metadata.size() == 1){
-            replicas.add(node);
+//            replicas.add(node);
             return replicas;
         }
         if (metadata.size() == 2){
-            replicas.add(getSuccessor(metadata, node));
+            replicas.add(metadata.get((index +1) % metadata.size()));
             return replicas;
         }
 
-        replica1 = (metadata.indexOf(node) +1) % metadata.size();
-        replica2 = (metadata.indexOf(node) +2) % metadata.size();
+        logger.info(node.getID() + ": My index is: " + index);
+        replica1 = (index +1) % metadata.size();
+        replica2 = (index +2) % metadata.size();
         replicas.add(metadata.get(replica1));
         replicas.add(metadata.get(replica2));
+        for (ServerInfo info : replicas) {
+            logger.info("Replica: Address: " + info.getAddress()+ " port: " + info.getServerPort());
+        }
         return replicas;
 
     }
@@ -169,49 +178,43 @@ public class Utilities {
      * @return
      */
     public static List<ServerInfo> getCoordinators(List<ServerInfo> metadata, ServerInfo node){
-
-        if (!metadata.contains(node))
+        logger.info("Getting coordinators!!!");
+        boolean found = false;
+        int index = -1;
+        for (ServerInfo info : metadata)
+            if (info.getServerPort().equals(node.getServerPort()) && info.getAddress().equals(node.getAddress())) {
+                found = true;
+                index = metadata.indexOf(info);
+            }
+        if (!found)
             return null;
+        logger.info("Found myself");
+//        if (!metadata.contains(node))
+//            return null;
         int coordinator1, coordinator2;
-        ArrayList <ServerInfo> coordinators = new ArrayList<ServerInfo>();
+        ArrayList <ServerInfo> coordinators = new ArrayList<>();
 
         if (metadata.size() == 1){
-            coordinators.add(node);
             return coordinators;
         }
         if (metadata.size() == 2){
-            coordinators.add(getSuccessor(metadata,node));
+            coordinators.add(metadata.get((index +1) % metadata.size()));
             return coordinators;
         }
 
-        coordinator1 = metadata.indexOf(node)-1;
-        coordinator2 = metadata.indexOf(node)-2;
+        coordinator1 = index-1;
+        coordinator2 = index-2;
         if (coordinator1 < 0)
             coordinator1 += metadata.size();
         if (coordinator2 < 0)
             coordinator2 += metadata.size();
         coordinators.add(metadata.get(coordinator2));
         coordinators.add(metadata.get(coordinator1));
+        for (ServerInfo info : coordinators) {
+            logger.info("Coordinator: Address: " + info.getAddress()+ " port: " + info.getServerPort());
+        }
         return coordinators;
 
     }
 
-    /**
-     * returns the successor of the newServer
-     *
-     * @param newServer
-     * @return
-     */
-    private static ServerInfo getSuccessor(List<ServerInfo> metadata, ServerInfo newServer) {
-
-        ServerInfo successor;
-        int nodeIndex = metadata.indexOf(newServer);
-        try {
-            successor = metadata.get(nodeIndex + 1);
-        }// success is the first server on the ring
-        catch (IndexOutOfBoundsException e) {
-            successor = metadata.get(0);
-        }
-        return successor;
-    }
 }

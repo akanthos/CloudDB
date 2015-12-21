@@ -1,7 +1,6 @@
 package app_kvServer;
 
 import app_kvServer.replication.Coordinator;
-import app_kvServer.replication.Replica;
 import app_kvServer.replication.ReplicationHandler;
 import app_kvServer.dataStorage.KVCache;
 import common.ServerInfo;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -33,7 +31,7 @@ public class SocketServer {
     private List<ServerInfo> metadata;
     private ReplicationHandler replicationHandler;
     Messenger messenger;
-    final long heartbeatPeriod = 5000; // In milliseconds
+    final long heartbeatPeriod = 2000; // In milliseconds
 //    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
     private boolean ECSRegistered;
@@ -349,6 +347,7 @@ public class SocketServer {
                 logger.info("Update my range to: " + this.info.getFromIndex() +":"+ this.info.getToIndex());
             }
         }
+        logger.info("DONE setting metadata");
     }
 
     /**
@@ -398,6 +397,8 @@ public class SocketServer {
                 : new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE) ;
     }
     public KVServerMessageImpl updateReplicatedData(List<KVPair> kvPairs) {
+        logger.info(getInfo().getID() + " : Got gossip!! ::: " + kvPairs.get(0).getKey() +
+                                        " , " + kvPairs.get(0).getValue());
         boolean status = replicationHandler.insertReplicatedData(kvPairs);
         return status ? new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_SUCCESS)
                 : new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_FAILURE) ;
@@ -427,8 +428,8 @@ public class SocketServer {
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
-    public void heartbeatReceived(String replicaID, Date timeOfSendingMessage) {
-        replicationHandler.heartbeatReceived(replicaID);
+    public KVServerMessageImpl heartbeatReceived(String replicaID, Date timeOfSendingMessage) {
+        return replicationHandler.heartbeatReceived(replicaID);
     }
 
 
@@ -437,16 +438,13 @@ public class SocketServer {
     }
 
 
-    public void sendHeartbeatToServer(Coordinator coordinator) {
+    public void askHeartbeatFromServer(Coordinator coordinator) {
         try {
-            messenger.sendHeartBeatToServer(coordinator.getInfo());
+            messenger.askHeartbeatFromServer(coordinator.getInfo());
         } catch (SocketTimeoutException e) {
             reportFailureToECS(coordinator);
             replicationHandler.coordinatorFailed(coordinator);
         }
-    }
-    public void answerHeartbeat(Replica replica) {
-        messenger.respondToHeartbeatRequest(replica.getInfo());
     }
 
 

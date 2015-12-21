@@ -24,7 +24,7 @@ public class HeartbeatSender implements Runnable {
     public void run() {
         try {
             // TODO: Initial wait for everybody to settle? Sleep for 20 seconds initially
-            Thread.sleep(20 * 1000);
+            Thread.sleep(10 * 1000);
         } catch (InterruptedException e) { }
         while (continueHeartbeating) {
             try {

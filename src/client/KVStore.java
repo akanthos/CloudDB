@@ -131,6 +131,7 @@ public class KVStore implements KVCommInterface {
                     disconnect();
                     continue;
                 }
+                logger.info("Sent PUT message to : " + connection.getAddress() + ":" + connection.getServerPort());
                 KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
                 if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)
                         || kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)
@@ -188,7 +189,7 @@ public class KVStore implements KVCommInterface {
                     logger.error(String.format("Get request cannot be performed. Key: %s", key));
                     throw new Exception("Client is disconnected");
                 }
-                logger.debug(String.format("Sending message: %s", kvMessage.toString()));
+                logger.debug(String.format("Sending (GET) message: %s to %s:%s", kvMessage.toString(), connection.getAddress(), connection.getServerPort()));
                 byte[] response;
                 try {
                     response = send(kvMessage.getMsgBytes(), connection);

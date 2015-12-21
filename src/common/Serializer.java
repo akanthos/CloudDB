@@ -1,10 +1,8 @@
 package common;
 
 
-import app_kvServer.KVServer;
 import common.messages.*;
 import common.utils.KVRange;
-import common.utils.Utilities;
 import helpers.Constants;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -87,7 +85,7 @@ public class Serializer {
             }
         } */else if (message.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
             messageStr.append(HEAD_DLM);
-            messageStr.append(message.getCoordinatorID());
+            messageStr.append(message.getReplicaID());
             messageStr.append(HEAD_DLM);
             messageStr.append(df.format(message.getTimeOfSendingMsg()));
         }
@@ -170,9 +168,11 @@ public class Serializer {
         String message = new String(objectByteStream).trim();
         String[] tokens = message.split(HEAD_DLM);
         AbstractMessage retrievedMessage = null;
+        logger.info("Decrypting message... : " + message);
         // tokens[0] => message_type
         if (tokens[0] != null) {
             AbstractMessage.MessageType messageType = toMessageType(tokens[0]);
+            logger.info("Found message type");
             switch (messageType) {
                 case CLIENT_MESSAGE:
                     retrievedMessage = new KVMessageImpl();
@@ -246,18 +246,22 @@ public class Serializer {
                     break;
                 case SERVER_MESSAGE:
                     retrievedMessage = new KVServerMessageImpl();
+                    logger.info("Parsing SERVER message");
                     if (tokens[1] != null) {// status
                         int statusNum = Integer.parseInt(tokens[1]);
                         ((KVServerMessage)retrievedMessage).setStatus( KVServerMessage.StatusType.values()[statusNum] );
                     }
                     if ((((KVServerMessageImpl) retrievedMessage).getStatus() == (KVServerMessage.StatusType.HEARTBEAT))) {
-                        ((KVServerMessageImpl) retrievedMessage).setCoordinatorID(tokens[2].trim());
+                        logger.info("It's a heartbeat message");
+                        ((KVServerMessageImpl) retrievedMessage).setReplicaID(tokens[2].trim());
                         try {
                             ((KVServerMessageImpl) retrievedMessage).setTimeOfSendingMsg(df.parse(tokens[3].trim()));
+                            logger.info("Parsed heartbeat datetime");
                         } catch (ParseException e) {
                             logger.error(String.format("Unsupported date format in message. Complete message: %s", tokens[3].trim()), e);
                             throw new UnsupportedDataTypeException("Unable to parse heartbeat message");
                         }
+                        logger.info("Parsed heartbeat datetime");
                     } else if (((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.GOSSIP)))
                             || ((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.REPLICATE)))
                             || ((((KVServerMessageImpl)retrievedMessage).getStatus() == (KVServerMessage.StatusType.MOVE_DATA)))) {
@@ -299,6 +303,7 @@ public class Serializer {
 
             }
         }
+        logger.info("Returning message");
         return retrievedMessage;
     }
 
@@ -375,12 +380,12 @@ public class Serializer {
 
 
 
-//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("1", new Date(), KVServerMessage.StatusType.HEARTBEAT);
-        ArrayList<KVPair> pairsTosend = new ArrayList<>();
-        pairsTosend.add(new KVPair("asdf", "sdf"));
-        pairsTosend.add(new KVPair("cbn", "sdf"));
-        pairsTosend.add(new KVPair("rty", "sdf"));
-        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
+        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("127.0.0.1:50036", new Date(), KVServerMessage.StatusType.HEARTBEAT);
+//        ArrayList<KVPair> pairsTosend = new ArrayList<>();
+//        pairsTosend.add(new KVPair("asdf", "sdf"));
+//        pairsTosend.add(new KVPair("cbn", "sdf"));
+//        pairsTosend.add(new KVPair("rty", "sdf"));
+//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
         byte[] bytes = toByteArray(kvServerMessage);
 
         AbstractMessage abstractMessage = Serializer.toObject(bytes);

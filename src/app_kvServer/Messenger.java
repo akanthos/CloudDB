@@ -135,6 +135,7 @@ public class Messenger {
      * @param ecsInfo the ecs contact information
      */
     public void reportFailureToECS(ServerInfo failedCoordinator, ServerInfo ecsInfo) {
+        logger.info(server.getInfo().getID() + " : Reporting failure to ECS for server: " + failedCoordinator.getID());
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -169,7 +170,7 @@ public class Messenger {
         }
     }
 
-    public void sendHeartBeatToServer(ServerInfo serverInfo) throws SocketTimeoutException {
+    public void askHeartbeatFromServer(ServerInfo serverInfo) throws SocketTimeoutException {
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -187,13 +188,19 @@ public class Messenger {
             /*     Send HEARTBEAT message to the other server    */
             /*****************************************************/
 
-            KVServerMessageImpl heartbeatMessage = new KVServerMessageImpl(serverInfo.getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT);
+            KVServerMessageImpl heartbeatMessage = new KVServerMessageImpl(server.getInfo().getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT);
             Utilities.send(heartbeatMessage, outStream);
 
             clientSocket.setSoTimeout(5000); // 5 seconds timeout
+            logger.info(server.getInfo().getID() + " : Waiting for heartbeat from " + serverInfo.getID());
             byte[] answerBytes = Utilities.receive(inStream);
+            if (answerBytes[0] == -1) {
+                logger.info("Received HEARTBEAT response -1 !!!!!!!!!!!!!");
+                throw new SocketTimeoutException();
+            }
             KVServerMessageImpl heartbeatAnswer = (KVServerMessageImpl) Serializer.toObject(answerBytes);
             if (!heartbeatAnswer.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT_RESPONSE)) {
+                logger.info("Received HEARTBEAT response =/= HEARTBEAT_RESPONSE !!!!!!!!!!!!!");
                 throw new SocketTimeoutException();
             }
 
@@ -204,43 +211,10 @@ public class Messenger {
             logger.error("KVServer hostname cannot be resolved", e);
         } catch (IOException e) {
             logger.error("Error while connecting to the server for heartbeat", e);
+            throw new SocketTimeoutException();
         } catch (CannotConnectException e) {
             logger.error("Error while connecting to the server.", e);
-        } finally {
-            /****************************************/
-            /* Tear down connection to other server */
-            /****************************************/
-            ConnectionHelper.connectionTearDown(inStream, outStream, clientSocket, logger);
-        }
-    }
-
-    public void respondToHeartbeatRequest(ServerInfo serverInfo) {
-        InputStream inStream = null;
-        OutputStream outStream = null;
-        Socket clientSocket = null;
-        try {
-            /***************************/
-            /* Connect to other server */
-            /***************************/
-
-            InetAddress address = InetAddress.getByName(serverInfo.getAddress());
-            clientSocket = new Socket(address, serverInfo.getServerPort());
-            inStream = clientSocket.getInputStream();
-            outStream = clientSocket.getOutputStream();
-
-            /********************************************************/
-            /*  Send HEARTBEAT_RESPONSE message to the other server */
-            /********************************************************/
-
-            KVServerMessageImpl heartResponseMessage = new KVServerMessageImpl(serverInfo.getID(), new Date(), KVServerMessage.StatusType.HEARTBEAT_RESPONSE);
-            Utilities.send(heartResponseMessage, outStream);
-
-        } catch (UnknownHostException e) {
-            logger.error("KVServer hostname cannot be resolved", e);
-        } catch (IOException e) {
-            logger.error("Error while connecting to the server for heartbeat", e);
-        } catch (CannotConnectException e) {
-            logger.error("Error while connecting to the server.", e);
+            throw new SocketTimeoutException();
         } finally {
             /****************************************/
             /* Tear down connection to other server */
@@ -266,9 +240,10 @@ public class Messenger {
             /********************************************************/
             /*    Send GOSSIP_MESSAGE message to the other server   */
             /********************************************************/
-
+            logger.info(server.getInfo().getID() + " : Sending the gossip (messenger) to " + replicaInfo.getID());
             KVServerMessageImpl gossipMessage = new KVServerMessageImpl(list, KVServerMessage.StatusType.GOSSIP);
             Utilities.send(gossipMessage, outStream);
+            logger.info(server.getInfo().getID() + " : Waiting for GOSSIP_SUCCESS from " + replicaInfo.getID());
 
             byte[] gossipMessageAnswerBytes = Utilities.receive(inStream);
             KVServerMessageImpl gossipMessageAnswer = (KVServerMessageImpl) Serializer.toObject(gossipMessageAnswerBytes);
@@ -282,7 +257,7 @@ public class Messenger {
             logger.error("KVServer hostname cannot be resolved", e);
             return false;
         } catch (IOException e) {
-            logger.error("Error while connecting to the server for heartbeat", e);
+            logger.error("Error while connecting to the server for gossiping", e);
             return false;
         } catch (CannotConnectException e) {
             logger.error("Error while connecting to the server.", e);

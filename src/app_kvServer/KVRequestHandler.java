@@ -60,13 +60,13 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             while (clientConnected && server.isOpen()) {
                 try {
                     // Get a new message
-                    logger.error("\n\n########################################\n\n");
                     byteMessage = Utilities.receive(inputStream);
                     if (!Thread.currentThread().isInterrupted()) {
 
                         if (byteMessage[0] == -1) {
                             clientConnected = false;
                         } else {
+                            logger.info(server.getInfo().getID() + " : Received message: " + new String(byteMessage).trim());
                             AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
                             if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.CLIENT_MESSAGE)) {
 
@@ -162,8 +162,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
             return server.updateReplicatedData(kvServerMessage.getKVPairs());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
-            server.heartbeatReceived(kvServerMessage.getCoordinatorID(), kvServerMessage.getTimeOfSendingMsg());
-            return null;
+            return server.heartbeatReceived(kvServerMessage.getReplicaID(), kvServerMessage.getTimeOfSendingMsg());
         } else {
             logger.error(String.format("Server: Invalid message from ECScm: %s", kvServerMessage.toString()));
             response = new KVServerMessageImpl(KVServerMessage.StatusType.GENERAL_ERROR);

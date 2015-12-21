@@ -218,6 +218,7 @@ public class KVCache {
         }
         // TODO: Add call to server.replicationServer.gossipToReplicas
         if (!response.getStatus().equals(KVMessage.StatusType.PUT_ERROR)) {
+            logger.info(server.getInfo().getID() + " : Triggering gossip");
             // PUT was SUCCESSFUL
             ArrayList<KVPair> forReplicas = new ArrayList<>();
             forReplicas.add(new KVPair(key, value));

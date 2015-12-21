@@ -397,6 +397,8 @@ public class SocketServer {
                 : new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE) ;
     }
     public KVServerMessageImpl updateReplicatedData(List<KVPair> kvPairs) {
+        logger.info(getInfo().getID() + " : Got gossip!! ::: " + kvPairs.get(0).getKey() +
+                                        " , " + kvPairs.get(0).getValue());
         boolean status = replicationHandler.insertReplicatedData(kvPairs);
         return status ? new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_SUCCESS)
                 : new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_FAILURE) ;

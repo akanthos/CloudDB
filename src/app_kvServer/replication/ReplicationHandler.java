@@ -113,12 +113,15 @@ public class ReplicationHandler {
     public boolean insertReplicatedData(List<KVPair> kvPairs) {
         synchronized (replicatedData) {
             for (KVPair pair : kvPairs) {
+                logger.info(server.getInfo().getID() + " : Inserting gossip pair ::: " + pair.getKey() +
+                        " , " + pair.getValue());
                 KVMessageImpl status = replicatedData.put(pair.getKey(), pair.getValue());
                 if ( ! (status.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS) ||
                         status.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) )
                     return false;
             }
         }
+        logger.info(server.getInfo().getID() + " : All gossips inserted!");
         return true;
     }
 
@@ -134,6 +137,7 @@ public class ReplicationHandler {
     ///////////////////////////////////////////
 
     public KVMessageImpl get(String key) {
+        logger.info(server.getInfo().getID() + " : Getting key from replicated data (" + key + ")");
         synchronized (replicatedData) {
             return replicatedData.get(key);
         }
@@ -146,6 +150,7 @@ public class ReplicationHandler {
 
 
     public synchronized boolean gossipToReplicas(ArrayList<KVPair> list) {
+        logger.info(server.getInfo().getID() + " : Sending gossip to replicas!");
         for (Replica replica : replicas.values()) {
             if (!server.gossipToReplica(replica.getInfo(), list))
                 return false;

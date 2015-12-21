@@ -240,9 +240,10 @@ public class Messenger {
             /********************************************************/
             /*    Send GOSSIP_MESSAGE message to the other server   */
             /********************************************************/
-
+            logger.info(server.getInfo().getID() + " : Sending the gossip (messenger) to " + replicaInfo.getID());
             KVServerMessageImpl gossipMessage = new KVServerMessageImpl(list, KVServerMessage.StatusType.GOSSIP);
             Utilities.send(gossipMessage, outStream);
+            logger.info(server.getInfo().getID() + " : Waiting for GOSSIP_SUCCESS from " + replicaInfo.getID());
 
             byte[] gossipMessageAnswerBytes = Utilities.receive(inStream);
             KVServerMessageImpl gossipMessageAnswer = (KVServerMessageImpl) Serializer.toObject(gossipMessageAnswerBytes);

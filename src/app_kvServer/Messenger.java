@@ -20,7 +20,8 @@ import java.util.Date;
 import java.util.LinkedList;
 
 /**
- * Class to encapsulate the  messaging functionality of
+ * Class to encapsulate the occasional messaging functionality
+ * of the server to other server's and the ECS (for failure reporting)
  */
 public class Messenger {
     private SocketServer server;

@@ -14,6 +14,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 
 /**
@@ -138,14 +139,18 @@ public class KVPersistenceEngine {
      * @param range the range of keys that need to be removed
      */
     public KVMessageImpl remove (KVRange range){
+        KVMessageImpl response;
+        logger.info("Starting range removal for range " + range.getLow() + ":"+range.getHigh());
         for (String key : prop.stringPropertyNames()) {
             MD5Hash md5 = new MD5Hash();
             Long hashedKey = md5.hash(key);
             if (range.isIndexInRange(hashedKey)) {
-                return this.remove(key);
+                response = this.remove(key);
+                if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR))
+                    return new KVMessageImpl(KVMessage.StatusType.DELETE_ERROR);
             }
         }
-        return new KVMessageImpl(KVMessage.StatusType.DELETE_ERROR);
+        return new KVMessageImpl(KVMessage.StatusType.DELETE_SUCCESS);
     }
 
     public List<KVPair> get (KVRange range){

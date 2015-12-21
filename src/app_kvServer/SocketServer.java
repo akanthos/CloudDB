@@ -426,8 +426,10 @@ public class SocketServer {
     public KVAdminMessageImpl removeReplicatedData(KVRange range) {
         KVMessageImpl response = replicationHandler.removeRange(range);
         if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
+            logger.info(info.getID() + " : Replicated range removal failed !!!");
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
         }
+        logger.info(info.getID() + " : Replicated range removal SUCCESSFUL !!!");
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 

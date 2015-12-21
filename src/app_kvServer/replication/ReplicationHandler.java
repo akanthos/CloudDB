@@ -238,9 +238,14 @@ public class ReplicationHandler {
      */
     public boolean isResponsibleForHash(KVMessage message) {
         for (Coordinator c : coordinators.values()) {
-            if (c.getInfo().getServerRange().isIndexInRange(message.getHash()))
+            if (c.getInfo().getServerRange().isIndexInRange(message.getHash())) {
+                logger.info(server.getInfo().getID() +
+                        " : Key found in our coordinator : " + c.getCoordinatorID());
                 return true;
+            }
         }
+        logger.info(server.getInfo().getID() +
+                " : Key NOT found in my coordinators' ranges...");
         return false;
     }
 

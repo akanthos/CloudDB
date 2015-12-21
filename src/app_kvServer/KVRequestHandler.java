@@ -183,19 +183,21 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
      * @return resulting KVMessageImpl
      */
     private KVMessageImpl processMessage(KVMessage kvMessage) {
+        logger.info(server.getInfo().getID() + " : Got client message before initialized ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
         if (!server.isInitialized()) {
             return new KVMessageImpl(KVMessage.StatusType.GENERAL_ERROR);
         }
         // Server is properly initialized
+        logger.info(server.getInfo().getID() + " : Got client message before stopped ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
         if (server.isStopped()) {
             return new KVMessageImpl(KVMessage.StatusType.SERVER_STOPPED);
         }
-//        logger.info("Got client message");
+        logger.info(server.getInfo().getID() + " : Got client message ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 //        logger.info("My Address is: " + server.getInfo().getAddress());
 //        logger.info("My Port is: " + server.getInfo().getServerPort());
 //        logger.info("My Range is: " + server.getInfo().getFromIndex() + ":" + server.getInfo().getToIndex());
-//        logger.info("Message: " + kvMessage.getStatus() + ", " + kvMessage.getKey() + " (" + kvMessage.getHash() + ")"
-//                + " Value: " + kvMessage.getValue() );
+        logger.info(server.getInfo().getID() + " : Message: " + kvMessage.getStatus() + ", " + kvMessage.getKey() + " (" + kvMessage.getHash() + ")"
+                + " Value: " + kvMessage.getValue() );
         if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
             logger.info("Index is ours!");
         }
@@ -206,6 +208,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         logger.info("Got key " + kvMessage.getKey() + " with Hash " + kvMessage.getHash() +".My Range is " + server.getInfo().getFromIndex() + ":" + server.getInfo().getToIndex());
         if (server.getInfo().getServerRange().isIndexInRange(kvMessage.getHash())) {
             // Server IS responsible for key
+            logger.info("I am responsible for the key");
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET)) {
                 KVMessageImpl answer = server.getKvCache().get(kvMessage.getKey());
                 logger.info("Answer: " + answer.getStatus() + ", " + answer.getKey() + " (" + answer.getHash() + ")"
@@ -229,8 +232,10 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             }
         }
         else {
+            logger.info(server.getInfo().getID()+" : I am NOT responsible for the key... Trying replicated data...");
             if (kvMessage.getStatus().equals(KVMessage.StatusType.GET) &&
                 server.getReplicationHandler().isResponsibleForHash(kvMessage)) {
+                logger.info(server.getInfo().getID()+" : Found key in replicated data");
                 return server.getReplicationHandler().get(kvMessage.getKey());
             }
 

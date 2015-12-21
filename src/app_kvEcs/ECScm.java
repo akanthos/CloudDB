@@ -576,6 +576,9 @@ public class ECScm implements ECSInterface {
             List<ServerInfo> replicas = Utilities.getReplicas(activeServers, failedServer);
             List<ServerInfo> coordinators = Utilities.getCoordinators(activeServers, failedServer);
 
+            logger.debug("Replicas size: " + replicas.size());
+            logger.debug("Coordinators size: " + coordinators.size());
+            logger.debug("Failed server: " + failedServer.getID());
             //if you failed to get the replicated data from the first replica
             //get it from the second
             if (moveData(replicas.get(0), replicas.get(0), failedServer.getFromIndex(), failedServer.getToIndex(), TransferType.RESTORE)){
@@ -1154,7 +1157,12 @@ public class ECScm implements ECSInterface {
     public synchronized void handleFailure(ServerInfo failNode) {
 
         logger.info("Failure delivered regarding server: "+ failNode.getAddress()+":"+ failNode.getServerPort());
-        repairSystem(failNode);
+        for (ServerInfo s : activeServers) {
+            if (s.getID().equals(failNode.getID())) {
+                repairSystem(failNode);
+                break;
+            }
+        }
     }
 
 

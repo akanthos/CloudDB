@@ -32,10 +32,10 @@ public class Messenger {
     }
 
     /**
-     *
-     * @param pairsToSend
-     * @param server
-     * @return
+     * MOVE_DATA admin operation implementation
+     * @param pairsToSend the key-value pairs to send to the other server
+     * @param server the server to send the data to
+     * @return the admin message response (to the admin command MOVE_DATA)
      */
     public KVAdminMessageImpl sendToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
         // Send ServerMessage "MOVE_DATA" message to "server" and wait for answer from that server
@@ -88,6 +88,12 @@ public class Messenger {
         return reply;
     }
 
+    /**
+     * Replicates a list of key-value pairs to another server
+     * @param pairsToSend the pairs to replicate
+     * @param server the server to replicate the pairs to
+     * @return the admin message response (to the REPLICATE_DATA command)
+     */
     public KVAdminMessageImpl replicateToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
         KVAdminMessageImpl reply;
         InputStream inStream = null;
@@ -178,6 +184,12 @@ public class Messenger {
         }
     }
 
+    /**
+     * Sends a heartbeat response to another server (a coordinator)
+     * @param serverInfo the target server info
+     * @throws SocketTimeoutException if the server does not respond for a certain timeout
+     *                or a connection cannot be established, a timeout exception is raised
+     */
     public void askHeartbeatFromServer(ServerInfo serverInfo) throws SocketTimeoutException {
         InputStream inStream = null;
         OutputStream outStream = null;
@@ -231,7 +243,15 @@ public class Messenger {
         }
     }
 
-    public boolean gossipToReplica(ServerInfo replicaInfo, ArrayList<KVPair> list) {
+    /**
+     * Gossip some key-value updates to a replica
+     * Used by the GOSSIP server command
+     * @param replicaInfo the replica to send the data to
+     * @param kvPairs the data to gossip to the replica
+     * @return a status boolean for successful gossiping.
+     *         True if gossip was successful, false otherwise
+     */
+    public boolean gossipToReplica(ServerInfo replicaInfo, ArrayList<KVPair> kvPairs) {
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -249,7 +269,7 @@ public class Messenger {
             /*    Send GOSSIP_MESSAGE message to the other server   */
             /********************************************************/
             logger.info(server.getInfo().getID() + " : Sending the gossip (messenger) to " + replicaInfo.getID());
-            KVServerMessageImpl gossipMessage = new KVServerMessageImpl(list, KVServerMessage.StatusType.GOSSIP);
+            KVServerMessageImpl gossipMessage = new KVServerMessageImpl(kvPairs, KVServerMessage.StatusType.GOSSIP);
             Utilities.send(gossipMessage, outStream);
             logger.info(server.getInfo().getID() + " : Waiting for GOSSIP_SUCCESS from " + replicaInfo.getID());
 

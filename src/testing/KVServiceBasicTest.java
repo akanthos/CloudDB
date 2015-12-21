@@ -1,15 +1,12 @@
 package testing;
 
-import app_kvEcs.ECSClient;
-import app_kvEcs.ECSImpl;
-import app_kvServer.KVServer;
+import app_kvEcs.ECScm;
 import client.KVStore;
 import common.messages.KVMessage;
 import junit.framework.TestCase;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 /**
  * This test case tests the basic functionalities
@@ -18,12 +15,12 @@ import java.util.ArrayList;
  */
 public class KVServiceBasicTest extends TestCase {
     private KVStore kvClient;
-    private ECSImpl Ecs;
+    private ECScm Ecs;
 
     public void setUp() {
 
         try {
-            Ecs = new ECSImpl("ecs.config.small");
+            Ecs = new ECScm("ecs.config.small");
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -18,7 +18,7 @@ public class ECSApp {
             new ECSApp(args[0]);
         }
         else{
-            System.out.println("Wrong arguments given. Run app using ECS " +
+            System.out.println("Wrong arguments given. Run app using ECSInterface " +
                     "Configuration files as the only parameter.");
         }
     }

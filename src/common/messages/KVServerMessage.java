@@ -16,7 +16,7 @@ public interface KVServerMessage extends AbstractMessage {
         MOVE_DATA_SUCCESS,
         MOVE_DATA_FAILURE,
         GENERAL_ERROR,
-        SERVER_FAILURE,             /* Message to ECS informing about a possible server failure */
+        SERVER_FAILURE,             /* Message to ECSInterface informing about a possible server failure */
         HEARTBEAT,                  /* Heartbeats between coordinators and replicas */
         HEARTBEAT_RESPONSE,
         REPLICATE,                  /* Coordinator message from coordinator to replicas */

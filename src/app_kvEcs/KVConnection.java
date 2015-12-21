@@ -13,7 +13,7 @@ import java.net.Socket;
 
 /**
  * Responsible for communicating with the servers
- * (send ECS commands receives acknowledgments)
+ * (send ECSInterface commands receives acknowledgments)
  *
  */
 public class KVConnection{

@@ -1,5 +1,6 @@
 package testing;
 
+import app_kvEcs.ECScm;
 import client.KVStore;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
@@ -8,18 +9,17 @@ import org.junit.Before;
 import org.junit.Test;
 import java.io.IOException;
 import static org.junit.Assert.assertTrue;
-import app_kvEcs.ECSImpl;
 
 public class ms3_tests {
 
 
     private static KVStore client;
-    private static ECSImpl ecs;
+    private static ECScm ecs;
 
     @Before
     public  void setUp(){
         try {
-            ecs = new ECSImpl ( "ecs.config" );
+            ecs = new ECScm( "ecs.config" );
             ecs.initService( 10, 8, "FIFO");
             client = new KVStore (  );
             client.connect ("localhost", 50000);

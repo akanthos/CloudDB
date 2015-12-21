@@ -1,7 +1,7 @@
 package app_kvEcs;
 
 
-public interface ECS {
+public interface ECSInterface {
 
     /** Send an SSH call to launch number of servers,
      * Send an INIT message to hand meta data.
@@ -10,17 +10,17 @@ public interface ECS {
     public boolean initService(int numberOfNodes, int cacheSize, String displacementStrategy);
 
     /**
-     * Called by the ECS client starting all the services
+     * Called by the ECSInterface client starting all the services
      */
     public boolean start();
 
     /**
-     * Called by the ECS client stopping all the services
+     * Called by the ECSInterface client stopping all the services
      */
     public boolean stop();
 
     /**
-     * Called by the ECS client to shut down all the services
+     * Called by the ECSInterface client to shut down all the services
      */
     public boolean shutdown();
 

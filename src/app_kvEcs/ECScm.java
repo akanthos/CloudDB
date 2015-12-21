@@ -1,5 +1,6 @@
 package app_kvEcs;
 
+import com.javafx.tools.doclets.internal.toolkit.util.Util;
 import common.Serializer;
 import common.ServerInfo;
 import common.messages.AbstractMessage;
@@ -11,18 +12,19 @@ import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-public class ECSImpl implements ECS {
+public class ECScm implements ECSInterface {
 
 
     public enum TransferType {
         MOVE, REPLICATE, RESTORE
     };
 
-    private static Logger logger = Logger.getLogger(ECSImpl.class);
+    private static Logger logger = Logger.getLogger(ECScm.class);
     private List<ServerInfo> allServers;
     private List<ServerInfo> activeServers;
     private ConfigReader confReader;
@@ -35,16 +37,17 @@ public class ECSImpl implements ECS {
     private Map<ServerInfo, KVConnection> KVConnections;
     private ServerSocket failSocket;
     private boolean running=false;
+    private int detectionPort = 60036;
 
     /**
      *
      */
-    public ECSImpl(String fileName) throws IOException {
+    public ECScm(String fileName) throws IOException {
         try {
             this.confReader = new ConfigReader( fileName );
             allServers = confReader.getServers();
         } catch (IOException e) {
-            throw new IOException("ECSImpl. Cannot access ecs.config");
+            throw new IOException("ECScm. Cannot access ecs.config");
         }
     }
 
@@ -52,7 +55,7 @@ public class ECSImpl implements ECS {
      * Randomly choose <numberOfNodes> servers from the available machines and start the KVServer
      * by issuing a SSH call to the respective machine.
      * This call launches the server with the specified cache size and displacement strategy.
-     * You can assume that the KVServer.jar is located in the same directory as the ECSImpl.
+     * You can assume that the KVServer.jar is located in the same directory as the ECScm.
      * All servers are initialized with the meta-data and remain in state stopped
      * @param numberOfNodes
      * @param cacheSize
@@ -84,13 +87,24 @@ public class ECSImpl implements ECS {
             }
         }
 
-        logger.info("ECS launching " + numberOfNodes + " servers.");
+        logger.info("ECSInterface launching " + numberOfNodes + " servers.");
         //start the store servers
         startServers = launchNodes(startServers, cacheSize, displacementStrategy);
-        final ECSImpl curr=this;
-        ////////
+        final ECScm curr=this;
+
         //failHandler = new FailDetection(50036, curr);
         //new Thread(failHandler).start();
+
+        try {
+            failSocket = new ServerSocket();
+        } catch (IOException e) {
+            logger.error("Failed to create a Socket Server for failure detection.");
+        }
+        try {
+            failSocket.bind(new InetSocketAddress("127.0.0.1", detectionPort));
+        } catch (IOException e) {
+            logger.error("Failed to bind to Failure detection socket server.");
+        }
 
         new Thread(new Runnable() {
             @Override
@@ -98,21 +112,16 @@ public class ECSImpl implements ECS {
                 if (failSocket != null) {
                     while (running) {
                         try {
-                            logger.debug("FAILURE: waiting for failure reports");
+                            logger.debug("Start thread for failure reporting");
                             Socket failClient = failSocket.accept();
-                            FailDetection connection = new FailDetection(60036, failSocket, curr);
+                            FailDetection connection = new FailDetection(detectionPort, failSocket, curr);
                             new Thread(connection).start();
-
-                            logger.info("FAILURE: new Connection: Connected to "
-                                    + failClient.getInetAddress().getHostName()
-                                    + " on port " + failClient.getPort());
                         } catch (IOException e) {
-                            logger.error("FAILURE: Error! "
-                                    + "Unable to establish connection. \n", e);
+                            logger.error("Unable to establish connection. \n", e);
                         }
                     }
                 }
-                logger.info("Server stopped.");
+                logger.info("Stopped server.");
             }
         }).start();
 
@@ -281,6 +290,7 @@ public class ECSImpl implements ECS {
         this.KVConnections.clear();
         this.activeServers.clear();
         logger.info("Active servers shut down.");
+        running = false;
         return shutdownSuccess;
     }
 
@@ -328,9 +338,6 @@ public class ECSImpl implements ECS {
     public boolean addNode(int cacheSize, String displacementStrategy){
 
         boolean addSuccess = false;
-        logger.debug("System BEFORE adding new node.");
-        for (ServerInfo s : activeServers)
-            logger.debug(s.getServerPort() + s.getFromIndex() + s.getToIndex() );
         int run = -1;
         ServerInfo newServer = new ServerInfo();
         Iterator<ServerInfo> allServersIterator = allServers.iterator();
@@ -378,8 +385,8 @@ public class ECSImpl implements ECS {
             return false;
         }
         ServerInfo successor = getSuccessor(newServer);
-        replicas = getReplicas(activeServers, newServer);
-        coordinators = getCoordinators(newServer);
+        replicas = Utilities.getReplicas(activeServers, newServer);
+        coordinators = Utilities.getCoordinators(activeServers, newServer);
 
         /**
          * normal case of having more than 2 servers
@@ -390,7 +397,8 @@ public class ECSImpl implements ECS {
             // coordinators of the new Node send their replicas
             if (moveData(successor, newServer, newServer.getFromIndex(), newServer.getToIndex(), TransferType.MOVE)
                     && moveData(coordinators.get(0), newServer, coordinators.get(0).getFromIndex(), coordinators.get(0).getToIndex(), TransferType.REPLICATE)
-                    && moveData(coordinators.get(1), newServer, coordinators.get(1).getFromIndex(), coordinators.get(1).getToIndex(), TransferType.REPLICATE) ) {
+                    && moveData(coordinators.get(1), newServer, coordinators.get(1).getFromIndex(), coordinators.get(1).getToIndex(), TransferType.REPLICATE) )
+            {
 
                 WriteLockNodes.add(KVConnections.get(successor));
                 //
@@ -434,21 +442,6 @@ public class ECSImpl implements ECS {
                             " relasing the WriteLocks.");
                     return false;
                 }
-
-                // release the lock from the successor and newNode
-                logger.debug("Time to realise the Write Locks.");
-                KVAdminMessageImpl WriteLockRelease = new KVAdminMessageImpl();
-                WriteLockRelease.setStatus(KVAdminMessage.StatusType.UNLOCK_WRITE);
-                try {
-                    for (KVConnection connection: WriteLockNodes)
-                        ECSAction(connection, connection.getServer(), WriteLockRelease);
-                    logger.debug("All locks are released.");
-                } catch (CannotConnectException e) {
-                    logger.error("Release Lock message couldn't be sent.");
-                    kvconnection.disconnect();
-                    return false;
-                }
-                
 
             }
             /*
@@ -577,8 +570,8 @@ public class ECSImpl implements ECS {
         //more than 3 nodes in the ring
         else{
             logger.debug("Case of failed node appearing in a ring with more than 3 nodes.");
-            List<ServerInfo> replicas = getReplicas(activeServers, failedServer);
-            List<ServerInfo> coordinators = getCoordinators(failedServer);
+            List<ServerInfo> replicas = Utilities.getReplicas(activeServers, failedServer);
+            List<ServerInfo> coordinators = Utilities.getCoordinators(activeServers, failedServer);
 
             //if you failed to get the replicated data from the first replica
             //get it from the second
@@ -606,7 +599,7 @@ public class ECSImpl implements ECS {
                 logger.info("Case of failure with more than 3 nodes. Failed update.");
             }
 
-            List<ServerInfo> successorReplicas = getReplicas(activeServers, successor);
+            List<ServerInfo> successorReplicas = Utilities.getReplicas(activeServers, successor);
 
             /*
                 store data as replication:
@@ -982,7 +975,7 @@ public class ECSImpl implements ECS {
         //All servers have to replicas (Normal-general case)
         else{
             for (ServerInfo node : activeServers ){
-                List<ServerInfo> replicas = getReplicas(activeServers, node);
+                List<ServerInfo> replicas = Utilities.getReplicas(activeServers, node);
                 if (moveData(node, replicas.get(0), node.getFromIndex(), node.getToIndex(), TransferType.REPLICATE)
                     && moveData(node, replicas.get(1), node.getFromIndex(), node.getToIndex(), TransferType.REPLICATE))
                     continue;
@@ -1068,7 +1061,7 @@ public class ECSImpl implements ECS {
     }
 
     /**
-     * Calculate metaData of our ECS system
+     * Calculate metaData of our ECSInterface system
      *
      * @param servers servers of the current system
      * @return the new metaData
@@ -1119,78 +1112,9 @@ public class ECSImpl implements ECS {
 
     public synchronized void handleFailure(ServerInfo failNode) {
 
-        logger.info("Got a failed report regarding the node: "+
-            failNode.getAddress()+":"+failNode.getServerPort());
-
-
-
+        logger.info("Failure delivered regarding server: "+ failNode.getAddress()+":"+ failNode.getServerPort());
+        repairSystem(failNode);
     }
 
-    /**
-     * Get the Replica Nodes for a given node.
-     * Those nodes are responsible for keeping replicated
-     * data of the given Node.
-     * @param node
-     * @return
-     */
-    public List<ServerInfo> getReplicas(List<ServerInfo> metadata, ServerInfo node){
-
-        if (!activeServers.contains(node))
-            return null;
-        int replica1, replica2;
-        ArrayList <ServerInfo> replicas = new ArrayList<ServerInfo>();
-
-        if (activeServers.size() == 1){
-            replicas.add(node);
-            return replicas;
-        }
-        if (activeServers.size() == 2){
-            replicas.add(getSuccessor(node));
-            return replicas;
-        }
-
-        replica1 = (activeServers.indexOf(node) +1) % activeServers.size();
-        replica2 = (activeServers.indexOf(node) +2) % activeServers.size();
-        replicas.add(activeServers.get(replica1));
-        replicas.add(activeServers.get(replica2));
-        return replicas;
-
-    }
-
-    /**
-     * Get the Coordinator Nodes for a given node.
-     * Those are the nodes whose replicated data is being
-     * held by the given node.
-     * @param node
-     * @return
-     */
-    public List<ServerInfo> getCoordinators(ServerInfo node){
-
-        if (!activeServers.contains(node))
-            return null;
-        int coordinator1, coordinator2;
-        ArrayList <ServerInfo> coordinators = new ArrayList<ServerInfo>();
-
-        if (activeServers.size() == 1){
-            coordinators.add(node);
-            return coordinators;
-        }
-        if (activeServers.size() == 2){
-            coordinators.add(getSuccessor(node));
-            return coordinators;
-        }
-
-        coordinator1 = activeServers.indexOf(node)-1;
-        coordinator2 = activeServers.indexOf(node)-2;
-        if (coordinator1 < 0)
-            coordinator1 += activeServers.size();
-        if (coordinator2 < 0)
-            coordinator2 += activeServers.size();
-        //TODO: case of only one Node in the ring.
-        coordinators.add(activeServers.get(coordinator2));
-        coordinators.add(activeServers.get(coordinator1));
-        return coordinators;
-
-    }
 
 }

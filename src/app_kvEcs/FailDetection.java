@@ -5,12 +5,10 @@ import common.messages.*;
 import common.utils.Utilities;
 import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
-import org.junit.internal.runners.statements.Fail;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.BindException;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 
@@ -27,7 +25,7 @@ public class FailDetection implements Runnable {
     private OutputStream out;
     private InputStream in;
     private Socket client;
-    private ECSImpl ecs;
+    private ECScm ecs;
     ServerSocket serverSocket;
 
     public boolean isRunning() {
@@ -38,23 +36,10 @@ public class FailDetection implements Runnable {
         this.running = running;
     }
 
-    public FailDetection(int port, ServerSocket SSocket, ECSImpl ecsServer){
+    public FailDetection(int port, ServerSocket SSocket, ECScm ecsServer){
         this.port = port;
         this.ecs = ecsServer;
         serverSocket = SSocket;
-        //initialize the newly created socket server
-        try {
-            serverSocket = new ServerSocket(port);
-            logger.info("Server listening on port " + port);
-            logger.debug("Start listening for Failure reports from KVStore Servers.");
-            //accept a new connection
-        } catch (IOException e) {
-            logger.error("Error. Cannot open server socket for Failure detection.");
-            if (e instanceof BindException) {
-                logger.error("Port " + port + " is already bound!");
-            }
-        }
-
     }
 
     @Override
@@ -72,7 +57,8 @@ public class FailDetection implements Runnable {
                     byteMessage = Utilities.receive(in);
                     if (byteMessage[0] == -1) {
                         clientConnected = false;
-                    } else {
+                    }
+                    else {
                         AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
                         if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
                             kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
@@ -92,7 +78,5 @@ public class FailDetection implements Runnable {
         catch (IOException e) {
             logger.error("Connection could not be established.");
         }
-
-
     }
 }

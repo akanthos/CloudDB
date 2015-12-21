@@ -26,7 +26,7 @@ public interface SshCommunication {
      * invokes the KVserver Process
      * @param host: The address of the remote host
      * @paramm serverPort: The port of the remote host
-     * @paramm ecsPort : Port for communication with ECS
+     * @paramm ecsPort : Port for communication with ECSInterface
      @return: 0 in case of Success and -1 in case of Failure
      */
     public int RunRemoteProcess(String host, String command, String[] arguments);

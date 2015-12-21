@@ -112,8 +112,8 @@ public class SocketServer {
     /*                      Administrative Commands                     */
     /********************************************************************/
     /**
-     * Registers ECS info
-     * @param inetAddress ECS IP address
+     * Registers ECSInterface info
+     * @param inetAddress ECSInterface IP address
      */
     public void registerECS(InetAddress inetAddress) {
         if (!ECSRegistered) {

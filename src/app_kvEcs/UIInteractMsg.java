@@ -7,7 +7,7 @@ package app_kvEcs;
 public class UIInteractMsg {
 
 
-    public static final String ECS_ECHO_PROMPT = "ECS> ";
+    public static final String ECS_ECHO_PROMPT = "ECSInterface> ";
 
     public static final String SPLIT_DLMT = "\\s+";
 
@@ -17,12 +17,12 @@ public class UIInteractMsg {
             " Please use the help command to see an example.";
 
 
-    public static final String ECS_HELP_TEXT = "ECS:  Cloud databases MS3 ECS Service."
+    public static final String ECS_HELP_TEXT = "ECSInterface:  Cloud databases MS3 ECSInterface Service."
             + "\nUsage:"
             + "\nInit <NumberOfNodes> <cacheSize> <displacementStrategy>: Initialize the service with N random nodes"
-            + "\nStart: Sends a start signal to all the servers using ECS Service.\n"
-            + "Stop:  Sends a stop signal to all the servers using ECS Service.\n"
-            + "Shutdown:  Sends a Shutdown signal to all the servers using ECS Service.\n"
+            + "\nStart: Sends a start signal to all the servers using ECSInterface Service.\n"
+            + "Stop:  Sends a stop signal to all the servers using ECSInterface Service.\n"
+            + "Shutdown:  Sends a Shutdown signal to all the servers using ECSInterface Service.\n"
             + "Add <cacheSize> <displacementStrategy>:  Adds a Store Server to the Ring and performs respective data Re-Arrangements.\n"
             + "Remove:  Removes a Store Server from the Ring and performs related data Re-Arrangements.\n"
             + "\nlogLevel <level>: Sets the logger to the desired Logging Level."

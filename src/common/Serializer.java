@@ -102,7 +102,7 @@ public class Serializer {
     }
 
     /**
-     * Admin (ECS) message serializer
+     * Admin (ECSInterface) message serializer
      *
      * @param message Outgoing admin message
      * @return byte array representation of outgoing admin message

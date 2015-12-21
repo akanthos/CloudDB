@@ -130,7 +130,7 @@ public class Messenger {
     }
 
     /**
-     * Reports to the ECS that a specific server has failed
+     * Reports to the ECSInterface that a specific server has failed
      * @param failedCoordinator the information about the failed server
      * @param ecsInfo the ecs contact information
      */
@@ -140,7 +140,7 @@ public class Messenger {
         Socket clientSocket = null;
         try {
             /***************************/
-            /*     Connect to ECS      */
+            /*     Connect to ECSInterface      */
             /***************************/
 
             InetAddress address = InetAddress.getByName(ecsInfo.getAddress());
@@ -149,18 +149,18 @@ public class Messenger {
             outStream = clientSocket.getOutputStream();
 
             /*****************************************************/
-            /*       Send SERVER_FAILURE message to the ECS      */
+            /*       Send SERVER_FAILURE message to the ECSInterface      */
             /*****************************************************/
 
             KVAdminMessageImpl failureMessage = new KVAdminMessageImpl(KVAdminMessage.StatusType.SERVER_FAILURE, failedCoordinator);
             Utilities.send(failureMessage, outStream);
 
         } catch (UnknownHostException e) {
-            logger.error("ECS hostname cannot be resolved", e);
+            logger.error("ECSInterface hostname cannot be resolved", e);
         } catch (IOException e) {
-            logger.error("Error while sending failure message to ECS", e);
+            logger.error("Error while sending failure message to ECSInterface", e);
         } catch (CannotConnectException e) {
-            logger.error("Error while connecting to the ECS", e);
+            logger.error("Error while connecting to the ECSInterface", e);
         } finally {
             /****************************************/
             /* Tear down connection to other server */

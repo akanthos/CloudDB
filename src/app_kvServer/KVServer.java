@@ -117,7 +117,7 @@ public class KVServer {
                     e.printStackTrace();
                 }
                 /*
-                 * informing the ProcessInvoker of the ECS Machine that the
+                 * informing the ProcessInvoker of the ECSInterface Machine that the
                  * KVServer process started successfully
                  */
                 System.out.write("SUCCESS".getBytes());
@@ -140,7 +140,7 @@ public class KVServer {
     /**
      * Initialize the KVServer with the meta-data, it’s local cache size, and the
      * cache displacement strategy, and block it for client requests, i.e., all client
-     * requests are rejected with an SERVER_STOPPED error message; ECSImpl requests have
+     * requests are rejected with an SERVER_STOPPED error message; ECScm requests have
      * to be processed.
      *
      * @param metadata the initial metadata
@@ -159,7 +159,7 @@ public class KVServer {
     }
 
     /**
-     * Starts the KVServer, all client requests and all ECSImpl requests are processed.
+     * Starts the KVServer, all client requests and all ECScm requests are processed.
      *
      */
     public void start() {
@@ -167,7 +167,7 @@ public class KVServer {
     }
 
     /**
-     * Stops the KVServer, all client requests are rejected and only ECSImpl requests are processed.
+     * Stops the KVServer, all client requests are rejected and only ECScm requests are processed.
      *
      */
     public void stop() {
@@ -201,7 +201,7 @@ public class KVServer {
     /**
      * Transfer a subset (range) of the KVServer’s data to another KVServer
      * (reallocation before removing this server or adding a new KVServer to
-     * the ring); send a notification to the ECSImpl, if data transfer is completed.
+     * the ring); send a notification to the ECScm, if data transfer is completed.
      *
      * @param range the range where the moved data should belong to
      * @param serverInfo the server to move the data to

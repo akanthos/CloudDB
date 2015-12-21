@@ -2,7 +2,6 @@ package app_kvEcs;
 
 import common.messages.TextMessage;
 import helpers.Constants;
-import logger.LogSetup;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import java.io.BufferedReader;
@@ -18,7 +17,7 @@ public class ECSClient implements ECSClientListener {
     private static Logger logger = Logger.getLogger(ECSClient.class);
     private static final String PROMPT = "ECSClient> ";
     private BufferedReader stdin;
-    private ECSImpl ECServer;
+    private ECScm ECServer;
     private String fileName;
     private boolean stop = false;
     private boolean initialized = false;
@@ -37,14 +36,14 @@ public class ECSClient implements ECSClientListener {
                 this.handleCommand(cmdLine);
             } catch (IOException e) {
                 stop = true;
-                printError("ECSImpl Client CLI not responding - Application terminated ");
+                printError("ECScm Client CLI not responding - Application terminated ");
             }
         }
     }
 
     private void handleCommand(String cmdLine) {
         String[] tokens = cmdLine.split("\\s+");
-        ECSCommand command = ECSCommand.fromString(tokens[0]);
+        ECSUi command = ECSUi.fromString(tokens[0]);
         Validator validator = Validator.getInstance();
         switch (command) {
             case START:
@@ -54,6 +53,8 @@ public class ECSClient implements ECSClientListener {
                 if(tokens.length == 4) {
                     if ( validator.isValidPolicy(tokens[3]) )
                         this.ECSinit(tokens[1], tokens[2], tokens[3]);
+                    else
+                        printError("Invalid replacement policy.");
                 } else {
                     printError("Invalid number of parameters.");
                 }
@@ -116,64 +117,64 @@ public class ECSClient implements ECSClientListener {
     }
 
     /**
-     * Initializes ECSImpl server, check ECSImpl' initService function
+     * Initializes ECScm server, check ECScm' initService function
      * @param numNodes
      * @param cacheSize
      * @param displacementStrategy
      */
     private void ECSinit(String numNodes,String cacheSize, String displacementStrategy) {
         try {
-            ECServer = new ECSImpl(fileName);
+            ECServer = new ECScm(fileName);
             if (ECServer.initService(Integer.parseInt(numNodes), Integer.parseInt(cacheSize), displacementStrategy)) {
                 initialized = true;
             }
             else{
-                System.out.println(PROMPT + "Failed initializing the ECS Service.");
+                System.out.println(PROMPT + "Failed initializing the ECSInterface Service.");
             }
         } catch (IOException e) {
-            logger.error("Could not initialize ECSImpl Service. Problem accessing ecs.config file");
-            System.out.println("Could not initialize ECSImpl Service");
+            logger.error("Could not initialize ECScm Service. Problem accessing ecs.config file");
+            System.out.println("Could not initialize ECScm Service");
             return;
         }
     }
 
     /**
-     * Start the ECSImpl service
+     * Start the ECScm service
      */
     private void ECSStart() {
         if ( !initialized ) {
-            System.out.println(PROMPT + "ECS Service is not initialized. First initialize the server.");
+            System.out.println(PROMPT + "ECSInterface Service is not initialized. First initialize the server.");
             return;
         }
         if (ECServer.start()) {
-            logger.info("ECSImpl Service started.");
-            System.out.println(PROMPT + "ECS Service started.");
+            logger.info("ECScm Service started.");
+            System.out.println(PROMPT + "ECSInterface Service started.");
         }
         else {
-            logger.error( "Failed starting the ECSImpl Service." );
-            System.out.println(PROMPT + "Failed starting the ECS Service.");
+            logger.error( "Failed starting the ECScm Service." );
+            System.out.println(PROMPT + "Failed starting the ECSInterface Service.");
 
         }
     }
 
     /**
-     * Stop the ECSImpl
+     * Stop the ECScm
      */
     private void ECSStop() {
         if ( !initialized )
-            System.out.println(PROMPT + "ECS Service is not initialized. First initialize the server.");
+            System.out.println(PROMPT + "ECSInterface Service is not initialized. First initialize the server.");
         if (ECServer.stop()) {
-            logger.info("ECSImpl Service stopped.");
-            System.out.println(PROMPT + "ECS Service stopped.");
+            logger.info("ECScm Service stopped.");
+            System.out.println(PROMPT + "ECSInterface Service stopped.");
         }
         else {
-            logger.info( "ECSImpl Service could not be stopped." );
-            System.out.println(PROMPT + "ECS Service could not be stopped.");
+            logger.info( "ECScm Service could not be stopped." );
+            System.out.println(PROMPT + "ECSInterface Service could not be stopped.");
         }
     }
 
     /**
-     * Shutdown ECSImpl
+     * Shutdown ECScm
      */
     private void ECSShutDown() {
         if ( !initialized ) {
@@ -181,18 +182,18 @@ public class ECSClient implements ECSClientListener {
             return;
         }
         if ( ECServer != null && ECServer.shutdown()) {
-            logger.info( "ECSImpl Service shutdown." );
-            System.out.println(PROMPT + "ECS Service shutdown successfully.");
+            logger.info( "ECScm Service shutdown." );
+            System.out.println(PROMPT + "ECSInterface Service shutdown successfully.");
             ECServer = null;
         }
         else {
-            logger.debug("ECSImpl Service shutdown failed.");
-            System.out.println(PROMPT + "ECS Service shutdown failed.");
+            logger.debug("ECScm Service shutdown failed.");
+            System.out.println(PROMPT + "ECSInterface Service shutdown failed.");
         }
     }
 
     /**
-     * Add Server arbitrarily selected from ECSImpl configuration file
+     * Add Server arbitrarily selected from ECScm configuration file
      * @param cacheSize
      * @param displacementStrategy
      */
@@ -202,8 +203,8 @@ public class ECSClient implements ECSClientListener {
             System.out.println(PROMPT + "A node has been added!");
         }
         else{
-            System.out.println(PROMPT + "ECSImpl Service failed adding a new node.");
-            logger.debug("ECSImpl Service failed adding a new node.");
+            System.out.println(PROMPT + "ECScm Service failed adding a new node.");
+            logger.debug("ECScm Service failed adding a new node.");
         }
     }
 
@@ -216,8 +217,8 @@ public class ECSClient implements ECSClientListener {
             System.out.println(PROMPT + "Random Node has been removed.");
         }
         else{
-            System.out.println(PROMPT + "ECSImpl Service failed to remove a node.");
-            logger.debug("ECSImpl Service failed to remove a node.");
+            System.out.println(PROMPT + "ECScm Service failed to remove a node.");
+            logger.debug("ECScm Service failed to remove a node.");
         }
     }
 

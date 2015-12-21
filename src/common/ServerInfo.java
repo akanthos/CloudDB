@@ -58,6 +58,10 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
         this.serverRange = range;
     }
 
+    /**
+     * Server ID string getter
+     * @return a string of the form "IP:port"
+     */
     public String getID() {
         return address + ":" + serverPort;
     }

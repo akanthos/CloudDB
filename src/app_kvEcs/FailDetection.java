@@ -24,9 +24,8 @@ public class FailDetection implements Runnable {
     private boolean running;
     private OutputStream out;
     private InputStream in;
-    private Socket client;
     private ECScm ecs;
-    ServerSocket serverSocket;
+    Socket clientSocket;
 
     public boolean isRunning() {
         return running;
@@ -36,10 +35,10 @@ public class FailDetection implements Runnable {
         this.running = running;
     }
 
-    public FailDetection(int port, ServerSocket SSocket, ECScm ecsServer){
+    public FailDetection(int port, Socket SSocket, ECScm ecsServer){
         this.port = port;
         this.ecs = ecsServer;
-        serverSocket = SSocket;
+        clientSocket = SSocket;
     }
 
     @Override
@@ -47,8 +46,8 @@ public class FailDetection implements Runnable {
         try {
             running = true;
             boolean clientConnected = true;
-            in = client.getInputStream();
-            out = client.getOutputStream();
+            in = clientSocket.getInputStream();
+            out = clientSocket.getOutputStream();
             byte[] byteMessage = new byte[0];
             KVAdminMessageImpl kvAdminMessage;
 

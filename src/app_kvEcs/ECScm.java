@@ -112,9 +112,9 @@ public class ECScm implements ECSInterface {
                 if (failSocket != null) {
                     while (running) {
                         try {
-                            logger.debug("Start thread for failure reporting");
+                            logger.info("Start thread for failure reporting");
                             Socket failClient = failSocket.accept();
-                            FailDetection connection = new FailDetection(detectionPort, failSocket, curr);
+                            FailDetection connection = new FailDetection(detectionPort, failClient, curr);
                             new Thread(connection).start();
                         } catch (IOException e) {
                             logger.error("Unable to establish connection. \n", e);
@@ -338,7 +338,6 @@ public class ECScm implements ECSInterface {
     public boolean addNode(int cacheSize, String displacementStrategy){
 
         boolean addSuccess = false;
-        int run = -1;
         ServerInfo newServer = new ServerInfo();
         Iterator<ServerInfo> allServersIterator = allServers.iterator();
 
@@ -523,7 +522,7 @@ public class ECScm implements ECSInterface {
         else if (activeServers.size() < 4){
 
             logger.debug("Case of failed node in Ring. Starting repairing the system.");
-            if (moveData(failedServer, failedServer, failedServer.getFromIndex(), failedServer.getToIndex(), TransferType.RESTORE)){
+            if (moveData(successor, successor, failedServer.getFromIndex(), failedServer.getToIndex(), TransferType.RESTORE)){
                 logger.info("Successfully recover data regarding the failed server.");
                 //remove failed server from the ring
                 activeServers.remove(failedServer);
@@ -531,7 +530,7 @@ public class ECScm implements ECSInterface {
                 UpdateMetaData();
 
                 // you also have to send the replicated data to each other
-                if (activeServers.size() == 3){
+                if (activeServers.size() == 2){
 
                     //replicate data to each other
                     // if success
@@ -541,7 +540,7 @@ public class ECScm implements ECSInterface {
                             activeServers.get(1).getToIndex(), TransferType.REPLICATE))
                     {
 
-                        logger.debug("Sent replicated Data from "
+                        logger.debug("Sent replicated data from "
                                 + activeServers.get(0).getAddress() + ":" + activeServers.get(0).getServerPort() + " to "
                                 + activeServers.get(1).getAddress() + ":" + activeServers.get(1).getServerPort());
                         logger.debug("Sent replicated Data from "
@@ -575,7 +574,7 @@ public class ECScm implements ECSInterface {
 
             //if you failed to get the replicated data from the first replica
             //get it from the second
-            if (moveData(failedServer, failedServer, failedServer.getFromIndex(), failedServer.getToIndex(), TransferType.RESTORE)){
+            if (moveData(replicas.get(0), replicas.get(0), failedServer.getFromIndex(), failedServer.getToIndex(), TransferType.RESTORE)){
                 logger.info("Data recovered from replica "
                         + replicas.get(1).getAddress() + ":"
                         + replicas.get(1).getServerPort() + " was sent to"

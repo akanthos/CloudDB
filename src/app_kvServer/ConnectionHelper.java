@@ -21,6 +21,14 @@ import java.net.UnknownHostException;
  */
 public class ConnectionHelper {
 
+    /**
+     * Constructor for creating a tcp connection to the given server
+     * @param serverAddress the server address
+     * @param serverPort the server port
+     * @param logger the logger for error reporting
+     * @param failureMessage the failure message in case of connect failure
+     * @return
+     */
     public static InOutClientPack connectionSetup(String serverAddress, Integer serverPort, Logger logger, KVAdminMessageImpl failureMessage) {
         InputStream inStream;
         OutputStream outStream;
@@ -47,6 +55,13 @@ public class ConnectionHelper {
         }
     }
 
+    /**
+     * Tears down a tcp connection
+     * @param inStream the input stream
+     * @param outStream the output stream
+     * @param clientSocket the connection socket
+     * @param logger the logger for error reporting
+     */
     public static void connectionTearDown(InputStream inStream, OutputStream outStream, Socket clientSocket, Logger logger) {
         try {
             if (inStream != null
@@ -57,7 +72,7 @@ public class ConnectionHelper {
                 clientSocket.close();
             }
         } catch(IOException ioe){
-            logger.error("Error! Unable to tear down connection for bulk put!", ioe);
+            logger.error("Error! Unable to tear down connection!", ioe);
         }
     }
 

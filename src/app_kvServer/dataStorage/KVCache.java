@@ -222,7 +222,8 @@ public class KVCache {
             // PUT was SUCCESSFUL
             ArrayList<KVPair> forReplicas = new ArrayList<>();
             forReplicas.add(new KVPair(key, value));
-            server.getReplicationHandler().gossipToReplicas(forReplicas);
+            if (!server.getReplicationHandler().gossipToReplicas(forReplicas))
+                response = new KVMessageImpl(KVMessage.StatusType.PUT_ERROR);
         }
         return response;
     }

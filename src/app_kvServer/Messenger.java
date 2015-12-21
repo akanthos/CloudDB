@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.LinkedList;
 
 /**
- * Created by akanthos on 10.12.15.
+ * Class to encapsulate the  messaging functionality of
  */
 public class Messenger {
     private SocketServer server;
@@ -30,6 +30,12 @@ public class Messenger {
         this.server = server;
     }
 
+    /**
+     *
+     * @param pairsToSend
+     * @param server
+     * @return
+     */
     public KVAdminMessageImpl sendToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
         // Send ServerMessage "MOVE_DATA" message to "server" and wait for answer from that server
         // If it's MOVE_DATA_SUCCESS => send back OPERATION_SUCCESS
@@ -136,6 +142,7 @@ public class Messenger {
      */
     public void reportFailureToECS(ServerInfo failedCoordinator, ServerInfo ecsInfo) {
         logger.info(server.getInfo().getID() + " : Reporting failure to ECS for server: " + failedCoordinator.getID());
+        logger.info("ECS data" + ecsInfo.getAddress() + ":" + ecsInfo.getServerPort());
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;

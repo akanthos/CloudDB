@@ -1,5 +1,8 @@
 package app_kvServer;
 
+import common.utils.Utilities;
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -16,6 +19,8 @@ public class KVConnectionHandler implements ConnectionHandler {
 
     private SocketServer server;
     private ExecutorService threadpool = null;
+    private ArrayList<KVRequestHandler> currentRunnables;
+    private static Logger logger = Logger.getLogger(KVConnectionHandler.class);
 
 
     /**
@@ -24,6 +29,7 @@ public class KVConnectionHandler implements ConnectionHandler {
      */
     public KVConnectionHandler(SocketServer server) {
         this.server = server;
+        this.currentRunnables = new ArrayList<>();
         threadpool = Executors.newCachedThreadPool();
     }
 
@@ -36,13 +42,31 @@ public class KVConnectionHandler implements ConnectionHandler {
     @Override
     public void handle(Socket client, int numOfClient) throws IOException {
         KVRequestHandler rr = new KVRequestHandler(this, server, client, numOfClient);
+        currentRunnables.add(rr);
 //        server.addListener(rr);
         threadpool.submit(rr);
     }
 
+    /**
+     * Shutdown method for killing runnable client handlers and closing all connections
+     */
     @Override
     public void shutDown() {
+        logger.info("Shutting down all runnables");
+        for (KVRequestHandler r : currentRunnables) {
+            r.stop = true;
+            ConnectionHelper.connectionTearDown(r.inputStream, r.outputStream, r.clientSocket, logger);
+            currentRunnables.remove(r);
+        }
         threadpool.shutdownNow();
+    }
+
+    /**
+     * Unsubscribes a runnable client handler from the list of client handlers
+     * @param r the runnable client to be unsubscribed
+     */
+    public void unsubscribe(KVRequestHandler r) {
+        currentRunnables.remove(r);
     }
 
 }

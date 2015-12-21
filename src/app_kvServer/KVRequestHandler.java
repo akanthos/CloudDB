@@ -24,6 +24,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     int clientNumber;
     InputStream inputStream;
     OutputStream outputStream;
+    volatile boolean stop;
     private static Logger logger = Logger.getLogger(KVRequestHandler.class);
 
     public KVRequestHandler(KVConnectionHandler handler, SocketServer server, Socket clientSocket, int clientNumber) throws IOException {
@@ -32,6 +33,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         this.server = server;
         this.clientSocket = clientSocket;
         this.clientNumber = clientNumber;
+        this.stop = false;
 
         try {
             inputStream = clientSocket.getInputStream();
@@ -57,11 +59,11 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             KVServerMessageImpl kvServerResponse;
             byte[] byteMessage = new byte[0];
             boolean clientConnected = true;
-            while (clientConnected && server.isOpen()) {
+            while (clientConnected && server.isOpen() && !stop) {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
-                    if (!Thread.currentThread().isInterrupted()) {
+                    if (!Thread.currentThread().isInterrupted() || !stop) {
 
                         if (byteMessage[0] == -1) {
                             clientConnected = false;
@@ -105,9 +107,13 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } catch (Exception e) {
             logger.error(e);
         } finally {
-            ConnectionHelper.connectionTearDown(inputStream, outputStream, clientSocket, logger);
+            if (!stop) {
+                ConnectionHelper.connectionTearDown(inputStream, outputStream, clientSocket, logger);
+                myHandler.unsubscribe(this);
+            }
         }
     }
+
 
     /**
      * Process of the KVAdminMessage (message from the ECSInterface) and configure the server
@@ -135,9 +141,9 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } else if (kvAdminMessage.getStatus().equals(StatusType.REPLICATE_DATA)) {
             return server.replicateData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
         } else if (kvAdminMessage.getStatus().equals(StatusType.REMOVE_DATA)) {
-            return server.removeReplicatedData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
+            return server.removeReplicatedData(kvAdminMessage.getRange());
         } else if (kvAdminMessage.getStatus().equals(StatusType.RESTORE_DATA)) {
-            return server.restoreData(kvAdminMessage.getRange(), kvAdminMessage.getServerInfo());
+            return server.restoreData(kvAdminMessage.getRange());
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
             return server.update(kvAdminMessage.getMetadata());
         } else {

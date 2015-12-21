@@ -391,11 +391,24 @@ public class SocketServer {
         this.kvCache.cleanUp();
     }
 
+    /**
+     * Inserts new data into the replicated data file
+     * Used by the REPLICATE server command
+     * @param kvPairs the key value pairs to be inserted to the replicated data
+     * @return the Server message response
+     */
     public KVServerMessageImpl newReplicatedData(List<KVPair> kvPairs) {
         boolean status = replicationHandler.insertReplicatedData(kvPairs);
         return status ? new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_SUCCESS)
                 : new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE) ;
     }
+
+    /**
+     * Inserts new data into the replicated data file
+     * Used by the GOSSIP server command
+     * @param kvPairs the key value pairs to be inserted to the replicated data
+     * @return the Server message response
+     */
     public KVServerMessageImpl updateReplicatedData(List<KVPair> kvPairs) {
         logger.info(getInfo().getID() + " : Got gossip!! ::: " + kvPairs.get(0).getKey() +
                                         " , " + kvPairs.get(0).getValue());
@@ -404,7 +417,13 @@ public class SocketServer {
                 : new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_FAILURE) ;
     }
 
-    public KVAdminMessageImpl removeReplicatedData(KVRange range, ServerInfo serverInfo) {
+    /**
+     * Removes replicated data belonging to a specific range
+     * Used by the REMOVE_DATA admin command
+     * @param range the range into which the keys to be deleted should belong
+     * @return the admin message response
+     */
+    public KVAdminMessageImpl removeReplicatedData(KVRange range) {
         KVMessageImpl response = replicationHandler.removeRange(range);
         if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
@@ -412,32 +431,55 @@ public class SocketServer {
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
-    public KVAdminMessageImpl restoreData(KVRange range, ServerInfo serverInfo) {
+    /**
+     * Restores data from the replicated to the main (kvcache) data
+     * Usede by the RESTORE_DATA admin command
+     * @param range
+     * @return the server message response
+     */
+    public KVAdminMessageImpl restoreData(KVRange range) {
         // Get data to restore from the replicated data
         List<KVPair> pairsToRestore = replicationHandler.getData(range);
         // Delete this range from the replicated data
         KVMessageImpl response = replicationHandler.removeRange(range);
         if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR)) {
+            logger.info(getInfo().getID() + " : Delete error on restoring data");
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
         }
         // Insert the restored data to the cache
         KVServerMessageImpl response2 = this.insertNewDataToCache(pairsToRestore);
         if (response2.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_FAILURE)) {
+            logger.info(getInfo().getID() + " : Insertion error on restoring data");
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
         }
+        logger.info(getInfo().getID() + " : Successfully restored data");
         return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_SUCCESS);
     }
 
+    /**
+     * Called when a HEARTBEAT server mesasge arrives from one of our replicas
+     * @param replicaID the string representing the replica (IP:port)
+     * @param timeOfSendingMessage datetime of the heartbeat
+     * @return the server message response
+     */
     public KVServerMessageImpl heartbeatReceived(String replicaID, Date timeOfSendingMessage) {
         return replicationHandler.heartbeatReceived(replicaID);
     }
 
 
+    /**
+     * Reports a failed coordinator to the ECS
+     * @param coordinator the coordinator that was detected to have failed
+     */
     public void reportFailureToECS(Coordinator coordinator) {
         messenger.reportFailureToECS(coordinator.getInfo(), ecsInfo);
     }
 
-
+    /**
+     * Called periodically by the HeartbeatSender runnable class.
+     * Used to ask for a heartbeat from a server's coordinator
+     * @param coordinator the coordinator to be asked for a heartbeat
+     */
     public void askHeartbeatFromServer(Coordinator coordinator) {
         try {
             messenger.askHeartbeatFromServer(coordinator.getInfo());
@@ -447,7 +489,13 @@ public class SocketServer {
         }
     }
 
-
+    /**
+     * Called during a PUT client command to update the respective key-value
+     * to one of our replicas.
+     * @param replicaInfo the replica to be updated
+     * @param list the key-values that changed (usually only one)
+     * @return a status boolean to indicate if the value has been updated to the replica
+     */
     public boolean gossipToReplica(ServerInfo replicaInfo, ArrayList<KVPair> list) {
         return messenger.gossipToReplica(replicaInfo, list);
     }

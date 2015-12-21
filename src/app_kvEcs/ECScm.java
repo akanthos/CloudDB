@@ -1,6 +1,5 @@
 package app_kvEcs;
 
-import com.javafx.tools.doclets.internal.toolkit.util.Util;
 import common.Serializer;
 import common.ServerInfo;
 import common.messages.AbstractMessage;
@@ -923,6 +922,8 @@ public class ECScm implements ECSInterface {
         KVAdminMessageImpl moveDataMsg = new KVAdminMessageImpl();
         if (ttype == TransferType.REPLICATE)
             moveDataMsg.setStatus(KVAdminMessage.StatusType.REPLICATE_DATA);
+        else if (ttype == TransferType.RESTORE)
+            moveDataMsg.setStatus(KVAdminMessage.StatusType.RESTORE_DATA);
         else
             moveDataMsg.setStatus(KVAdminMessage.StatusType.MOVE_DATA);
         moveDataMsg.setLow(fromIndex);

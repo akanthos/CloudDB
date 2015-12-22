@@ -2,7 +2,7 @@ package app_kvEcs;
 
 
 
-public interface SshCommunication {
+public interface CallRemoteInterface {
     /**
      * Sets UserName for the ssh communication
      * @param s Username

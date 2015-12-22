@@ -1,6 +1,6 @@
 package testing;
 
-import app_kvEcs.ECScm;
+import app_kvEcs.ECSCore;
 import client.KVStore;
 import common.messages.KVMessage;
 import junit.framework.TestCase;
@@ -15,12 +15,12 @@ import java.io.IOException;
  */
 public class KVServiceBasicTest extends TestCase {
     private KVStore kvClient;
-    private ECScm Ecs;
+    private ECSCore Ecs;
 
     public void setUp() {
 
         try {
-            Ecs = new ECScm("ecs.config.small");
+            Ecs = new ECSCore("ecs.config.small");
         } catch (IOException e) {
             e.printStackTrace();
         }

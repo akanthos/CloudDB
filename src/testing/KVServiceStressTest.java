@@ -1,6 +1,6 @@
 package testing;
 
-import app_kvEcs.ECScm;
+import app_kvEcs.ECSCore;
 import client.KVStore;
 import common.messages.KVMessage;
 import junit.framework.TestCase;
@@ -19,7 +19,7 @@ import java.util.concurrent.*;
  */
 public class KVServiceStressTest extends TestCase {
     private KVStore kvClient;
-    private ECScm Ecs;
+    private ECSCore Ecs;
     private ExecutorService threadpool;
     private double difference;
 
@@ -27,7 +27,7 @@ public class KVServiceStressTest extends TestCase {
     public void setUp() {
         threadpool = Executors.newCachedThreadPool();
         try {
-            Ecs = new ECScm("ecs.config");
+            Ecs = new ECSCore("ecs.config");
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -7,8 +7,6 @@ import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
 
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.BindException;
 import java.net.Socket;
 
 
@@ -24,7 +22,7 @@ public class FailDetection implements Runnable {
     private boolean running;
     private OutputStream out;
     private InputStream in;
-    private ECScm ecs;
+    private ECSCore ecs;
     Socket clientSocket;
 
     public boolean isRunning() {
@@ -35,7 +33,7 @@ public class FailDetection implements Runnable {
         this.running = running;
     }
 
-    public FailDetection(int port, Socket SSocket, ECScm ecsServer){
+    public FailDetection(int port, Socket SSocket, ECSCore ecsServer){
         this.port = port;
         this.ecs = ecsServer;
         clientSocket = SSocket;
@@ -64,7 +62,7 @@ public class FailDetection implements Runnable {
                             kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
                             if (kvAdminMessage.getStatus().equals(KVAdminMessage.StatusType.SERVER_FAILURE)){
                                 ecs.handleFailure(kvAdminMessage.getFailedServerInfo());
-                                logger.info("Failure reported on: " + kvAdminMessage.getFailedServerInfo().getAddress() +
+                                logger.info("Failure THREAD got message regarding: " + kvAdminMessage.getFailedServerInfo().getAddress() +
                                         " : " + kvAdminMessage.getFailedServerInfo().getServerPort());
 
                             }

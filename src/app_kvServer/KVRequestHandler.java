@@ -118,7 +118,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     /**
      * Process of the KVAdminMessage (message from the ECSInterface) and configure the server
      * accordingly
-     * @param kvAdminMessage KVAdminMessage representation of the ECScm request
+     * @param kvAdminMessage KVAdminMessage representation of the ECSCore request
      * @return resulting KVAdminMessageImpl
      */
     private KVAdminMessageImpl processAdminMessage(KVAdminMessage kvAdminMessage) {
@@ -147,7 +147,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } else if (kvAdminMessage.getStatus().equals(StatusType.UPDATE_METADATA)) {
             return server.update(kvAdminMessage.getMetadata());
         } else {
-            logger.error(String.format("ECScm: Invalid message from ECScm: %s", kvAdminMessage.toString()));
+            logger.error(String.format("ECSCore: Invalid message from ECSCore: %s", kvAdminMessage.toString()));
             response = new KVAdminMessageImpl(StatusType.GENERAL_ERROR);
         }
         return response;
@@ -170,7 +170,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
             return server.heartbeatReceived(kvServerMessage.getReplicaID(), kvServerMessage.getTimeOfSendingMsg());
         } else {
-            logger.error(String.format("Server: Invalid message from ECScm: %s", kvServerMessage.toString()));
+            logger.error(String.format("Server: Invalid message from ECSCore: %s", kvServerMessage.toString()));
             response = new KVServerMessageImpl(KVServerMessage.StatusType.GENERAL_ERROR);
         }
         return response;

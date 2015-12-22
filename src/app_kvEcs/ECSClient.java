@@ -13,11 +13,10 @@ public class ECSClient implements ECSClientListener {
     static {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
     }
-
     private static Logger logger = Logger.getLogger(ECSClient.class);
     private static final String PROMPT = "ECSClient> ";
     private BufferedReader stdin;
-    private ECScm ECServer;
+    private ECSCore ECServer;
     private String fileName;
     private boolean stop = false;
     private boolean initialized = false;
@@ -36,14 +35,14 @@ public class ECSClient implements ECSClientListener {
                 this.handleCommand(cmdLine);
             } catch (IOException e) {
                 stop = true;
-                printError("ECScm Client CLI not responding - Application terminated ");
+                printError("ECSCore Client CLI not responding - Application terminated.");
             }
         }
     }
 
     private void handleCommand(String cmdLine) {
         String[] tokens = cmdLine.split("\\s+");
-        ECSUi command = ECSUi.fromString(tokens[0]);
+        ECSUI command = ECSUI.fromString(tokens[0]);
         Validator validator = Validator.getInstance();
         switch (command) {
             case START:
@@ -117,14 +116,14 @@ public class ECSClient implements ECSClientListener {
     }
 
     /**
-     * Initializes ECScm server, check ECScm' initService function
+     * Initializes ECSCore server, check ECSCore' initService function
      * @param numNodes
      * @param cacheSize
      * @param displacementStrategy
      */
     private void ECSinit(String numNodes,String cacheSize, String displacementStrategy) {
         try {
-            ECServer = new ECScm(fileName);
+            ECServer = new ECSCore(fileName);
             if (ECServer.initService(Integer.parseInt(numNodes), Integer.parseInt(cacheSize), displacementStrategy)) {
                 initialized = true;
             }
@@ -132,14 +131,14 @@ public class ECSClient implements ECSClientListener {
                 System.out.println(PROMPT + "Failed initializing the ECSInterface Service.");
             }
         } catch (IOException e) {
-            logger.error("Could not initialize ECScm Service. Problem accessing ecs.config file");
-            System.out.println("Could not initialize ECScm Service");
+            logger.error("Could not initialize ECSCore Service. Problem accessing ecs.config file");
+            System.out.println("Could not initialize ECSCore Service");
             return;
         }
     }
 
     /**
-     * Start the ECScm service
+     * Start the ECSCore service
      */
     private void ECSStart() {
         if ( !initialized ) {
@@ -147,34 +146,34 @@ public class ECSClient implements ECSClientListener {
             return;
         }
         if (ECServer.start()) {
-            logger.info("ECScm Service started.");
+            logger.info("ECSCore Service started.");
             System.out.println(PROMPT + "ECSInterface Service started.");
         }
         else {
-            logger.error( "Failed starting the ECScm Service." );
+            logger.error( "Failed starting the ECSCore Service." );
             System.out.println(PROMPT + "Failed starting the ECSInterface Service.");
 
         }
     }
 
     /**
-     * Stop the ECScm
+     * Stop the ECSCore
      */
     private void ECSStop() {
         if ( !initialized )
             System.out.println(PROMPT + "ECSInterface Service is not initialized. First initialize the server.");
         if (ECServer.stop()) {
-            logger.info("ECScm Service stopped.");
+            logger.info("ECSCore Service stopped.");
             System.out.println(PROMPT + "ECSInterface Service stopped.");
         }
         else {
-            logger.info( "ECScm Service could not be stopped." );
+            logger.info( "ECSCore Service could not be stopped." );
             System.out.println(PROMPT + "ECSInterface Service could not be stopped.");
         }
     }
 
     /**
-     * Shutdown ECScm
+     * Shutdown ECSCore
      */
     private void ECSShutDown() {
         if ( !initialized ) {
@@ -182,18 +181,18 @@ public class ECSClient implements ECSClientListener {
             return;
         }
         if ( ECServer != null && ECServer.shutdown()) {
-            logger.info( "ECScm Service shutdown." );
+            logger.info( "ECSCore Service shutdown." );
             System.out.println(PROMPT + "ECSInterface Service shutdown successfully.");
             ECServer = null;
         }
         else {
-            logger.debug("ECScm Service shutdown failed.");
+            logger.debug("ECSCore Service shutdown failed.");
             System.out.println(PROMPT + "ECSInterface Service shutdown failed.");
         }
     }
 
     /**
-     * Add Server arbitrarily selected from ECScm configuration file
+     * Add Server arbitrarily selected from ECSCore configuration file
      * @param cacheSize
      * @param displacementStrategy
      */
@@ -203,8 +202,8 @@ public class ECSClient implements ECSClientListener {
             System.out.println(PROMPT + "A node has been added!");
         }
         else{
-            System.out.println(PROMPT + "ECScm Service failed adding a new node.");
-            logger.debug("ECScm Service failed adding a new node.");
+            System.out.println(PROMPT + "ECSCore Service failed adding a new node.");
+            logger.debug("ECSCore Service failed adding a new node.");
         }
     }
 
@@ -212,13 +211,18 @@ public class ECSClient implements ECSClientListener {
      * remove arbitrarily selected Store server
      */
     private void ECSRemoveServer() {
+        if (ECServer.getSize() == 1){
+            System.out.println(PROMPT + "Only one server on the Ring. Cannot be removed. \n" +
+                    "If you want to delete ring please use the shutdown functionality.");
+            return;
+        }
         if( ECServer.removeNode() ){
             logger.debug("Random Node has been removed.");
             System.out.println(PROMPT + "Random Node has been removed.");
         }
         else{
-            System.out.println(PROMPT + "ECScm Service failed to remove a node.");
-            logger.debug("ECScm Service failed to remove a node.");
+            System.out.println(PROMPT + "ECSCore Service failed to remove a node.");
+            logger.debug("ECSCore Service failed to remove a node.");
         }
     }
 

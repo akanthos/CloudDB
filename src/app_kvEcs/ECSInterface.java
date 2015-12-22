@@ -3,8 +3,8 @@ package app_kvEcs;
 
 public interface ECSInterface {
 
-    /** Send an SSH call to launch number of servers,
-     * Send an INIT message to hand meta data.
+    /** Launch servers,
+     * Send an INIT message to hand meta-data etc.
      * @param numberOfNodes
      */
     public boolean initService(int numberOfNodes, int cacheSize, String displacementStrategy);

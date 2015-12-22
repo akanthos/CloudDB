@@ -9,21 +9,20 @@ import common.utils.Utilities;
 import hashing.MD5Hash;
 import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
 
-public class ECScm implements ECSInterface {
+public class ECSCore implements ECSInterface {
 
 
     public enum TransferType {
         MOVE, REPLICATE, RESTORE, REMOVE
     };
 
-    private static Logger logger = Logger.getLogger(ECScm.class);
+    private static Logger logger = Logger.getLogger(ECSCore.class);
     private List<ServerInfo> allServers;
     private List<ServerInfo> activeServers;
     private ConfigReader confReader;
@@ -31,7 +30,7 @@ public class ECScm implements ECSInterface {
     private int cacheSize;
     private String displacementStrategy;
     private boolean runLocal=true;
-    private SshCommunication runProcess;
+    private CallRemoteInterface runProcess;
     private FailDetection failHandler;
     private Map<ServerInfo, KVConnection> KVConnections;
     private ServerSocket failSocket;
@@ -41,12 +40,12 @@ public class ECScm implements ECSInterface {
     /**
      *
      */
-    public ECScm(String fileName) throws IOException {
+    public ECSCore(String fileName) throws IOException {
         try {
             this.confReader = new ConfigReader( fileName );
             allServers = confReader.getServers();
         } catch (IOException e) {
-            throw new IOException("ECScm. Cannot access ecs.config");
+            throw new IOException("ECSCore. Cannot access ecs.config");
         }
     }
 
@@ -54,7 +53,7 @@ public class ECScm implements ECSInterface {
      * Randomly choose <numberOfNodes> servers from the available machines and start the KVServer
      * by issuing a SSH call to the respective machine.
      * This call launches the server with the specified cache size and displacement strategy.
-     * You can assume that the KVServer.jar is located in the same directory as the ECScm.
+     * You can assume that the KVServer.jar is located in the same directory as the ECSCore.
      * All servers are initialized with the meta-data and remain in state stopped
      * @param numberOfNodes
      * @param cacheSize
@@ -67,7 +66,7 @@ public class ECScm implements ECSInterface {
         Random rand = new Random();
         int count = 0;
         this.md5Hasher = new MD5Hash();
-        runProcess = new SshCaller();
+        runProcess = new CallRemote();
         this.KVConnections = new HashMap<ServerInfo, KVConnection>();
         running=true;
 
@@ -89,7 +88,7 @@ public class ECScm implements ECSInterface {
         logger.info("ECSInterface launching " + numberOfNodes + " servers.");
         //start the store servers
         startServers = launchNodes(startServers, cacheSize, displacementStrategy);
-        final ECScm curr=this;
+        final ECSCore curr=this;
 
         //failHandler = new FailDetection(50036, curr);
         //new Thread(failHandler).start();
@@ -147,7 +146,6 @@ public class ECScm implements ECSInterface {
         replicateData();
         return initSuccess;
     }
-
 
     /**
      * Create an INIT KVAdminMessage
@@ -336,6 +334,7 @@ public class ECScm implements ECSInterface {
     @Override
     public boolean addNode(int cacheSize, String displacementStrategy){
 
+
         boolean addSuccess = false;
         ServerInfo newServer = new ServerInfo();
         Iterator<ServerInfo> allServersIterator = allServers.iterator();
@@ -357,6 +356,10 @@ public class ECScm implements ECSInterface {
             logger.info("No available node to add.");
             return false;
         }
+        logger.info("About to ADD server: " + newServer.getID());
+        logger.debug("My system before adding is: ");
+        for (ServerInfo server: activeServers)
+            logger.debug(server.getID());
         //calculate the new MetaData.
         activeServers = generateMetaData(activeServers);
         List<KVConnection> WriteLockNodes = new ArrayList<>();
@@ -383,15 +386,16 @@ public class ECScm implements ECSInterface {
             generateMetaData(activeServers);
             return false;
         }
-        ServerInfo successor = getSuccessor(newServer);
+
         replicas = Utilities.getReplicas(activeServers, newServer);
         coordinators = Utilities.getCoordinators(activeServers, newServer);
-
+        ServerInfo successor = replicas.get(0);
         /**
          * normal case of having more than 2 servers
          * in out Storage System
          */
         if (activeServers.size()>2) {
+            logger.info("ADD new server in a ring of size >=3 ");
             // successor sends data to new node
             // coordinators of the new Node send their replicas
             if (moveData(successor, newServer, newServer.getFromIndex(), newServer.getToIndex(), TransferType.MOVE)
@@ -463,6 +467,7 @@ public class ECScm implements ECSInterface {
         }
         // 2 servers in the ring after adding a newNode
         else {
+            logger.info("ADD new server in a ring of size <=2 ");
             if (moveData(successor, newServer, newServer.getFromIndex(), newServer.getToIndex(), TransferType.MOVE)) {
                     WriteLockNodes.add(KVConnections.get(successor));
                 logger.debug("Successfully moved data from successor to NewServer added.");
@@ -506,7 +511,10 @@ public class ECScm implements ECSInterface {
             kvconnection.disconnect();
             return false;
         }
-
+        logger.info("ADDED server: " + newServer.getID());
+        logger.debug("My system after adding is: ");
+        for (ServerInfo server: activeServers)
+            logger.debug(server.getID());
         return addSuccess;
     }
 
@@ -514,11 +522,14 @@ public class ECScm implements ECSInterface {
 
     public void repairSystem(ServerInfo failedServer){
 
+        logger.info("Failure handling regarding server: " + failedServer.getAddress() + ":" + failedServer.getServerPort());
         boolean moveSuccess = true;
         boolean found = false;
         int index = -1;
+        List<ServerInfo> replicas = Utilities.getReplicas(activeServers, failedServer);
+        List<ServerInfo> coordinators = Utilities.getCoordinators(activeServers, failedServer);
         List<ServerInfo> WriteLockNodes = new ArrayList<>();
-        ServerInfo successor = getSuccessor(failedServer);
+        ServerInfo successor = replicas.get(0);
         //only one activeServer and failed
         if (activeServers.size() == 1) {
             logger.error("None of the nodes is alive. No data available :(");
@@ -566,15 +577,10 @@ public class ECScm implements ECSInterface {
                 logger.error("Failed to recover data regarding the failed server.");
                 moveSuccess = false;
             }
-            logger.debug("I have a system with 3 nodes and one of them failed.");
-            //send message to successor to save replicated
-            //data from the failed node as his main data
         }
         //more than 3 nodes in the ring
         else{
             logger.debug("Case of failed node appearing in a ring with more than 3 nodes.");
-            List<ServerInfo> replicas = Utilities.getReplicas(activeServers, failedServer);
-            List<ServerInfo> coordinators = Utilities.getCoordinators(activeServers, failedServer);
 
             logger.debug("Replicas size: " + replicas.size());
             logger.debug("Coordinators size: " + coordinators.size());
@@ -606,19 +612,19 @@ public class ECScm implements ECSInterface {
                 logger.info("Case of failure with more than 3 nodes. Failed update.");
             }
 
-            List<ServerInfo> successorReplicas = Utilities.getReplicas(activeServers, successor);
+            List<ServerInfo> successorReplicas = Utilities.getReplicas(activeServers, replicas.get(0));
 
             /*
                 store data as replication:
                 1. from successor of failed Node to replicas
                 2. from coordinators to the respective nodes.
              */
-            if (moveData(successor, successorReplicas.get(0), successor.getFromIndex(), successor.getToIndex(), TransferType.REPLICATE)){
+            if (moveData(replicas.get(0), successorReplicas.get(0), replicas.get(0).getFromIndex(), replicas.get(0).getToIndex(), TransferType.REPLICATE)){
                 logger.debug("Sent data for replication from "
                         + successor.getAddress() + ":" + successor.getServerPort() + " to "
                         + successorReplicas.get(0).getAddress() + ":" + successorReplicas.get(0).getServerPort());
             }
-            if (moveData(successor, successorReplicas.get(1), successor.getFromIndex(), successor.getToIndex(), TransferType.REPLICATE)){
+            if (moveData(replicas.get(0), successorReplicas.get(1), replicas.get(0).getFromIndex(), replicas.get(0).getToIndex(), TransferType.REPLICATE)){
                 logger.debug("Sent data for replication from "
                         + successor.getAddress() + ":" + successor.getServerPort() + " to "
                         + successorReplicas.get(1).getAddress() + ":" + successorReplicas.get(1).getServerPort());
@@ -741,17 +747,25 @@ public class ECScm implements ECSInterface {
 
     public boolean removeNode(ServerInfo deleteNode) {
 
-
+        if (activeServers.size() == 1) {
+            logger.info("You have only one Server in the Ring so you cannot remove it.");
+            return true;
+        }
+        logger.info("About to DELETE server: " + deleteNode.getID());
+        logger.debug("My system before removing is: ");
+        for (ServerInfo server: activeServers)
+            logger.debug(server.getID());
         boolean moveSuccess=true;
         //get the successor
+        List<ServerInfo> replicas = Utilities.getReplicas(activeServers, deleteNode);
+        List<ServerInfo> coordinators = Utilities.getCoordinators(activeServers, deleteNode);
         ServerInfo successor = getSuccessor(deleteNode);
         //socket connection of Node to be removed
         KVConnection deleteNodeConnection = this.KVConnections
                 .get(deleteNode);
         KVConnection successorConnection = this.KVConnections
                 .get(successor);
-        List<ServerInfo> replicas = new ArrayList<>();
-        List<ServerInfo> coordinators = new ArrayList<>();
+
         List<KVConnection> WriteLockNodes = new ArrayList<>();
 
         //remove NodetoDelete from the active servers list
@@ -867,6 +881,11 @@ public class ECScm implements ECSInterface {
         } catch (CannotConnectException e) {
             logger.error("shut down message couldn't be sent.");
         }
+
+        logger.info("DELETED server: " + deleteNode.getID());
+        logger.debug("My system after removing is: ");
+        for (ServerInfo server: activeServers)
+            logger.debug(server.getID());
 
         return true;
     }
@@ -1035,28 +1054,6 @@ public class ECScm implements ECSInterface {
         }
     }
 
-
-    private boolean deleteData(ServerInfo node,
-                               Long fromIndex, Long toIndex){
-
-        KVAdminMessageImpl deleteDataMsg = new KVAdminMessageImpl();
-        deleteDataMsg.setStatus(KVAdminMessage.StatusType.REMOVE_DATA);
-        deleteDataMsg.setLow(fromIndex);
-        deleteDataMsg.setHigh(toIndex);
-        try {
-            ECSAction(KVConnections.get(node), node, deleteDataMsg);
-        } catch (CannotConnectException e) {
-            KVConnections.get(node).disconnect();
-            logger.info(deleteDataMsg.getStatus() + " operation on server " + node.getAddress()+":"
-                    + node.getServerPort() + " failed due to Connection problem");
-            return false;
-        }
-        return true;
-
-    }
-
-
-
     /**
      * returns the successor of the newServer
      *
@@ -1065,15 +1062,8 @@ public class ECScm implements ECSInterface {
      */
     private ServerInfo getSuccessor(ServerInfo newServer) {
 
-        ServerInfo successor;
-        int nodeIndex = this.activeServers.indexOf(newServer);
-        try {
-            successor = this.activeServers.get(nodeIndex + 1);
-        }// success is the first server on the ring
-        catch (IndexOutOfBoundsException e) {
-            successor = this.activeServers.get(0);
-        }
-        return successor;
+        List<ServerInfo> replicas = Utilities.getReplicas(activeServers, newServer);
+        return replicas.get(0);
     }
 
 
@@ -1156,13 +1146,16 @@ public class ECScm implements ECSInterface {
 
     public synchronized void handleFailure(ServerInfo failNode) {
 
-        logger.info("Failure delivered regarding server: "+ failNode.getAddress()+":"+ failNode.getServerPort());
         for (ServerInfo s : activeServers) {
             if (s.getID().equals(failNode.getID())) {
                 repairSystem(failNode);
                 break;
             }
         }
+    }
+
+    public int getSize(){
+        return activeServers.size();
     }
 
 

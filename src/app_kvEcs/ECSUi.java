@@ -1,6 +1,6 @@
 package app_kvEcs;
 
-public enum ECSUi {
+public enum ECSUI {
 
     INIT("init"),  START("start"), STOP("stop"),
     SHUT_DOWN("shutDown"), ACK("ack"),
@@ -17,7 +17,7 @@ public enum ECSUi {
      *
      * @param commandText
      */
-    private ECSUi(String commandText) {
+    private ECSUI(String commandText) {
         this.commandText = commandText;
     }
 
@@ -32,15 +32,15 @@ public enum ECSUi {
      * @param commandText
      * @return
      */
-    public static ECSUi fromString(String commandText) {
+    public static ECSUI fromString(String commandText) {
         if (commandText != null) {
-            for (ECSUi command : ECSUi.values()) {
+            for (ECSUI command : ECSUI.values()) {
                 if (commandText.equalsIgnoreCase(command.commandText)) {
                     return command;
                 }
             }
         }
-        return ECSUi.UNSUPPORTED;
+        return ECSUI.UNSUPPORTED;
     }
 
 }

@@ -17,13 +17,13 @@ public interface KVAdminMessage extends AbstractMessage {
         SHUT_DOWN, 		        /* Exits the KVServer application */
         LOCK_WRITE, 	        /* Lock KVServer for write operations */
         UNLOCK_WRITE, 	        /* Unlock KVServer for write operations */
-        MOVE_DATA, 		        /* Transfer subrange to another server and notify ECScm when complete */
+        MOVE_DATA, 		        /* Transfer subrange to another server and notify ECSCore when complete */
         UPDATE_METADATA,        /* Update meta-data repository */
         OPERATION_SUCCESS,      /* Operation requested by the ECSInterface was successful */
         OPERATION_FAILED,       /* Operation requested by the ECSInterface failed */
         GENERAL_ERROR,          /* For other types of errors */
         SERVER_FAILURE,         /* Message to ECSInterface informing about a possible server failure */
-        REPLICATE_DATA,         /* Replicate subrange to another server and notify ECScm when complete */
+        REPLICATE_DATA,         /* Replicate subrange to another server and notify ECSCore when complete */
         REMOVE_DATA,
         RESTORE_DATA
     }

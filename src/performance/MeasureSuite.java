@@ -1,6 +1,6 @@
 package performance;
 
-import app_kvEcs.ECScm;
+import app_kvEcs.ECSCore;
 import client.KVStore;
 import common.ServerInfo;
 import common.messages.KVMessage;
@@ -29,7 +29,7 @@ public class MeasureSuite {
     private static RandomKeyValue randomKeyValue;
 
 
-    private static ECScm ecs;
+    private static ECSCore ecs;
     private static double difference;
 
     public static void main (String[] args) {
@@ -58,7 +58,7 @@ public class MeasureSuite {
             threadpool = Executors.newCachedThreadPool();
 
             /* Service administration initialization */
-            ecs = new ECScm("ecs.config");
+            ecs = new ECSCore("ecs.config");
 
             /* Titles of CSV output file */
             resultsFile.println("result, servers, clients, cacheSize, strategy, time (sec), throughput");
@@ -120,7 +120,7 @@ public class MeasureSuite {
             threadpool = Executors.newCachedThreadPool();
 
             /* Service administration initialization */
-            ecs = new ECScm("ecs.config");
+            ecs = new ECSCore("ecs.config");
 
             /* Titles of CSV output file */
             resultsFile.println("result, servers, clients, cacheSize, strategy, time (sec), throughput");

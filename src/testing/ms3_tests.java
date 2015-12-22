@@ -1,6 +1,6 @@
 package testing;
 
-import app_kvEcs.ECScm;
+import app_kvEcs.ECSCore;
 import client.KVStore;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
@@ -14,12 +14,12 @@ public class ms3_tests {
 
 
     private static KVStore client;
-    private static ECScm ecs;
+    private static ECSCore ecs;
 
     @Before
     public  void setUp(){
         try {
-            ecs = new ECScm( "ecs.config" );
+            ecs = new ECSCore( "ecs.config" );
             ecs.initService( 10, 8, "FIFO");
             client = new KVStore (  );
             client.connect ("localhost", 50000);

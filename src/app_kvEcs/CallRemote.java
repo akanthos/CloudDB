@@ -10,12 +10,12 @@ import java.io.File;
 import java.io.InputStream;
 
 
-public class SshCaller implements SshCommunication {
+public class CallRemote implements CallRemoteInterface {
 
-    public static Logger logger = Logger.getRootLogger();
-    private String userName = System.getProperty("user.name");
     private String privateKey = System.getProperty("user.home") + "/.ssh/id_rsa";
     private String knownHosts = System.getProperty("user.home") + "/.ssh/known_hosts";
+    public static Logger logger = Logger.getRootLogger();
+    private String userName = System.getProperty("user.name");
     private static final int port = 22;
     private long timeOut = 3000;
 

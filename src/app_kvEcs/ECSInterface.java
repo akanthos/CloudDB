@@ -1,6 +1,8 @@
 package app_kvEcs;
 
 
+import common.ServerInfo;
+
 public interface ECSInterface {
 
     /** Launch servers,
@@ -35,5 +37,9 @@ public interface ECSInterface {
      * Update the meta data, and move data operations
      */
     public boolean removeNode();
+
+    public int getSize();
+
+    public void handleFailure(ServerInfo failNode);
 
 }

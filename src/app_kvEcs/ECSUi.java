@@ -3,39 +3,36 @@ package app_kvEcs;
 public enum ECSUI {
 
     INIT("init"),  START("start"), STOP("stop"),
-    SHUT_DOWN("shutDown"), ACK("ack"),
-    SET_WRITE_LOCK("setWriteLock"), UNLOCK_WRITE("setUnlock"),
-    MOVE_DATA("moveData"), SEND_METADATA("sendMetadata"),
-    ADD("add"), REMOVE("remove"),
-    LOG_LEVEL("logLevel"), HELP("help"), QUIT("quit"),
-    REMOVE_DATA("removeData"), UNSUPPORTED( "unSupported"),;
+    SHUT_DOWN("shutDown"), SET_WRITE_LOCK("setWriteLock"), UNLOCK_WRITE("setUnlock"),
+    ADD("add"), REMOVE("remove"), UNSUPPORTED( "unSupported"),
+    LOG_LEVEL("logLevel"), HELP("help"), QUIT("quit"),;
 
-    private String commandText;
+    private String cmd;
 
     /**
-     * Enum constructor initializing commandText
+     * initializing cmd
      *
-     * @param commandText
+     * @param cmd
      */
-    private ECSUI(String commandText) {
-        this.commandText = commandText;
+    private ECSUI(String cmd) {
+        this.cmd = cmd;
     }
 
     /**
      * @return commandText
      */
     public String getCommandText() {
-        return commandText;
+        return cmd;
     }
 
     /**
-     * @param commandText
+     * @param c1
      * @return
      */
-    public static ECSUI fromString(String commandText) {
-        if (commandText != null) {
+    public static ECSUI fromString(String c1) {
+        if (c1 != null) {
             for (ECSUI command : ECSUI.values()) {
-                if (commandText.equalsIgnoreCase(command.commandText)) {
+                if (c1.equalsIgnoreCase(command.cmd)) {
                     return command;
                 }
             }

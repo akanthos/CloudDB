@@ -20,6 +20,7 @@ public class ECSClient implements ECSClientListener {
     private String fileName;
     private boolean stop = false;
     private boolean initialized = false;
+    private ECSHelpers Helper;
 
     public ECSClient (String fileName) {
         this.fileName = fileName;

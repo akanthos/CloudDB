@@ -122,7 +122,8 @@ public class CallRemote implements CallRemoteInterface {
             // adding the arguments to the command
             for (String argument : arguments)
                 command += " " + argument;
-            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar", "ms3-server.jar", arguments[0], "&");
+            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar", "ms3-server.jar",
+                    arguments[0], arguments[1], arguments[2], "&");
             String path = System.getProperty("user.dir");
 
             processb.directory(new File(path));

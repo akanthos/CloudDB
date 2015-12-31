@@ -9,6 +9,8 @@ import common.utils.Utilities;
 import hashing.MD5Hash;
 import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
+import testing.InteractionTest;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -35,7 +37,7 @@ public class ECSCore implements ECSInterface {
     private Map<ServerInfo, KVConnection> KVConnections;
     private ServerSocket failSocket;
     private boolean running=false;
-    private int detectionPort = 60036;
+    private int detectionPort = 60037;
 
     /**
      *
@@ -103,14 +105,13 @@ public class ECSCore implements ECSInterface {
         } catch (IOException e) {
             logger.error("Failed to bind to Failure detection socket server.");
         }
-
         new Thread(new Runnable() {
             @Override
             public void run() {
                 if (failSocket != null) {
                     while (running) {
                         try {
-                            logger.info("Start thread for failure reporting");
+                            logger.info("Start a thread for failure reporting messages from KVStore servers.");
                             Socket failClient = failSocket.accept();
                             FailDetection connection = new FailDetection(detectionPort, failClient, curr);
                             new Thread(connection).start();
@@ -119,7 +120,6 @@ public class ECSCore implements ECSInterface {
                         }
                     }
                 }
-                logger.info("Stopped server.");
             }
         }).start();
 
@@ -142,7 +142,6 @@ public class ECSCore implements ECSInterface {
                 return false;
             }
         }
-        // TODO: Send message to Server to Replicate their data?
         replicateData();
         return initSuccess;
     }
@@ -176,8 +175,17 @@ public class ECSCore implements ECSInterface {
 		 */
         String path = System.getProperty("user.dir");
         String command = "nohup java -jar " + path + "/ms3-server.jar ";
+        /*
+        OLD
         String arguments[] = new String[2];
         arguments[1] = " ERROR &";
+        */
+        String arguments[] = new String[4];
+        arguments[1] = Integer.toString(cacheSize);
+        arguments[2] = displacementStrategy;
+        arguments[3] = " ERROR &";
+        // OLD
+        /////////////
         int result;
 
         Iterator<ServerInfo> iterator = startServers.iterator();
@@ -193,6 +201,7 @@ public class ECSCore implements ECSInterface {
             if (result == 0) {
                 this.activeServers.add(item);
                 item.setLaunched(true);
+                logger.info("Successfully started a server." + item.getID());
 
             }
             // could not start the server
@@ -298,14 +307,18 @@ public class ECSCore implements ECSInterface {
      * @param startServer
      * @return 0 in case of successful launch
      */
-    private boolean launchNode(ServerInfo startServer) {
+    private boolean launchNode(ServerInfo startServer, int cacheSize, String displacementStrategy) {
 
         String path = System.getProperty("user.dir");
         String command = "nohup java -jar " + path + "/ms3-server.jar ";
-        String arguments[] = new String[2];
-        arguments[1] = "  ERROR &";
-        int result;
+
+        String arguments[] = new String[4];
         arguments[0] = String.valueOf(startServer.getServerPort());
+        arguments[1] = Integer.toString(cacheSize);
+        arguments[2] = displacementStrategy;
+        arguments[3] = " ERROR &";
+        int result;
+
         // ssh calls
         if (!runLocal)
             result = runProcess.RunRemoteProcess(startServer.getAddress(),
@@ -342,20 +355,19 @@ public class ECSCore implements ECSInterface {
         while (allServersIterator.hasNext()) {
             newServer = allServersIterator.next();
             if ( !this.activeServers.contains(newServer) ){
-                //try to launch the server
-                //launchNode adds server to the active Servers
-                if (launchNode(newServer))
+                if (launchNode(newServer, cacheSize, displacementStrategy))
                     break;
                 else {
-                    logger.warn("Could not add a new Server!");
+                    logger.warn("Unable to add a new server!");
                     return false;
                 }
             }
         }
         if (newServer == null) {
-            logger.info("No available node to add.");
+            logger.info("Could not find a server to add.");
             return false;
         }
+
         logger.info("About to ADD server: " + newServer.getID());
         logger.debug("My system before adding is: ");
         for (ServerInfo server: activeServers)

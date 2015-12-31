@@ -103,11 +103,11 @@ public class KVServer {
      */
     public static void main(final String[] args) {
 
-        if( args.length == 2 ) {
+        if( args.length == 4 ) {
             try {
                 new Thread(new Runnable() {
                     public void run() {
-                        new KVServer("127.0.0.1", Integer.parseInt(args[0]), 10, "FIFO");
+                        new KVServer("127.0.0.1", Integer.parseInt(args[0]), Integer.parseInt(args[1]), args[2]);
                     }
                 }).start();
 

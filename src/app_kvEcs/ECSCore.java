@@ -7,7 +7,6 @@ import common.utils.Utilities;
 import hashing.MD5Hash;
 import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -35,8 +34,6 @@ public class ECSCore implements ECSInterface {
     private boolean runLocal=true;
     private CallRemoteInterface runProcess;
     private FailDetection failHandler;
-
-
     private Map<ServerInfo, KVConnection> KVConnections;
     private ServerSocket failSocket;
     private boolean running=false;
@@ -620,18 +617,6 @@ public class ECSCore implements ECSInterface {
         }
     }
 
-    public int getSize(){
-        return activeServers.size();
-    }
-
-    public List<ServerInfo> getActiveServers() {
-        return activeServers;
-    }
-
-    public Map<ServerInfo, KVConnection> getKVConnections() {
-        return KVConnections;
-    }
-
     /**
      * Lock the KVServer for write operations.
      * @return true if succeeded else false
@@ -690,5 +675,17 @@ public class ECSCore implements ECSInterface {
         int serverIndex = Helper.getRandom(activeServers.size());
         ServerInfo entryNode = activeServers.get(serverIndex);
         return  entryNode;
+    }
+
+    public int getSize(){
+        return activeServers.size();
+    }
+
+    public List<ServerInfo> getActiveServers() {
+        return activeServers;
+    }
+
+    public Map<ServerInfo, KVConnection> getKVConnections() {
+        return KVConnections;
     }
 }

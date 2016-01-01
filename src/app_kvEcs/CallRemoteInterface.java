@@ -29,8 +29,8 @@ public interface CallRemoteInterface {
      * @paramm ecsPort : Port for communication with ECSInterface
      @return: 0 in case of Success and -1 in case of Failure
      */
-    public int RunRemoteProcess(String host, String command, String[] arguments);
+    public boolean RunRemoteProcess(String host, String command, String[] arguments);
 
-    public int RunLocalProcess(String command, String[] arguments);
+    public boolean RunLocalProcess(String command, String[] arguments);
 
 }

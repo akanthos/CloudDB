@@ -42,9 +42,7 @@ public class ECSHelpers {
         arguments[1] = Integer.toString(cacheSize);
         arguments[2] = displacementStrategy;
         arguments[3] = " ERROR &";
-
-        int result;
-
+        boolean result;
         Iterator<ServerInfo> iterator = startServers.iterator();
         while (iterator.hasNext()) {
             ServerInfo item = iterator.next();
@@ -55,13 +53,12 @@ public class ECSHelpers {
 
             else
                 result = runProcess.RunLocalProcess(command, arguments);
-            if (result == 0) {
+            if (result) {
                 activeServers.add(item);
                 item.setLaunched(true);
                 logger.info("Successfully started a server." + item.getID());
 
             }
-            // could not start the server
             else
                 iterator.remove();
         }
@@ -151,18 +148,16 @@ public class ECSHelpers {
         arguments[1] = Integer.toString(cacheSize);
         arguments[2] = displacementStrategy;
         arguments[3] = " ERROR &";
-        int result;
-
-        // ssh calls
+        boolean result;
+        //ssh calls
         if (!runLocal)
             result = runProcess.RunRemoteProcess(startServer.getAddress(),
                     command, arguments);
-            // for runLocal invocations
+        //local calls
         else
             result = runProcess.RunLocalProcess(command, arguments);
-
-        // remote server started successfully
-        if (result == 0) {
+        //store server started successfully
+        if (result) {
             activeServers.add(startServer);
             startServer.setLaunched(true);
             return true;

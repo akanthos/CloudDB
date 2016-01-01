@@ -44,13 +44,12 @@ public class CallRemote implements CallRemoteInterface {
      * @return
      */
     @Override
-    public int RunRemoteProcess(String host, String command, String[] arguments) {
+    public boolean RunRemoteProcess(String host, String command, String[] arguments) {
 
         boolean waiting;
         String tmpResponse = "";
         char c;
         command = "nohup java -jar " + "/home/pi/clouddb" + "/ms3-server.jar ";
-
         try {
             JSch jsch = new JSch();
             jsch.setKnownHosts(knownHosts);
@@ -63,17 +62,14 @@ public class CallRemote implements CallRemoteInterface {
             // Add arguments to exec Command
             for (String argument : arguments)
                 command += " " + argument;
-
             Channel channel = session.openChannel("exec");
             ((ChannelExec) channel).setCommand(command);
             channel.setInputStream(null);
             InputStream in = channel.getInputStream();
             channel.connect();
 
-            long begin = System.currentTimeMillis();
-            long end = begin + timeOut;
             waiting = true;
-            while (waiting && System.currentTimeMillis() < end) {
+            while (waiting) {
                 while (in.available() > 0) {
                     c = (char) in.read();
                     tmpResponse += c;
@@ -84,7 +80,7 @@ public class CallRemote implements CallRemoteInterface {
                     }
                     // failure in process starting
                     if (tmpResponse.contains("FAIL"))
-                        return -1;
+                        return false;
 
                     // no more input
                     if ((int) c < 0)
@@ -97,13 +93,13 @@ public class CallRemote implements CallRemoteInterface {
             if (channel.getExitStatus() == 0) {
                 logger.info("Remote Server on host: " + host
                         + " has started! Listening on Port " + arguments[0]);
-                return 0;
+                return true;
             } else
-                return -1;
+                return false;
         }
         catch (Exception e){
             logger.error(e);
-            return -1;
+            return false;
         }
     }
 
@@ -115,9 +111,8 @@ public class CallRemote implements CallRemoteInterface {
      * @return
      */
     @Override
-    public int RunLocalProcess(String command, String[] arguments) {
+    public boolean RunLocalProcess(String command, String[] arguments) {
 
-        //ERROR & -> dont write standard error in nohup.out
         try {
             // adding the arguments to the command
             for (String argument : arguments)
@@ -144,20 +139,18 @@ public class CallRemote implements CallRemoteInterface {
                     }
                     // the process did not start successfully
                     if (s.contains("ERROR"))
-                        return -1;
+                        return false;
                     // no more input to read
                     if ((int) c < 0)
                         break;
                 }
             }
             logger.info("Local Server on port " + arguments[0]);
-            return 0;
+            return true;
         } catch (Exception e) {
             System.out.println(e);
             logger.error(e);
-            return -1;
+            return false;
         }
-
     }
-
 }

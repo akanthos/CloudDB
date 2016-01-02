@@ -1,20 +1,14 @@
-package app_kvServer.dataStorage;
+package app_kvServer;
 
-import app_kvServer.SocketServer;
 import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
-import common.messages.KVPair;
-import common.utils.KVRange;
-import hashing.MD5Hash;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
-import java.util.Set;
+import java.util.Random;
 
 
 /**
@@ -30,29 +24,18 @@ public class KVPersistenceEngine {
     private OutputStream output = null;
     private static Logger logger = Logger.getLogger(KVPersistenceEngine.class);
 
-    public KVPersistenceEngine(String suffix) throws StorageException {
-        initialization(fileNamePrefix + suffix);
-    }
-    public KVPersistenceEngine(int replicaNumber) throws StorageException {
-        initialization(fileNamePrefix + "_replica_" + String.valueOf(replicaNumber));
+
+    public KVPersistenceEngine(){
     }
     /**
      *
      * @throws StorageException
      * indicating problems accessing the persistant file
      */
-    public KVPersistenceEngine(SocketServer server) throws StorageException {
-        initialization(fileNamePrefix + String.valueOf(server.getInfo().getServerPort()));
-    }
-
-    /**
-     * Initialization of storage file
-     * @param persistenceFileName name used for the storage file
-     * @throws StorageException
-     */
-    private void initialization(String persistenceFileName) throws StorageException {
-        fileName = persistenceFileName;
+    public KVPersistenceEngine(ServerInfo info) throws StorageException {
         try {
+            // Initialize properties file
+            fileName = fileNamePrefix + String.valueOf(info.getServerPort());
             File storeFile = new File(fileName);
             prop = new Properties();
             if(storeFile.exists()) {
@@ -67,6 +50,16 @@ public class KVPersistenceEngine {
             logger.error("Cannot initialize persistence file", e);
             throw new StorageException("Cannot initialize persistence file");
         }
+    }
+
+    private String randomSuffix(int suffixSize) {
+        Random r = new Random();
+        StringBuffer sb = new StringBuffer();
+        while(sb.length() < suffixSize){
+            sb.append(Integer.toHexString(r.nextInt()));
+        }
+
+        return sb.toString().substring(0, suffixSize);
     }
 
     /**
@@ -132,39 +125,6 @@ public class KVPersistenceEngine {
         }
 
 
-    }
-
-    /**
-     * Removes a whole key range from the persistence file.
-     * @param range the range of keys that need to be removed
-     */
-    public KVMessageImpl remove (KVRange range){
-        KVMessageImpl response;
-        logger.info("Starting range removal for range " + range.getLow() + ":"+range.getHigh());
-        for (String key : prop.stringPropertyNames()) {
-            MD5Hash md5 = new MD5Hash();
-            String hashedKey = md5.hash(key);
-            if (range.isIndexInRange(hashedKey)) {
-                response = this.remove(key);
-                if (response.getStatus().equals(KVMessage.StatusType.DELETE_ERROR))
-                    return new KVMessageImpl(KVMessage.StatusType.DELETE_ERROR);
-            }
-        }
-        return new KVMessageImpl(KVMessage.StatusType.DELETE_SUCCESS);
-    }
-
-    public List<KVPair> get (KVRange range){
-        List<KVPair> pairs = new ArrayList<>();
-        for (String key : prop.stringPropertyNames()) {
-            MD5Hash md5 = new MD5Hash();
-            String hashedKey = md5.hash(key);
-            if (range.isIndexInRange(hashedKey)) {
-                String resultValue = prop.getProperty(key);
-                if (resultValue != null)
-                    pairs.add(new KVPair(key, resultValue));
-            }
-        }
-        return pairs;
     }
 
     /**

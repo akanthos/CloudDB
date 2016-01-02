@@ -10,12 +10,12 @@ import java.io.File;
 import java.io.InputStream;
 
 
-public class CallRemote implements CallRemoteInterface {
+public class SshCaller implements SshCommunication {
 
-    private String privateKey = System.getProperty("user.home") + "/.ssh/id_rsa";
-    private String knownHosts = System.getProperty("user.home") + "/.ssh/known_hosts";
     public static Logger logger = Logger.getRootLogger();
     private String userName = System.getProperty("user.name");
+    private String privateKey = System.getProperty("user.home") + "/.ssh/id_rsa";
+    private String knownHosts = System.getProperty("user.home") + "/.ssh/known_hosts";
     private static final int port = 22;
     private long timeOut = 3000;
 
@@ -44,21 +44,17 @@ public class CallRemote implements CallRemoteInterface {
      * @return
      */
     @Override
-    public int RunRemoteProcess(String host, String command, String[] arguments) {
+    public int invokeProcessRemotely(String host, String command, String[] arguments) {
 
         boolean waiting;
         String tmpResponse = "";
         char c;
-        command = "nohup java -jar " + "/home/pi/clouddb" + "/ms3-server.jar ";
 
         try {
             JSch jsch = new JSch();
             jsch.setKnownHosts(knownHosts);
+            Session session = jsch.getSession(userName, host, port);
             jsch.addIdentity(privateKey);
-            Session session = jsch.getSession("pi", host, port);
-            session.setPassword("raspberry");
-            session.setConfig("StrictHostKeyChecking", "no"); //
-            session.setConfig("PreferredAuthentications", "password,gssapi-with-mic,publickey");
             session.connect(3000);
             // Add arguments to exec Command
             for (String argument : arguments)
@@ -115,15 +111,16 @@ public class CallRemote implements CallRemoteInterface {
      * @return
      */
     @Override
-    public int RunLocalProcess(String command, String[] arguments) {
+    public int invokeProcessLocally(String command, String[] arguments) {
 
         //ERROR & -> dont write standard error in nohup.out
         try {
             // adding the arguments to the command
             for (String argument : arguments)
                 command += " " + argument;
-            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar", "ms3-server.jar",
-                    arguments[0], arguments[1], arguments[2], "&");
+            // logger.debug("<<<<<<" + command + ">>>>>");
+            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar",
+                    "ms3-server.jar", arguments[0], "&");
             String path = System.getProperty("user.dir");
 
             processb.directory(new File(path));
@@ -134,7 +131,7 @@ public class CallRemote implements CallRemoteInterface {
             String s = "";
             char c;
             boolean waiting = true;
-            while (waiting) {
+            while (System.currentTimeMillis() < end && waiting) {
                 while (in.available() > 0) {
                     c = (char) in.read();
                     s += c;
@@ -149,8 +146,11 @@ public class CallRemote implements CallRemoteInterface {
                     if ((int) c < 0)
                         break;
                 }
+
             }
-            logger.info("Local Server on port " + arguments[0]);
+            logger.info("Local Server" + " has started! Listening on Port "
+                    + arguments[0]);
+
             return 0;
         } catch (Exception e) {
             System.out.println(e);

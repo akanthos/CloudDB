@@ -142,6 +142,9 @@ public class ECSCore implements ECSInterface {
                 return false;
             }
         }
+        logger.debug("My system after INIT: ");
+        for (ServerInfo server: activeServers)
+            logger.debug(server.getID() + " " + server.getFromIndex() + ":" + server.getToIndex());
         Helper.replicateData(activeServers, KVConnections);
         return initSuccess;
     }
@@ -268,7 +271,7 @@ public class ECSCore implements ECSInterface {
         logger.info("About to ADD server: " + newServer.getID());
         logger.debug("My system before adding is: ");
         for (ServerInfo server: activeServers)
-            logger.debug(server.getID());
+            logger.debug(server.getID() + server.getFromIndex() + ":" + server.getToIndex());
         //calculate the new MetaData.
         activeServers = Helper.generateMetaData(activeServers, md5Hasher);
         List<KVConnection> WriteLockNodes = new ArrayList<>();
@@ -334,9 +337,9 @@ public class ECSCore implements ECSInterface {
                     if ( activeServers.size() >=4 ){
                         if (Helper.moveData(Helper.getSuccessor(replicas.get(1), activeServers), Helper.getSuccessor(replicas.get(1), activeServers),
                                 newServer.getFromIndex(), newServer.getToIndex(), TransferType.REMOVE, KVConnections)
-                            && Helper.moveData(replicas.get(1), replicas.get(1), coordinators.get(1).getFromIndex(),
+                                && Helper.moveData(replicas.get(1), replicas.get(1), coordinators.get(1).getFromIndex(),
                                 coordinators.get(1).getToIndex(), TransferType.REMOVE, KVConnections)
-                            && Helper.moveData(replicas.get(0), replicas.get(0), coordinators.get(0).getFromIndex(),
+                                && Helper.moveData(replicas.get(0), replicas.get(0), coordinators.get(0).getFromIndex(),
                                 coordinators.get(0).getToIndex(), TransferType.REMOVE, KVConnections))
                         {
                             WriteLockNodes.add(KVConnections.get(replicas.get(1)));
@@ -383,33 +386,33 @@ public class ECSCore implements ECSInterface {
         else {
             logger.info("ADD new server in a ring of size <=2 ");
             if (Helper.moveData(successor, newServer, newServer.getFromIndex(), newServer.getToIndex(), TransferType.MOVE, KVConnections)) {
-                    WriteLockNodes.add(KVConnections.get(successor));
+                WriteLockNodes.add(KVConnections.get(successor));
                 logger.debug("Successfully moved data from successor to NewServer added.");
-                    if (!Helper.UpdateMetaData(activeServers, KVConnections))
-                        return false;
+                if (!Helper.UpdateMetaData(activeServers, KVConnections))
+                    return false;
 
-                    //replicate data to each other
-                    // if success
-                    if ( Helper.moveData(successor, newServer, successor.getFromIndex(), successor.getToIndex(), TransferType.REPLICATE, KVConnections)
-                            && Helper.moveData(newServer, successor, newServer.getFromIndex(), newServer.getToIndex(), TransferType.REPLICATE,KVConnections)) {
+                //replicate data to each other
+                // if success
+                if ( Helper.moveData(successor, newServer, successor.getFromIndex(), successor.getToIndex(), TransferType.REPLICATE, KVConnections)
+                        && Helper.moveData(newServer, successor, newServer.getFromIndex(), newServer.getToIndex(), TransferType.REPLICATE,KVConnections)) {
 
-                        logger.info("Data from successor " + successor.getAddress() + ":" + successor.getServerPort() +
-                                " replicated to newly added node " + newServer.getAddress() + ":" + newServer.getServerPort());
-                    }
-                    //failed to replicate data to each other
-                    else {
-                        logger.warn("Replication on system with two nodes " + successor.getAddress() + ":" + successor.getServerPort()
-                                + " and " + successor.getAddress() + ":" + successor.getServerPort() + " failed.");
-                    }
+                    logger.info("Data from successor " + successor.getAddress() + ":" + successor.getServerPort() +
+                            " replicated to newly added node " + newServer.getAddress() + ":" + newServer.getServerPort());
+                }
+                //failed to replicate data to each other
+                else {
+                    logger.warn("Replication on system with two nodes " + successor.getAddress() + ":" + successor.getServerPort()
+                            + " and " + successor.getAddress() + ":" + successor.getServerPort() + " failed.");
+                }
             }
             else {
-                    logger.error("Data reallocations from " + successor.getAddress() +":"+ successor.getServerPort() +
-                    " to " + newServer.getAddress() +":"+ newServer.getServerPort() + " failed.");
-                    Helper.removeFromRing(newServer, activeServers, KVConnections);
-                    kvconnection.disconnect();
-                    Helper.removeFromConnections(newServer, KVConnections);
-                    Helper.generateMetaData(activeServers, md5Hasher);
-                    addSuccess = false;
+                logger.error("Data reallocations from " + successor.getAddress() +":"+ successor.getServerPort() +
+                        " to " + newServer.getAddress() +":"+ newServer.getServerPort() + " failed.");
+                Helper.removeFromRing(newServer, activeServers, KVConnections);
+                kvconnection.disconnect();
+                Helper.removeFromConnections(newServer, KVConnections);
+                Helper.generateMetaData(activeServers, md5Hasher);
+                addSuccess = false;
             }
 
         }
@@ -428,7 +431,7 @@ public class ECSCore implements ECSInterface {
         logger.info("ADDED server: " + newServer.getID());
         logger.debug("My system after adding is: ");
         for (ServerInfo server: activeServers)
-            logger.debug(server.getID());
+            logger.debug(server.getID() + " " + server.getFromIndex() + ":" + server.getToIndex());
         return addSuccess;
     }
 
@@ -461,7 +464,7 @@ public class ECSCore implements ECSInterface {
         logger.info("About to DELETE server: " + deleteNode.getID());
         logger.debug("My system before removing is: ");
         for (ServerInfo server: activeServers)
-            logger.debug(server.getID());
+            logger.debug(server.getID() + server.getFromIndex() + ":" + server.getToIndex());
         boolean moveSuccess=true;
         //get the successor
         List<ServerInfo> replicas = Utilities.getReplicas(activeServers, deleteNode);
@@ -593,7 +596,7 @@ public class ECSCore implements ECSInterface {
         logger.info("DELETED server: " + deleteNode.getID());
         logger.debug("My system after removing is: ");
         for (ServerInfo server: activeServers)
-            logger.debug(server.getID());
+            logger.debug(server.getID() + server.getFromIndex() + ":" + server.getToIndex());
 
         return true;
     }

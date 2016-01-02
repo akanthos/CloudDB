@@ -80,7 +80,7 @@ public class KVServer {
         server.addConnectionHandler(handler);
 
         ArrayList<ServerInfo> metadata = new ArrayList<>();
-        metadata.add(new ServerInfo(server.getInfo().getAddress(), server.getInfo().getServerPort(), new KVRange(0, 0)));
+        metadata.add(new ServerInfo(server.getInfo().getAddress(), server.getInfo().getServerPort(), new KVRange()));
         server.initKVServer(metadata, cacheSize, displacementStrategy);
 
 

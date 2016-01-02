@@ -6,6 +6,11 @@ package app_kvEcs;
  */
 public class UIInteractMsg {
 
+
+    public static final String ECS_ECHO_PROMPT = "ECSInterface> ";
+
+    public static final String SPLIT_DLMT = "\\s+";
+
     public static final String ILLEGAL_PARAM = " is not as expected, Please use the help command to view an example.";
 
     public static final String ILLEGAL_PARAM_NUM = "Illegal number of parameters," +
@@ -18,11 +23,11 @@ public class UIInteractMsg {
             + "\nStart: Sends a start signal to all the servers using ECSInterface Service.\n"
             + "Stop:  Sends a stop signal to all the servers using ECSInterface Service.\n"
             + "Shutdown:  Sends a Shutdown signal to all the servers using ECSInterface Service.\n"
-            + "Add <cacheSize> <displacementStrategy>:  Adds a Store Server to the Ring and required rearrangements.\n"
+            + "Add <cacheSize> <displacementStrategy>:  Adds a Store Server to the Ring and performs respective data Re-Arrangements.\n"
             + "Remove:  Removes a Store Server from the Ring and performs related data Re-Arrangements.\n"
-            + "\nlogLevel <level>: Sets Logging Level."
-            + "\nHelp: Prints the help instructions."
-            + "\nquit: Shut down all servers and exit ecs application.";
+            + "\nlogLevel <level>: Sets the logger to the desired Logging Level."
+            + "\nHelp: Prints the help guide."
+            + "\nquit: Shuts down servers and exit application.";
 
     public static final String GENERAL_ILLEGAL_ARGUMENT = "Please enter a valid command. \n"+ ECS_HELP_TEXT;
 

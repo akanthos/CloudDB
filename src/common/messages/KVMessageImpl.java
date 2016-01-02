@@ -140,7 +140,7 @@ public class KVMessageImpl implements KVMessage {
      * Computes the hash value of the message
      * @return
      */
-    public long getHash() {
+    public String getHash() {
         MD5Hash md5 = new MD5Hash();
         return md5.hash(key);
     }

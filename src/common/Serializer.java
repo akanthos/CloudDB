@@ -220,10 +220,10 @@ public class Serializer {
                             || ((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.REMOVE_DATA)) {
                         if (tokens.length>= 3 && tokens[2] != null) {
                             //((KVAdminMessageImpl) retrievedMessage).setRange(new KVRange());
-                            ((KVAdminMessageImpl) retrievedMessage).setLow(Long.valueOf(tokens[2].trim()));
+                            ((KVAdminMessageImpl) retrievedMessage).setLow(tokens[2].trim());
                         }
                         if (tokens.length>= 4 && tokens[3] != null) {
-                            ((KVAdminMessageImpl)retrievedMessage).setHigh(Long.valueOf(tokens[3].trim()));
+                            ((KVAdminMessageImpl)retrievedMessage).setHigh(tokens[3].trim());
                         }
                         if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
                             ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
@@ -232,10 +232,10 @@ public class Serializer {
                     } else if (((KVAdminMessageImpl)retrievedMessage).getStatus() == (KVAdminMessage.StatusType.SERVER_FAILURE)) {
                         KVRange range = new KVRange();
                         if (tokens.length>= 3 && tokens[2] != null) {
-                            range.setLow(Long.valueOf(tokens[2].trim()));
+                            range.setLow(tokens[2].trim());
                         }
                         if (tokens.length>= 4 && tokens[3] != null) {
-                            range.setHigh(Long.valueOf(tokens[3].trim()));
+                            range.setHigh(tokens[3].trim());
                         }
                         if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
                             ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
@@ -344,7 +344,7 @@ public class Serializer {
                 String[] serverInfoTokens = serverInfoStr.split(SUB_DLM1);
                 ServerInfo serverInfo = new ServerInfo(serverInfoTokens[0],
                         Integer.parseInt(serverInfoTokens[1]));
-                serverInfo.setServerRange(new KVRange(Long.valueOf(serverInfoTokens[2]), Long.valueOf(serverInfoTokens[3])));
+                serverInfo.setServerRange(new KVRange( serverInfoTokens[2], serverInfoTokens[3]));
                 KVServerList.add(serverInfo);
             }
             return KVServerList;

@@ -1,6 +1,5 @@
-package app_kvServer.dataStorage;
+package app_kvServer;
 
-import app_kvServer.SocketServer;
 import common.ServerInfo;
 import common.messages.KVMessage;
 import common.messages.KVMessageImpl;
@@ -12,7 +11,7 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
-import static app_kvServer.dataStorage.CachePolicy.*;
+import static app_kvServer.CachePolicy.*;
 
 /**
  * A KV cache implementation, based on LinkedHashMap.
@@ -25,10 +24,10 @@ import static app_kvServer.dataStorage.CachePolicy.*;
  */
 public class KVCache {
 
-    private SocketServer server;
+    private ServerInfo server;
     private LinkedHashMap<String,String> map;
     private LFUCache lfu;
-    private KVPersistenceEngine persistence;
+    private KVPersistenceEngine persistence = new KVPersistenceEngine();
     final Integer cacheSize;
     CachePolicy policy;
     private static Logger logger = Logger.getLogger(KVCache.class);
@@ -40,7 +39,7 @@ public class KVCache {
      */
     public KVCache (final int cacheSize, String Policy) throws StorageException {
 
-        this.server = null;
+        this.server = new ServerInfo("127.0.0.1", 50000);
         this.cacheSize = cacheSize;
         this.persistence = new KVPersistenceEngine(server);
         switch (policy = valueOf(Policy)) {
@@ -74,7 +73,7 @@ public class KVCache {
      * Creates a new LRU or FIFO or LFU cache according to the cache replacing policy.
      * @param cacheSize the maximum number of entries that will be kept in this cache.
      */
-    public KVCache (final int cacheSize, String Policy, SocketServer server) throws StorageException {
+    public KVCache (final int cacheSize, String Policy, ServerInfo server) throws StorageException {
 
         this.server = server;
         this.cacheSize = cacheSize;
@@ -170,25 +169,25 @@ public class KVCache {
      * @param value Value of the KV pair to be stored
      */
     public synchronized KVMessageImpl put(String key, String value) {
-        KVMessageImpl response;
+
         if (policy == LFU) {
-            response = lfu.addLfuCacheEntry(key, value); // Just forward the request to the LFU cache
+            return lfu.addLfuCacheEntry(key, value); // Just forward the request to the LFU cache
         }
         else {
             // "This" does the job
             if (value.equals("null")) {
                 map.remove(key);
-                response = persistence.remove(key);
+                return persistence.remove(key);
             }
             else {
                 if (map.containsKey(key)) {
                     map.put(key, value);
                     //return persistence.put(key, value); // Write-through policy
-                    response = new KVMessageImpl(key, value, KVMessage.StatusType.PUT_UPDATE);
+                    return new KVMessageImpl(key, value, KVMessage.StatusType.PUT_UPDATE);
                 } else {
                     // Cache miss.... Forward request to KVPersistenceEngine.
-                    response = persistence.put(key, value);
-                    if (response.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS) || response.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) {
+                    KVMessageImpl result = persistence.put(key, value);
+                    if (result.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS) || result.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)) {
                         // Key was written in persistence file. Put it in cache too.
                         // Or key found and updated in persistence file. Put it in cache too. :-)
                         // The rest for Write-allocate policy
@@ -203,29 +202,22 @@ public class KVCache {
                             if (!key.isEmpty()) {
                                 String victimValue = map.get(victimKey);
                                 map.remove(victimKey);
-                                map.put(key, response.getValue());
+                                map.put(key, result.getValue());
                                 persistence.put(victimKey, victimValue);
                             } else {
                                 logger.error("Couldn't find cache victim");
-                                response = new KVMessageImpl(KVMessage.StatusType.PUT_ERROR);
+                                return new KVMessageImpl("", "", KVMessage.StatusType.PUT_ERROR);
                             }
                         }
                     } else {
                         logger.error("Error while putting value to persistence");
                     }
+
+                    return result;
+
                 }
             }
         }
-        // TODO: Add call to server.replicationServer.gossipToReplicas
-        if (!response.getStatus().equals(KVMessage.StatusType.PUT_ERROR)) {
-            logger.info(server.getInfo().getID() + " : Triggering gossip");
-            // PUT was SUCCESSFUL
-            ArrayList<KVPair> forReplicas = new ArrayList<>();
-            forReplicas.add(new KVPair(key, value));
-            if (!server.getReplicationHandler().gossipToReplicas(forReplicas))
-                response = new KVMessageImpl(KVMessage.StatusType.PUT_ERROR);
-        }
-        return response;
     }
 
     /**

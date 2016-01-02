@@ -148,7 +148,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      * Key range low limit setter
      * @param low the low limit to set
      */
-    public void setLow(Long low){
+    public void setLow(String low){
         range.setLow(low);
     }
 
@@ -156,7 +156,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
      * Key range high limit setter
      * @param high the high limit to set
      */
-    public void setHigh(Long high){
+    public void setHigh(String high){
         range.setHigh(high);
     }
 

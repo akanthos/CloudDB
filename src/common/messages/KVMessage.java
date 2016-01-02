@@ -54,7 +54,7 @@ public interface KVMessage extends AbstractMessage {
 	 * Computes the hash value of the message
 	 * @return
      */
-	long getHash();
+	String getHash();
 	
 }
 

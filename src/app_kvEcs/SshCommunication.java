@@ -1,8 +1,7 @@
 package app_kvEcs;
 
 
-
-public interface CallRemoteInterface {
+public interface SshCommunication {
     /**
      * Sets UserName for the ssh communication
      * @param s Username
@@ -26,11 +25,11 @@ public interface CallRemoteInterface {
      * invokes the KVserver Process
      * @param host: The address of the remote host
      * @paramm serverPort: The port of the remote host
-     * @paramm ecsPort : Port for communication with ECSInterface
+     * @paramm ecsPort : Port for communication with ECS
      @return: 0 in case of Success and -1 in case of Failure
      */
-    public int RunRemoteProcess(String host, String command, String[] arguments);
+    public int invokeProcessRemotely(String host,String command,String[]arguments);
 
-    public int RunLocalProcess(String command, String[] arguments);
+    public int invokeProcessLocally(String command,String[]arguments);
 
 }

@@ -9,6 +9,7 @@ import common.utils.Utilities;
 import hashing.MD5Hash;
 import helpers.CannotConnectException;
 import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.util.*;
 
@@ -30,7 +31,7 @@ public class ECSHelpers {
      * @return
      */
     public List<ServerInfo> launchNodes(List<ServerInfo> activeServers, List<ServerInfo> startServers,
-                                         int cacheSize, String displacementStrategy, boolean runLocal, CallRemoteInterface runProcess) {
+                                        int cacheSize, String displacementStrategy, boolean runLocal, CallRemoteInterface runProcess) {
 		/*
 		 * it is considered that the invoker and invoked processes are in the
 		 * same folder and machine
@@ -42,7 +43,7 @@ public class ECSHelpers {
         arguments[1] = Integer.toString(cacheSize);
         arguments[2] = displacementStrategy;
         arguments[3] = " ERROR &";
-        boolean result;
+        int result;
         Iterator<ServerInfo> iterator = startServers.iterator();
         while (iterator.hasNext()) {
             ServerInfo item = iterator.next();
@@ -53,7 +54,7 @@ public class ECSHelpers {
 
             else
                 result = runProcess.RunLocalProcess(command, arguments);
-            if (result) {
+            if (result == 0) {
                 activeServers.add(item);
                 item.setLaunched(true);
                 logger.info("Successfully started a server." + item.getID());
@@ -87,8 +88,8 @@ public class ECSHelpers {
      * @return 0 in case of success and -1 otherwise
      */
     public boolean moveData(ServerInfo fromNode, ServerInfo toNode,
-                             Long fromIndex, Long toIndex, TransferType ttype,
-                             Map<ServerInfo, KVConnection> KVConnections) {
+                            String fromIndex, String toIndex, TransferType ttype,
+                            Map<ServerInfo, KVConnection> KVConnections) {
 
         // if it is a replicate message no
         // need to lockWrite in the server
@@ -138,7 +139,7 @@ public class ECSHelpers {
      * @return 0 in case of successful launch
      */
     public boolean launchNode(List<ServerInfo> activeServers, ServerInfo startServer,
-                               int cacheSize, String displacementStrategy, boolean runLocal, CallRemoteInterface runProcess) {
+                              int cacheSize, String displacementStrategy, boolean runLocal, CallRemoteInterface runProcess) {
 
         String path = System.getProperty("user.dir");
         String command = "nohup java -jar " + path + "/ms3-server.jar ";
@@ -148,7 +149,7 @@ public class ECSHelpers {
         arguments[1] = Integer.toString(cacheSize);
         arguments[2] = displacementStrategy;
         arguments[3] = " ERROR &";
-        boolean result;
+        int result;
         //ssh calls
         if (!runLocal)
             result = runProcess.RunRemoteProcess(startServer.getAddress(),
@@ -157,7 +158,7 @@ public class ECSHelpers {
         else
             result = runProcess.RunLocalProcess(command, arguments);
         //store server started successfully
-        if (result) {
+        if (result == 0) {
             activeServers.add(startServer);
             startServer.setLaunched(true);
             return true;
@@ -253,7 +254,7 @@ public class ECSHelpers {
         // them based on this value
 
         for (ServerInfo server : servers) {
-            long hashKey = hasher.hash(server.getAddress() + ":"
+            String hashKey = hasher.hash(server.getAddress() + ":"
                     + server.getServerPort());
             server.setToIndex(hashKey);
         }
@@ -261,7 +262,7 @@ public class ECSHelpers {
         Collections.sort(servers, new Comparator<ServerInfo>() {
             @Override
             public int compare(ServerInfo o1, ServerInfo o2) {
-                return o1.getToIndex().compareTo(o2.getToIndex());
+                return MD5Hash.compareIds(o1.getToIndex(), o2.getToIndex());
             }
         });
 

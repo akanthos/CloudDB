@@ -44,7 +44,7 @@ public class SocketServer {
     public SocketServer(ServerInfo info) {
         this.info = info;
         this.ecsInfo = new ServerInfo();
-        ecsInfo.setServerPort(60037);
+        ecsInfo.setServerPort(60036);
         this.ECSRegistered = false;
         this.state = new ServerState(
                 /*init*/ false,

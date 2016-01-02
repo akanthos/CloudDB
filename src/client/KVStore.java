@@ -53,7 +53,7 @@ public class KVStore implements KVCommInterface {
         if (connected) {
             disconnect();
         }
-        currentServer = new ServerInfo(hostAddress, port, new KVRange(0L, Long.MAX_VALUE));
+        currentServer = new ServerInfo(hostAddress, port, new KVRange("00000000000000000000000000000000", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
 //        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
         metadataFromServer.add(currentServer);
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
@@ -115,7 +115,7 @@ public class KVStore implements KVCommInterface {
             while (resendRequest) {
                 ServerConnection connection = getServerConnection(key, false);
                 if (connection == null) {
-                    logger.error(String.format("Put request cannot be performed. Key: %s, Value: %s", key, value));
+                    logger.error(String.format("Put request cannot be performed.Null connection. Key: %s, Value: %s", key, value));
                     throw new Exception("Client is disconnected");
                 }
                 logger.debug(String.format("Sending message: %s", kvMessage.toString()));
@@ -161,7 +161,7 @@ public class KVStore implements KVCommInterface {
             }
         } catch (Exception e) {
             kvMessage.setStatus(KVMessage.StatusType.PUT_ERROR);
-            logger.error(String.format("Put request cannot be performed. Key: %s, Value: %s", key, value));
+            logger.error(String.format("Put request cannot be performed.General exception. Key: %s, Value: %s", key, value));
             throw new Exception("Put request not successful");
         }
         return kvMessage;
@@ -328,11 +328,14 @@ public class KVStore implements KVCommInterface {
      * @throws Exception
      */
     private ServerConnection getServerConnection(String key, boolean randomizeReplicas) throws Exception {
-        Long keyValue = hash.hash(key);
+        String keyValue = hash.hash(key);
+        logger.info("The hashID of my key: " + key + " is :" + keyValue);
         // Passing the key in the form of a dummy object
         // TODO: Is there a cleaner way to do this?
         for (ServerInfo m : metadataFromServer) {
+            logger.info("Server Range is :" + m.getFromIndex() + " : " + m.getToIndex());
             if (m.getServerRange().isIndexInRange(keyValue)) {
+                logger.info("Found server: " + m.getID() +" for my key: " + key);
                 if (randomizeReplicas) {
                     m = getRandomReplica(m);
                 }
@@ -400,18 +403,18 @@ public class KVStore implements KVCommInterface {
         @Override
         public int compare(ServerInfo serverInfo, ServerInfo t1) {
             // t1 is a dummy object. key is the low value of the range.
-            long key = t1.getServerRange().getLow();
+            String key = t1.getServerRange().getLow();
             KVRange range = serverInfo.getServerRange();
             if (range.isIndexInRange(key)) {
                 return 0;
             } else {
-                long low = range.getLow();
-                long high = range.getHigh();
+                String low = range.getLow();
+                String high = range.getHigh();
                 // Last node of the ring
-                if (low > high) {
+                if (MD5Hash.compareIds(low, high) >0) {
                     // If the key is not in the range, the key has to be lesser.
                     return 1;
-                } else if (low > key) {
+                } else if (MD5Hash.compareIds(low, key) >0) {
                     // Key towards the left.
                     return 1;
                 } else {

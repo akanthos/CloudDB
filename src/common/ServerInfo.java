@@ -92,7 +92,7 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
      *
      * @return
      */
-    public Long getHash() {
+    public String getHash() {
         MD5Hash md5 = new MD5Hash();
         return md5.hash(this.toString());
     }
@@ -133,7 +133,7 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
      * Low limit of the server instance key range getter
      * @return
      */
-    public Long getFromIndex() {
+    public String getFromIndex() {
         return serverRange.getLow();
     }
 
@@ -141,14 +141,14 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
      * Low limit of the server instance key range setter
      * @param fromIndex
      */
-    public void setFromIndex(Long fromIndex) {
+    public void setFromIndex(String fromIndex) {
         this.serverRange.setLow(fromIndex);    }
 
     /**
      * High limit of the server instance key range getter
      * @return
      */
-    public Long getToIndex() {
+    public String getToIndex() {
         return serverRange.getHigh();
     }
 
@@ -156,7 +156,7 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
      * High limit of the server instance key range setter
      * @param toIndex
      */
-    public void setToIndex(Long toIndex) {
+    public void setToIndex(String toIndex) {
         this.serverRange.setHigh(toIndex);
     }
 
@@ -173,7 +173,7 @@ public class ServerInfo implements java.io.Serializable, Comparable<ServerInfo> 
      */
     @Override
     public int compareTo(ServerInfo o) {
-        Long l = serverRange.getLow();
+        String l = serverRange.getLow();
         return l.compareTo(o.getServerRange().getLow());
     }
 }

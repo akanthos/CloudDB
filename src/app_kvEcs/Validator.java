@@ -11,7 +11,12 @@ import java.util.List;
  */
 public class Validator {
 
-    private static Validator IN = null;
+    private static Validator VALIDATION_INSTANCE = null;
+
+    /**
+     * A list that contains all the options of log Levels
+     *
+     */
     public static final List< String > LOG_LEVELS = Arrays.asList("ALL",
             "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF");
 
@@ -21,10 +26,10 @@ public class Validator {
      * @return
      */
     public static Validator getInstance () {
-        if ( IN == null ) {
-            IN = new Validator ();
+        if ( VALIDATION_INSTANCE == null ) {
+            VALIDATION_INSTANCE = new Validator ();
         }
-        return IN;
+        return VALIDATION_INSTANCE;
     }
 
     /**

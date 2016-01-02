@@ -63,10 +63,10 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
                 || this.getStatus() == (KVAdminMessage.StatusType.RESTORE_DATA)
                 || this.getStatus() == (KVAdminMessage.StatusType.REMOVE_DATA)) {
             if (tokens.length>= 3 && tokens[2] != null) {
-                this.setLow(Long.valueOf(tokens[2].trim()));
+                this.setLow(tokens[2].trim());
             }
             if (tokens.length>= 4 && tokens[3] != null) {
-                this.setHigh(Long.valueOf(tokens[3].trim()));
+                this.setHigh(tokens[3].trim());
             }
             if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
                 ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
@@ -75,10 +75,10 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
         } else if (this.getStatus() == (KVAdminMessage.StatusType.SERVER_FAILURE)) {
             KVRange range = new KVRange();
             if (tokens.length>= 3 && tokens[2] != null) {
-                range.setLow(Long.valueOf(tokens[2].trim()));
+                range.setLow(tokens[2].trim());
             }
             if (tokens.length>= 4 && tokens[3] != null) {
-                range.setHigh(Long.valueOf(tokens[3].trim()));
+                range.setHigh(tokens[3].trim());
             }
             if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
                 ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));

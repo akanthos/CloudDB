@@ -16,7 +16,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * KVMessage represantion of connection Message
  */
@@ -31,14 +30,27 @@ public class KVMessageImpl implements KVMessage {
 
     private static Logger logger = Logger.getLogger(KVMessageImpl.class);
 
-
     static {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
     }
 
-
-    public KVMessageImpl () {
-
+    public KVMessageImpl(String[] tokens) {
+        if (tokens[1] != null) {// status
+            int statusNum = Integer.parseInt(tokens[1]);
+            this.setStatus( KVMessage.StatusType.values()[statusNum] );
+        }
+        if (tokens[2] != null) { // key
+            this.setKey(tokens[2]);
+        }
+        if (tokens.length >= 4) {
+            if (tokens[3] != null) { // value
+                this.setValue(tokens[3].trim());
+            }
+        }
+        if (tokens.length >= 5) {
+            List<ServerInfo> metaData = Serializer.getMetaData(tokens[4].trim());
+            this.setMetadata(metaData);
+        }
     }
 
     public KVMessageImpl (StatusType status) {

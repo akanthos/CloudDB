@@ -36,8 +36,56 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
     }
 
-    public KVAdminMessageImpl () {
+    public KVAdminMessageImpl() {
 
+    }
+
+    public KVAdminMessageImpl(String[] tokens) {
+        if (tokens.length>= 2 && tokens[1] != null) {
+            int statusNum = Integer.parseInt(tokens[1]);
+            this.setStatus(KVAdminMessage.StatusType.values()[statusNum]);
+        }
+        if (this.getStatus()== (KVAdminMessage.StatusType.INIT)
+                || this.getStatus()== (KVAdminMessage.StatusType.UPDATE_METADATA)) {
+            if (tokens.length>= 3 && tokens[2] != null) {// is always the key
+                List<ServerInfo> metaData = Serializer.getMetaData(tokens[2].trim());
+                this.setMetadata(metaData);
+            }
+            if (tokens.length>= 4 && tokens[3] != null) {
+                Integer cacheSize = Integer.parseInt(tokens[3].trim());
+                this.setCacheSize(cacheSize);
+            }
+            if (tokens.length>= 5 && tokens[4] != null) {
+                this.setDisplacementStrategy(tokens[4]);
+            }
+        } else if (this.getStatus() == (KVAdminMessage.StatusType.MOVE_DATA)
+                || this.getStatus() == (KVAdminMessage.StatusType.REPLICATE_DATA)
+                || this.getStatus() == (KVAdminMessage.StatusType.RESTORE_DATA)
+                || this.getStatus() == (KVAdminMessage.StatusType.REMOVE_DATA)) {
+            if (tokens.length>= 3 && tokens[2] != null) {
+                this.setLow(Long.valueOf(tokens[2].trim()));
+            }
+            if (tokens.length>= 4 && tokens[3] != null) {
+                this.setHigh(Long.valueOf(tokens[3].trim()));
+            }
+            if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
+                ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
+                this.setServerInfo(toNode);
+            }
+        } else if (this.getStatus() == (KVAdminMessage.StatusType.SERVER_FAILURE)) {
+            KVRange range = new KVRange();
+            if (tokens.length>= 3 && tokens[2] != null) {
+                range.setLow(Long.valueOf(tokens[2].trim()));
+            }
+            if (tokens.length>= 4 && tokens[3] != null) {
+                range.setHigh(Long.valueOf(tokens[3].trim()));
+            }
+            if (tokens.length>= 6 && tokens[4] != null && tokens[5] != null ) {
+                ServerInfo toNode = new ServerInfo(tokens[4],Integer.parseInt(tokens[5]));
+                toNode.setServerRange(range);
+                this.setFailedServerInfo(toNode);
+            }
+        }
     }
 
     /**

@@ -1,5 +1,14 @@
 package common.messages;
 
+import common.Serializer;
+import helpers.Constants;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
+import javax.activation.UnsupportedDataTypeException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -11,7 +20,7 @@ public class KVServerMessageImpl implements KVServerMessage {
 
     private List<KVPair> kvPairs;
     private StatusType status;
-    private Integer serialNumber;
+    private static final DateFormat df = new SimpleDateFormat("dd/MM/yyyy kk:mm:ss.SSS z");
 
     /**
      * Information related to heartbeat messages
@@ -24,10 +33,54 @@ public class KVServerMessageImpl implements KVServerMessage {
      */
     private String replicaID;
 
+    private static Logger logger = Logger.getLogger(KVMessageImpl.class);
+
+    static {
+        PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
+    }
+
     /**
      * Default constructor
      */
-    public KVServerMessageImpl() {}
+    public KVServerMessageImpl() {
+
+    }
+
+    public KVServerMessageImpl(String[] tokens) throws UnsupportedDataTypeException {
+        logger.info("Parsing SERVER message");
+        if (tokens[1] != null) {// status
+            int statusNum = Integer.parseInt(tokens[1]);
+            this.setStatus( KVServerMessage.StatusType.values()[statusNum] );
+        }
+        if ((this.getStatus() == (KVServerMessage.StatusType.HEARTBEAT))) {
+            logger.info("It's a heartbeat message");
+            this.setReplicaID(tokens[2].trim());
+            try {
+                this.setTimeOfSendingMsg(df.parse(tokens[3].trim()));
+                logger.info("Parsed heartbeat datetime");
+            } catch (ParseException e) {
+                logger.error(String.format("Unsupported date format in message. Complete message: %s", tokens[3].trim()), e);
+                throw new UnsupportedDataTypeException("Unable to parse heartbeat message");
+            }
+            logger.info("Parsed heartbeat datetime");
+        } else if ((this.getStatus() == (KVServerMessage.StatusType.GOSSIP))
+                || (this.getStatus() == (KVServerMessage.StatusType.REPLICATE))
+                || (this.getStatus() == (KVServerMessage.StatusType.MOVE_DATA))) {
+            if (tokens[2] != null) { // Data length and data
+                int dataLength = Integer.parseInt(tokens[2]);
+                ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
+                if (tokens.length == dataLength + 3) {
+                    for (int i = 0; i < dataLength; i++) {
+                        String[] kv = tokens[i + 3].split(Serializer.SUB_DLM1);
+                        if (kv.length == 2) {
+                            kvPairs.add(new KVPair(kv[0], kv[1]));
+                        }
+                    }
+                }
+                this.setKVPairs(kvPairs);
+            }
+        }
+    }
 
     /**
      * Constructor which sets the status for simple messages

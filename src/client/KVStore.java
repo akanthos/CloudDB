@@ -13,16 +13,13 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 import java.io.*;
-import java.net.ConnectException;
 import java.util.*;
 
 public class KVStore implements KVCommInterface {
 
     private static Logger logger = Logger.getLogger(KVStore.class);
-    private HashMap<ServerInfo, ServerConnection> connections;
     private List<ServerInfo> metadataFromServer;
     private MD5Hash hash;
-    private SearchComparator searchComparator;
     private ServerInfo currentServer;
     private ServerConnection currentConnection;
     boolean connected;
@@ -34,16 +31,14 @@ public class KVStore implements KVCommInterface {
 	public KVStore() {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         metadataFromServer = new LinkedList<>();
-//        connections = new HashMap<>();
         hash = new MD5Hash();
-        // All key requests going to a single server initially.
-//        searchComparator = new SearchComparator();
         connected = false;
 	}
 
     /**
      * Initialize KVStore with address and port of KVServer
      * and connect to the server
+     *
      * @param hostAddress the address of the KVServer
      * @param port the port of the KVServer
      * @throws Exception
@@ -54,13 +49,10 @@ public class KVStore implements KVCommInterface {
             disconnect();
         }
         currentServer = new ServerInfo(hostAddress, port, new KVRange("00000000000000000000000000000000", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
-//        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
         metadataFromServer.add(currentServer);
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
-//        connections.put(currentServer, currentConnection);
         setIsConnected(true);
-        logger.info("Switched to server " + currentServer.getAddress() +
-                ":" + currentServer.getServerPort());
+        logger.info("Switched to server " + currentServer.getAddress() + ":" + currentServer.getServerPort());
     }
 
     /**
@@ -74,13 +66,9 @@ public class KVStore implements KVCommInterface {
             disconnect();
         }
         currentServer = new ServerInfo(sererInfo.getAddress(), sererInfo.getServerPort(), sererInfo.getServerRange());
-//        ServerInfo serverInfo = new ServerInfo(address, port, new KVRange(0L, Long.MAX_VALUE));
-//        metadataFromServer.add(currentServer);
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
-//        connections.put(currentServer, currentConnection);
         setIsConnected(true);
-        logger.info("Switched to server " + currentServer.getAddress() +
-                ":" + currentServer.getServerPort());
+        logger.info("Switched to server " + currentServer.getAddress() + ":" + currentServer.getServerPort());
     }
 
     @Override
@@ -88,8 +76,6 @@ public class KVStore implements KVCommInterface {
         if (currentConnection != null) {
             currentConnection.closeConnections();
         }
-//        closeConnections();
-//        connections.clear();
         currentConnection = null;
         currentServer = null;
         setIsConnected(false);
@@ -304,19 +290,8 @@ public class KVStore implements KVCommInterface {
      * @return
      */
     private void retryRequest(KVMessageImpl messageFromServer) {
-//        closeConnections();
-//        connections = new HashMap<>();
         metadataFromServer = messageFromServer.getMetadata();
         Collections.sort(metadataFromServer);
-    }
-
-    /**
-     * Close existing open connections.
-     */
-    private void closeConnections() {
-        for (ServerConnection connection: connections.values()) {
-            connection.closeConnections();
-        }
     }
 
     /**
@@ -356,19 +331,6 @@ public class KVStore implements KVCommInterface {
             }
         }
         return null;
-//        int index = Collections.binarySearch(metadataFromServer, new ServerInfo("", 0, new KVRange(keyValue, 0L)), searchComparator);
-//        ServerInfo serverInfo = metadataFromServer.get(index);
-//        if (currentServer.equals(serverInfo)) {
-//            return currentConnection;
-//        }
-//        else {
-//            connect(serverInfo.getAddress(), serverInfo.getServerPort());
-//            return currentConnection;
-////            ServerConnection serverConnection = new ServerConnection(serverInfo.getAddress(), serverInfo.getServerPort());
-////            connections.put(serverInfo, serverConnection);
-////            return serverConnection;
-//        }
-
     }
 
     private ServerConnection tryOtherNodes(List<ServerInfo> metadataFromServer, ServerInfo m) {
@@ -396,33 +358,6 @@ public class KVStore implements KVCommInterface {
     private ServerInfo getRandomReplica(ServerInfo m) {
         List<ServerInfo> replicas = Utilities.getReplicas(metadataFromServer, m);
         return replicas.get(new Random().nextInt(replicas.size()));
-    }
-
-    class SearchComparator implements Comparator<ServerInfo> {
-
-        @Override
-        public int compare(ServerInfo serverInfo, ServerInfo t1) {
-            // t1 is a dummy object. key is the low value of the range.
-            String key = t1.getServerRange().getLow();
-            KVRange range = serverInfo.getServerRange();
-            if (range.isIndexInRange(key)) {
-                return 0;
-            } else {
-                String low = range.getLow();
-                String high = range.getHigh();
-                // Last node of the ring
-                if (MD5Hash.compareIds(low, high) >0) {
-                    // If the key is not in the range, the key has to be lesser.
-                    return 1;
-                } else if (MD5Hash.compareIds(low, key) >0) {
-                    // Key towards the left.
-                    return 1;
-                } else {
-                    // Key towards the right.
-                    return -1;
-                }
-            }
-        }
     }
 
     /**

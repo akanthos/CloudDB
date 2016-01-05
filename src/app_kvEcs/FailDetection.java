@@ -66,8 +66,6 @@ public class FailDetection implements Runnable {
                                         " : " + kvAdminMessage.getFailedServerInfo().getServerPort());
 
                             }
-                            //kvAdminResponse = processAdminMessage(kvAdminMessage);
-                            //Utilities.send(kvAdminResponse, outputStream);
                         }
                     }
                 } catch (CannotConnectException e) {

@@ -43,18 +43,18 @@ public class ECSHelpers {
         arguments[1] = Integer.toString(cacheSize);
         arguments[2] = displacementStrategy;
         arguments[3] = " ERROR &";
-        int result;
+        int call;
         Iterator<ServerInfo> iterator = startServers.iterator();
         while (iterator.hasNext()) {
             ServerInfo item = iterator.next();
             arguments[0] = String.valueOf(item.getServerPort());
             if (!runLocal)
-                result = runProcess.RunRemoteProcess(item.getAddress(),
+                call = runProcess.RunRemoteProcess(item.getAddress(),
                         command, arguments);
 
             else
-                result = runProcess.RunLocalProcess(command, arguments);
-            if (result == 0) {
+                call = runProcess.RunLocalProcess(command, arguments);
+            if (call == 0) {
                 activeServers.add(item);
                 item.setLaunched(true);
                 logger.info("Successfully started a server." + item.getID());
@@ -149,16 +149,16 @@ public class ECSHelpers {
         arguments[1] = Integer.toString(cacheSize);
         arguments[2] = displacementStrategy;
         arguments[3] = " ERROR &";
-        int result;
+        int call;
         //ssh calls
         if (!runLocal)
-            result = runProcess.RunRemoteProcess(startServer.getAddress(),
+            call = runProcess.RunRemoteProcess(startServer.getAddress(),
                     command, arguments);
         //local calls
         else
-            result = runProcess.RunLocalProcess(command, arguments);
+            call = runProcess.RunLocalProcess(command, arguments);
         //store server started successfully
-        if (result == 0) {
+        if (call == 0) {
             activeServers.add(startServer);
             startServer.setLaunched(true);
             return true;
@@ -468,8 +468,6 @@ public class ECSHelpers {
     }
 
     public boolean replicateData(List<ServerInfo> activeServers, Map<ServerInfo, KVConnection> KVConnections) {
-
-
         if (activeServers.size()==1)
             return true;
             //replicate data to each other

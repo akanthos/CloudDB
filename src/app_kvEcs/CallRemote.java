@@ -70,10 +70,8 @@ public class CallRemote implements CallRemoteInterface {
             InputStream in = channel.getInputStream();
             channel.connect();
 
-            long begin = System.currentTimeMillis();
-            long end = begin + timeOut;
             waiting = true;
-            while (waiting && System.currentTimeMillis() < end) {
+            while (waiting) {
                 while (in.available() > 0) {
                     c = (char) in.read();
                     tmpResponse += c;

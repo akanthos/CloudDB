@@ -6,11 +6,6 @@ package app_kvEcs;
  */
 public class UIInteractMsg {
 
-
-    public static final String ECS_ECHO_PROMPT = "ECSInterface> ";
-
-    public static final String SPLIT_DLMT = "\\s+";
-
     public static final String ILLEGAL_PARAM = " is not as expected, Please use the help command to view an example.";
 
     public static final String ILLEGAL_PARAM_NUM = "Illegal number of parameters," +

@@ -19,7 +19,7 @@ public class ECSApp {
         }
         else{
             System.out.println("Wrong arguments given. Run app using ECSInterface " +
-                    "Configuration files as the only parameter.");
+                    "Configuration file with store servers information as the only parameter.");
         }
     }
 

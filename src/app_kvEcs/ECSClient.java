@@ -8,7 +8,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class ECSClient implements ECSClientListener {
+public class ECSClient {
 
     static {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
@@ -230,13 +230,4 @@ public class ECSClient implements ECSClientListener {
         System.out.println(PROMPT + "Error. " +  error);
     }
 
-    @Override
-    public void handleNewMessage(TextMessage msg) {
-
-    }
-
-    @Override
-    public void handleStatus(Status status) {
-
-    }
 }

@@ -20,11 +20,18 @@ public class Validator {
     public static final List< String > LOG_LEVELS = Arrays.asList("ALL",
             "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF");
 
+
+
     /**
-     * Singleton provider.
-     *
+     * check if give valid policy
+     * @param policy
      * @return
      */
+    public boolean isValidPolicy( String policy ){
+        String Dpolicy = policy.toUpperCase();
+        return ( Dpolicy.equals("FIFO") || Dpolicy.equals("LRU") || Dpolicy.equals("LFU") );
+    }
+
     public static Validator getInstance () {
         if ( VALIDATION_INSTANCE == null ) {
             VALIDATION_INSTANCE = new Validator ();
@@ -37,7 +44,6 @@ public class Validator {
      */
     private Validator () {
     }
-
 
 
     /**
@@ -65,16 +71,6 @@ public class Validator {
                     + UIInteractMsg.ILLEGAL_PARAM );
         }
         return true;
-    }
-
-    /**
-     * check if give valid policy
-     * @param policy
-     * @return
-     */
-    public boolean isValidPolicy( String policy ){
-        String Dpolicy = policy.toUpperCase();
-        return ( Dpolicy.equals("FIFO") || Dpolicy.equals("LRU") || Dpolicy.equals("LFU") );
     }
 
 

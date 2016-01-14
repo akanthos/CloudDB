@@ -42,4 +42,13 @@ public interface KVCommInterface {
 	 *             KV server).
 	 */
 	public KVMessage get(String key) throws Exception;
+
+	/**
+	 * Subscribes to a key with the corresponsing coordinator node
+	 *
+	 * @param key
+	 * @return
+	 * @throws Exception
+     */
+	public KVMessage subscribe(String key) throws Exception;
 }

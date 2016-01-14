@@ -30,23 +30,6 @@ public class KVClient {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-//		if (args.length < 2) {
-//			System.out.println("Provide valid host and port. Usage java <application> <host> <port>");
-//			return;
-//		}
-//		String hostName = args[0];
-//		String port = args[1];
-//		if (!isHostValid(hostName, port)) {
-//			System.out.println("Provide valid host and port. Usage java <application> <host> <port>");
-//			return;
-//		}
-//		engine = new KVStore(hostName, Integer.parseInt(port));
-//		try {
-//			engine.connect();
-//		} catch (Exception e) {
-//			logger.error("Cannot connect to initial server!");
-//			return;
-//		}
 		engine = new KVStore(); // Initializing with default values
 		BufferedReader consoleReader;
 		// Reader for input from stdIn
@@ -136,6 +119,15 @@ public class KVClient {
 						} else {
 							printHelp("put");
 						}
+					} else if (tokens[0].equals("subscribe")) {
+						// Subscribe to a key
+						if (tokens.length == 2) {
+							String key = tokens[1];
+							KVMessage response = engine.subscribe(key);
+							printSubscribeResponse(response);
+						} else {
+							printHelp("subscribe");
+						}
 					} else if (tokens[0].equals("logLevel")) {
 						// Change the loglevel
 						switch (tokens.length) {
@@ -201,6 +193,10 @@ public class KVClient {
 		} else {
 			System.out.println("Unknown error occurred. Please try again.");
 		}
+	}
+
+	private static void printSubscribeResponse(KVMessage response) {
+		// TODO
 	}
 
 	/**
@@ -277,6 +273,9 @@ public class KVClient {
 				break;
 			case QUIT:
 				System.out.println("Syntax: quit\n " + "Quits the client");
+				break;
+			case SUBSCRIBE:
+				System.out.println("Syntax: subscribe <key>\n" + "Subscribes to notifications to a key" );
 				break;
 			default:
 				System.out.println("No such command: \"" + command + "\"\n" + "Run \"help\" for more");

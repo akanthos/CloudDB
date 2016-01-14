@@ -14,6 +14,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class KVStore implements KVCommInterface {
 
@@ -22,7 +23,9 @@ public class KVStore implements KVCommInterface {
     private MD5Hash hash;
     private ServerInfo currentServer;
     private ServerConnection currentConnection;
+    private ConcurrentHashMap<String, String> memoryCache;
     boolean connected;
+    boolean isNotificationRunning;
 
 	/**
 	 * Initialize KVStore
@@ -33,7 +36,15 @@ public class KVStore implements KVCommInterface {
         metadataFromServer = new LinkedList<>();
         hash = new MD5Hash();
         connected = false;
-	}
+        memoryCache = new ConcurrentHashMap<>();
+        try {
+            NotificationListener notificationListener = new NotificationListener(memoryCache);
+            notificationListener.run();
+            isNotificationRunning = true;
+        } catch (IOException e) {
+            logger.error("Unable to start notification listener", e);
+        }
+    }
 
     /**
      * Initialize KVStore with address and port of KVServer
@@ -58,14 +69,14 @@ public class KVStore implements KVCommInterface {
     /**
      * Initialize KVStore with an instance of ServerInfo
      * and connect to the server
-     * @param sererInfo
+     * @param serverInfo
      * @throws Exception
      */
-    public void connect(ServerInfo sererInfo) throws Exception {
+    public void connect(ServerInfo serverInfo) throws Exception {
         if (connected) {
             disconnect();
         }
-        currentServer = new ServerInfo(sererInfo.getAddress(), sererInfo.getServerPort(), sererInfo.getServerRange());
+        currentServer = new ServerInfo(serverInfo.getAddress(), serverInfo.getServerPort(), serverInfo.getServerRange());
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
         setIsConnected(true);
         logger.info("Switched to server " + currentServer.getAddress() + ":" + currentServer.getServerPort());
@@ -79,6 +90,11 @@ public class KVStore implements KVCommInterface {
         currentConnection = null;
         currentServer = null;
         setIsConnected(false);
+    }
+
+    @Override
+    public KVMessage subscribe(String key) throws Exception;
+
     }
 
     /**
@@ -150,6 +166,9 @@ public class KVStore implements KVCommInterface {
             logger.error(String.format("Put request cannot be performed.General exception. Key: %s, Value: %s", key, value));
             throw new Exception("Put request not successful");
         }
+        if (!isNotificationRunning && memoryCache.containsKey(key)) {
+            memoryCache.put(key, value);
+        }
         return kvMessage;
 	}
 
@@ -162,56 +181,60 @@ public class KVStore implements KVCommInterface {
      */
 	@Override
 	public KVMessage get(String key) throws Exception {
-        if (!isConnected()) {
-            throw new Exception("Client not Connected to server");
-        }
+        KVMessageImpl kvMessage;
         // TODO: Perform key validation
-        boolean resendRequest = true;
-        KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.GET);
-        try {
-            while (resendRequest) {
-                ServerConnection connection = getServerConnection(key, true);
-                if (connection == null) {
-                    logger.error(String.format("Get request cannot be performed. Key: %s", key));
-                    throw new Exception("Client is disconnected");
-                }
-                logger.debug(String.format("Sending (GET) message: %s to %s:%s", kvMessage.toString(), connection.getAddress(), connection.getServerPort()));
-                byte[] response;
-                try {
-                    response = send(kvMessage.getMsgBytes(), connection);
-                    if (response[0] == -1) {
+        if (memoryCache.containsKey(key)) {
+            kvMessage = new KVMessageImpl(key, memoryCache.get(key), KVMessage.StatusType.GET);
+        } else {
+            if (!isConnected()) {
+                throw new Exception("Client not Connected to server");
+            }
+            boolean resendRequest = true;
+            kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.GET);
+            try {
+                while (resendRequest) {
+                    ServerConnection connection = getServerConnection(key, true);
+                    if (connection == null) {
+                        logger.error(String.format("Get request cannot be performed. Key: %s", key));
+                        throw new Exception("Client is disconnected");
+                    }
+                    logger.debug(String.format("Sending (GET) message: %s to %s:%s", kvMessage.toString(), connection.getAddress(), connection.getServerPort()));
+                    byte[] response;
+                    try {
+                        response = send(kvMessage.getMsgBytes(), connection);
+                        if (response[0] == -1) {
+                            disconnect();
+                            continue;
+                        }
+                    } catch (Exception e) {
                         disconnect();
                         continue;
                     }
-                }
-                catch (Exception e) {
-                    disconnect();
-                    continue;
-                }
 
-                KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
-                if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.GET_SUCCESS)) {
-                    resendRequest = false;
-                    kvMessage = kvMessageFromServer;
-                } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
-                    logger.info("He was not responsible!!! Oh god!");
-                    retryRequest(kvMessageFromServer);
-                    resendRequest = true;
-                } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_STOPPED)) {
-                    logger.info("Server responded stopped");
-                    kvMessage.setStatus(KVMessage.StatusType.SERVER_STOPPED);
-                    resendRequest = false;
-                } else {
-                    logger.error(String.format("Server not able to service the request. Status: %s. Request: GET <%s>", kvMessageFromServer.getStatus(), kvMessageFromServer.getKey()));
-                    kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
-                    resendRequest = false;
-                }
+                    KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
+                    if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.GET_SUCCESS)) {
+                        resendRequest = false;
+                        kvMessage = kvMessageFromServer;
+                    } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_NOT_RESPONSIBLE)) {
+                        logger.info("He was not responsible!!! Oh god!");
+                        retryRequest(kvMessageFromServer);
+                        resendRequest = true;
+                    } else if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.SERVER_STOPPED)) {
+                        logger.info("Server responded stopped");
+                        kvMessage.setStatus(KVMessage.StatusType.SERVER_STOPPED);
+                        resendRequest = false;
+                    } else {
+                        logger.error(String.format("Server not able to service the request. Status: %s. Request: GET <%s>", kvMessageFromServer.getStatus(), kvMessageFromServer.getKey()));
+                        kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
+                        resendRequest = false;
+                    }
 
+                }
+            } catch (Exception e) {
+                kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
+                logger.error(String.format("GET request cannot be performed. Key: %s", key));
+                throw new Exception("GET request not successful");
             }
-        } catch (Exception e) {
-            kvMessage.setStatus(KVMessage.StatusType.GET_ERROR);
-            logger.error(String.format("GET request cannot be performed. Key: %s", key));
-            throw new Exception("GET request not successful");
         }
         return kvMessage;
 	}

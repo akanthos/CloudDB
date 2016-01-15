@@ -284,12 +284,22 @@ public class Serializer {
 //        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
 //            m = (KVAdminMessageImpl) abstractMessage;
 //        }
-        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("127.0.0.1:50036", new Date(), KVServerMessage.StatusType.HEARTBEAT);
-//        ArrayList<KVPair> pairsTosend = new ArrayList<>();
-//        pairsTosend.add(new KVPair("asdf", "sdf"));
-//        pairsTosend.add(new KVPair("cbn", "sdf"));
-//        pairsTosend.add(new KVPair("rty", "sdf"));
-//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
+//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("127.0.0.1:50036", new Date(), KVServerMessage.StatusType.HEARTBEAT);
+        ArrayList<KVPair> pairsTosend = new ArrayList<>();
+        pairsTosend.add(new KVPair("asdf", "sdf"));
+        pairsTosend.add(new KVPair("cbn", "sdf"));
+        pairsTosend.add(new KVPair("rty", "sdf"));
+        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
+
+        Map<String, ArrayList<String>> subscribers = new HashMap<>();
+        ArrayList<String> subs = new ArrayList<>();
+        subs.add("IP1");
+        subs.add("IP2");
+        subs.add("IP3");
+        subscribers.put("salami", subs);
+        subscribers.put("tiri", subs);
+        subscribers.put("psomi", subs);
+        kvServerMessage.setSubscribers(subscribers);
         byte[] bytes = toByteArray(kvServerMessage);
 
         AbstractMessage abstractMessage = Serializer.toObject(bytes);

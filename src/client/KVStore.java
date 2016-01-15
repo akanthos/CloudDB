@@ -93,8 +93,8 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public KVMessage subscribe(String key) throws Exception;
-
+    public KVMessage subscribe(String key) throws Exception {
+        return null;
     }
 
     /**

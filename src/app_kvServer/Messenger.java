@@ -6,6 +6,7 @@ import common.ServerInfo;
 import common.messages.*;
 import common.utils.Utilities;
 import helpers.CannotConnectException;
+import helpers.Constants;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -37,7 +39,7 @@ public class Messenger {
      * @param server the server to send the data to
      * @return the admin message response (to the admin command MOVE_DATA)
      */
-    public KVAdminMessageImpl sendToServer(ArrayList<KVPair> pairsToSend, ServerInfo server) {
+    public KVAdminMessageImpl sendToServer(ArrayList<KVPair> pairsToSend, HashMap<String, ArrayList<ClientSubscription>> subscriptions, ServerInfo server) {
         // Send ServerMessage "MOVE_DATA" message to "server" and wait for answer from that server
         // If it's MOVE_DATA_SUCCESS => send back OPERATION_SUCCESS
         // If it's MOVE_DATA_FAILURE => send back OPERATION_FAILED
@@ -59,7 +61,7 @@ public class Messenger {
             /* Send MOVE_DATA server message to the other server */
             /*****************************************************/
 
-            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(pairsToSend, KVServerMessage.StatusType.MOVE_DATA);
+            KVServerMessageImpl bulkPutMessage = new KVServerMessageImpl(pairsToSend, subscriptions, KVServerMessage.StatusType.MOVE_DATA);
             Utilities.send(bulkPutMessage, outStream);
             byte[] bulkPutAnswerBytes = Utilities.receive(inStream);
             KVServerMessageImpl bulkPutAnswer = (KVServerMessageImpl) Serializer.toObject(bulkPutAnswerBytes);
@@ -299,4 +301,44 @@ public class Messenger {
     }
 
 
+    public static void notifySubscriber(String address, String key, String value) {
+        InputStream inStream = null;
+        OutputStream outStream = null;
+        Socket clientSocket = null;
+        try {
+            /***************************/
+            /* Connect to other server */
+            /***************************/
+
+            InetAddress connectionAddress = InetAddress.getByName(address);
+            clientSocket = new Socket(connectionAddress, Constants.NOTIFICATION_LISTEN_PORT);
+            inStream = clientSocket.getInputStream();
+            outStream = clientSocket.getOutputStream();
+
+            /********************************************************/
+            /*    Send GOSSIP_MESSAGE message to the other server   */
+            /********************************************************/
+            logger.info("Sending notification (messenger) to " + address+":"+Constants.NOTIFICATION_LISTEN_PORT);
+            KVMessageImpl notificationMessage;
+            if (value.equals("null")) {
+                notificationMessage = new KVMessageImpl(key, value, KVMessage.StatusType.NOTIFICATION_KEY_DELETED);
+            }
+            else {
+                notificationMessage = new KVMessageImpl(key, value, KVMessage.StatusType.NOTIFICATION_KEY_CHANGED);
+            }
+            Utilities.send(notificationMessage, outStream);
+
+        } catch (UnknownHostException e) {
+            logger.error("KVServer hostname cannot be resolved", e);
+        } catch (IOException e) {
+            logger.error("Error while connecting to the client for notification", e);
+        } catch (CannotConnectException e) {
+            logger.error("Error while connecting to the client.", e);
+        } finally {
+            /****************************************/
+            /* Tear down connection to other server */
+            /****************************************/
+            ConnectionHelper.connectionTearDown(inStream, outStream, clientSocket, logger);
+        }
+    }
 }

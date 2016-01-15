@@ -1,5 +1,6 @@
 package app_kvServer.dataStorage;
 
+import app_kvServer.ClientSubscription;
 import app_kvServer.SocketServer;
 import common.ServerInfo;
 import common.messages.KVMessage;
@@ -224,6 +225,12 @@ public class KVCache {
             forReplicas.add(new KVPair(key, value));
             if (!server.getReplicationHandler().gossipToReplicas(forReplicas))
                 response = new KVMessageImpl(KVMessage.StatusType.PUT_ERROR);
+        }
+        if (response.getStatus() == KVMessage.StatusType.PUT_SUCCESS ||
+            response.getStatus() == KVMessage.StatusType.PUT_UPDATE) {
+            new Thread(new SubscribersNotifier(server.getSubscribersForKey(key, ClientSubscription.Interest.CHANGE), key, value)).start();
+        } else if (response.getStatus() == KVMessage.StatusType.DELETE_SUCCESS) {
+            new Thread(new SubscribersNotifier(server.getSubscribersForKey(key, ClientSubscription.Interest.DELETE), key, value)).start();
         }
         return response;
     }

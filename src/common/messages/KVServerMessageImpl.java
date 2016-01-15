@@ -1,5 +1,6 @@
 package common.messages;
 
+import app_kvServer.ClientSubscription;
 import common.Serializer;
 import helpers.Constants;
 import org.apache.log4j.Logger;
@@ -20,7 +21,7 @@ public class KVServerMessageImpl implements KVServerMessage {
     private StatusType status;
     private static final DateFormat df = new SimpleDateFormat("dd/MM/yyyy kk:mm:ss.SSS z");
     //Map: <key><List of subscribers IPs>
-    private Map<String, ArrayList<String>> subscribers =  new HashMap<>();
+    private Map<String, ArrayList<ClientSubscription>> subscribers =  new HashMap<>();
 
     /**
      * Information related to heartbeat messages
@@ -103,9 +104,10 @@ public class KVServerMessageImpl implements KVServerMessage {
      * @param kvPairs the key-value pairs of the message
      * @param status the status of the message
      */
-    public KVServerMessageImpl(ArrayList<KVPair> kvPairs, StatusType status) {
+    public KVServerMessageImpl(ArrayList<KVPair> kvPairs, HashMap<String, ArrayList<ClientSubscription>> subscriptions, StatusType status) {
         this.kvPairs = kvPairs;
         this.status = status;
+        this.subscribers = subscriptions;
     }
 
     /**

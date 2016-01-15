@@ -26,8 +26,11 @@ public interface KVMessage extends AbstractMessage {
 		SERVER_NOT_RESPONSIBLE,  /* Request not successful, server not responsible for key */
 		SUBSCRIBE_MESSAGE,
 		SUBSCRIBE_SUCCESS,
+		SUBSCRIBE_ERROR,
 		UNSUBSCRIBE_MESSAGE,
-		UNSUBSCRIBE_SUCCESS
+		UNSUBSCRIBE_SUCCESS,
+		UNSUBSCRIBE_ERROR,
+		NOTIFICATION
 	}
 
 	/**

@@ -93,8 +93,64 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public KVMessage subscribe(String key) throws Exception;
+    public KVMessage subscribe(String key) {
+        KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.SUBSCRIBE_MESSAGE);
+        ServerConnection serverConnection = null;
+        try {
+            serverConnection = getServerConnection(key, false);
+            byte[] response;
+            response = send(kvMessage.getMsgBytes(), serverConnection);
+            if (response[0] == -1) {
+                logger.error(String.format("Subscribe request not successful. Got -1 as response. Key: %s, Coordinator: %s", key, serverConnection.getAddress()));
+                disconnect();
+            } else {
+                KVMessageImpl responseMessage = (KVMessageImpl) Serializer.toObject(response);
+                if (responseMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_SUCCESS)) {
+                    kvMessage = responseMessage;
+                } else {
+                    logger.error(String.format("Subscribe request not successful. Unrecognized message status %s. Key: %s, Coordinator: %s", responseMessage.getStatus(), key, serverConnection.getAddress()));
+                    kvMessage.setStatus(KVMessage.StatusType.SUBSCRIBE_ERROR);
+                }
+            }
+        } catch (Exception e) {
+            logger.error(String.format("Error while sending subscribe request. Key: %s, Coordinator: %s", key, serverConnection.getAddress()), e);
+            disconnect();
+            kvMessage.setStatus(KVMessage.StatusType.SUBSCRIBE_ERROR);
+        }
+        return kvMessage;
+    }
 
+    @Override
+    public KVMessage unsubscribe(String key) {
+        if (!memoryCache.containsKey(key)) {
+            logger.info(String.format("Not subscribed to key %s, but got unsubscribe request. Nothing to do.", key));
+            return new KVMessageImpl(key, "", KVMessage.StatusType.UNSUBSCRIBE_SUCCESS);
+        }
+        KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.UNSUBSCRIBE_MESSAGE);
+        ServerConnection serverConnection = null;
+        try {
+            serverConnection = getServerConnection(key, false);
+            byte[] response;
+            response = send(kvMessage.getMsgBytes(), serverConnection);
+            if (response[0] == -1) {
+                logger.error(String.format("Unsubscribe request not successful. Got -1 as response. Key: %s, Coordinator: %s", key, serverConnection.getAddress()));
+                disconnect();
+            } else {
+                KVMessageImpl responseMessage = (KVMessageImpl) Serializer.toObject(response);
+                if (responseMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_SUCCESS)) {
+                    kvMessage = responseMessage;
+                    memoryCache.remove(key);
+                } else {
+                    logger.error(String.format("Unsubscribe request not successful. Unrecognized message status %s. Key: %s, Coordinator: %s", responseMessage.getStatus(), key, serverConnection.getAddress()));
+                    kvMessage.setStatus(KVMessage.StatusType.UNSUBSCRIBE_ERROR);
+                }
+            }
+        } catch (Exception e) {
+            logger.error(String.format("Error while sending unsubscribe request. Key: %s, Coordinator: %s", key, serverConnection.getAddress()), e);
+            disconnect();
+            kvMessage.setStatus(KVMessage.StatusType.UNSUBSCRIBE_ERROR);
+        }
+        return kvMessage;
     }
 
     /**

@@ -50,5 +50,14 @@ public interface KVCommInterface {
 	 * @return
 	 * @throws Exception
      */
-	public KVMessage subscribe(String key) throws Exception;
+	public KVMessage subscribe(String key);
+
+	/**
+	 * unsubscribes to a key with the corresponsing coordinator node
+	 *
+	 * @param key
+	 * @return
+	 * @throws Exception
+	 */
+	public KVMessage unsubscribe(String key);
 }

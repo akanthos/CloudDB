@@ -128,6 +128,15 @@ public class KVClient {
 						} else {
 							printHelp("subscribe");
 						}
+					} else if (tokens[0].equals("unsubscribe")) {
+						// Unsubscribe to a key
+						if (tokens.length == 2) {
+							String key = tokens[1];
+							KVMessage response = engine.unsubscribe(key);
+							printUnsubscribeResponse(response);
+						} else {
+							printHelp("subscribe");
+						}
 					} else if (tokens[0].equals("logLevel")) {
 						// Change the loglevel
 						switch (tokens.length) {
@@ -196,7 +205,23 @@ public class KVClient {
 	}
 
 	private static void printSubscribeResponse(KVMessage response) {
-		// TODO
+		if (response.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_SUCCESS)) {
+			System.out.println("Subscription successful");
+		} else if (response.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_ERROR)) {
+			System.out.println("Subscription unsuccessful");
+		} else {
+			System.out.println("Unknown error occurred. Please try again.");
+		}
+	}
+
+	private static void printUnsubscribeResponse(KVMessage response) {
+		if (response.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_SUCCESS)) {
+			System.out.println("Unsubscription successful");
+		} else if (response.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_ERROR)) {
+			System.out.println("Unsubscription unsuccessful");
+		} else {
+			System.out.println("Unknown error occurred. Please try again.");
+		}
 	}
 
 	/**
@@ -239,6 +264,10 @@ public class KVClient {
 		printHelp("get");
 		System.out.println("\nput:");
 		printHelp("put");
+		System.out.println("\nsubscribe:");
+		printHelp("subscribe");
+		System.out.println("\nunsubscribe:");
+		printHelp("unsubscribe");
 		System.out.println("\nlogLevel:");
 		printHelp("logLevel");
 		System.out.println("\nhelp:");
@@ -276,6 +305,9 @@ public class KVClient {
 				break;
 			case SUBSCRIBE:
 				System.out.println("Syntax: subscribe <key>\n" + "Subscribes to notifications to a key" );
+				break;
+			case UNSUBSCRIBE:
+				System.out.println("Syntax: unsubscribe <key>\n" + "unsubscribes to notifications to a key" );
 				break;
 			default:
 				System.out.println("No such command: \"" + command + "\"\n" + "Run \"help\" for more");

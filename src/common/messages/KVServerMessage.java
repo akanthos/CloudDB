@@ -1,10 +1,11 @@
 package common.messages;
 
+import app_kvServer.ClientSubscription;
+import com.sun.org.apache.xalan.internal.xsltc.dom.CachedNodeListIterator;
 import common.ServerInfo;
 import common.utils.KVRange;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -53,6 +54,8 @@ public interface KVServerMessage extends AbstractMessage {
     String getReplicaID();
 
     void setReplicaID(String replicaID);
+
+    Map<String, ArrayList<ClientSubscription>> getSubscriptions();
 
     Date getTimeOfSendingMsg();
     void setTimeOfSendingMsg(Date timeOfSendingMsg);

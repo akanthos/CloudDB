@@ -218,6 +218,7 @@ public class SocketServer {
             if (allSubscribersForKey != null) {
                 subscribersToSend.put(pair.getKey(), allSubscribersForKey);
             }
+            subscriptions.remove(pair.getKey());
         }
         return messenger.sendToServer(pairsToSend, subscribersToSend, server);
     }
@@ -252,12 +253,15 @@ public class SocketServer {
      * @param kvPairs
      * @return
      */
-    public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs) {
+    public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs, Map<String, ArrayList<ClientSubscription>> subscribers) {
         for (KVPair kv : kvPairs) {
             KVMessageImpl response = kvCache.put(kv.getKey(), kv.getValue());
             if (response.getStatus().equals(KVMessage.StatusType.PUT_ERROR)) {
                 return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_FAILURE);
             }
+        }
+        for (String key : subscribers.keySet()) {
+            subscriptions.put(key, subscribers.get(key));
         }
         return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_SUCCESS);
         // If it fails, respond with MOVE_FAILURE ???
@@ -443,7 +447,7 @@ public class SocketServer {
 
     /**
      * Restores data from the replicated to the main (kvcache) data
-     * Usede by the RESTORE_DATA admin command
+     * Used by the RESTORE_DATA admin command
      * @param range
      * @return the server message response
      */
@@ -457,7 +461,7 @@ public class SocketServer {
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
         }
         // Insert the restored data to the cache
-        KVServerMessageImpl response2 = this.insertNewDataToCache(pairsToRestore);
+        KVServerMessageImpl response2 = this.insertNewDataToCache(pairsToRestore, new HashMap<>());
         if (response2.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_FAILURE)) {
             logger.info(getInfo().getID() + " : Insertion error on restoring data");
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);

@@ -185,6 +185,11 @@ public class KVServerMessageImpl implements KVServerMessage {
         this.replicaID = replicaID;
     }
 
+    @Override
+    public Map<String, ArrayList<ClientSubscription>> getSubscriptions() {
+        return this.subscribers;
+    }
+
     public Map<String, ArrayList<ClientSubscription>> getSubscribers() {
         return subscribers;
     }

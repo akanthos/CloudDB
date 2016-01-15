@@ -9,9 +9,7 @@ import javax.activation.UnsupportedDataTypeException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by aacha on 11/16/2015.
@@ -21,6 +19,8 @@ public class KVServerMessageImpl implements KVServerMessage {
     private List<KVPair> kvPairs;
     private StatusType status;
     private static final DateFormat df = new SimpleDateFormat("dd/MM/yyyy kk:mm:ss.SSS z");
+    //Map: <key><List of subscribers IPs>
+    private Map<String, ArrayList<String>> subscribers =  new HashMap<>();
 
     /**
      * Information related to heartbeat messages
@@ -69,12 +69,16 @@ public class KVServerMessageImpl implements KVServerMessage {
             if (tokens[2] != null) { // Data length and data
                 int dataLength = Integer.parseInt(tokens[2]);
                 ArrayList<KVPair> kvPairs = new ArrayList<>(dataLength);
-                if (tokens.length == dataLength + 3) {
-                    for (int i = 0; i < dataLength; i++) {
+                if (tokens.length >= dataLength + 3) {
+                    int i = 0;
+                    for (i = 0; i < dataLength; i++) {
                         String[] kv = tokens[i + 3].split(Serializer.SUB_DLM1);
                         if (kv.length == 2) {
                             kvPairs.add(new KVPair(kv[0], kv[1]));
                         }
+                    }
+                    if (tokens.length == dataLength + 4){
+                        this.setSubscribers(Serializer.getSubscribers(tokens[i+3]));
                     }
                 }
                 this.setKVPairs(kvPairs);
@@ -177,5 +181,13 @@ public class KVServerMessageImpl implements KVServerMessage {
 
     public void setReplicaID(String replicaID) {
         this.replicaID = replicaID;
+    }
+
+    public Map<String, ArrayList<String>> getSubscribers() {
+        return subscribers;
+    }
+
+    public void setSubscribers(Map<String, ArrayList<String>> subscribers) {
+        this.subscribers = subscribers;
     }
 }

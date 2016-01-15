@@ -9,7 +9,10 @@ import com.jcraft.jsch.Session;
 import java.io.File;
 import java.io.InputStream;
 
-
+/**
+ * class handling the start of a server process
+ * locally or remotely
+ */
 public class CallRemote implements CallRemoteInterface {
 
     private String privateKey = System.getProperty("user.home") + "/.ssh/id_rsa";

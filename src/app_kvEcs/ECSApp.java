@@ -2,6 +2,9 @@ package app_kvEcs;
 
 import org.apache.log4j.Logger;
 
+/**
+ * main ECS Application
+ */
 public class ECSApp {
 
     private Logger logger = Logger.getLogger( this.getClass ());

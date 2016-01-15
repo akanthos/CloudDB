@@ -28,6 +28,8 @@ public class ECSHelpers {
      * @param startServers
      * @param cacheSize
      * @param displacementStrategy
+     * @param runLocal
+     * @param runProcess 
      * @return
      */
     public List<ServerInfo> launchNodes(List<ServerInfo> activeServers, List<ServerInfo> startServers,
@@ -68,7 +70,7 @@ public class ECSHelpers {
 
 
     /**
-     * Start a Store Server using ssh
+     *
      * @param node
      * @return
      */
@@ -85,6 +87,8 @@ public class ECSHelpers {
      *            : (ServerINfo) The KVServer that recieves the data
      * @param fromIndex
      * @param toIndex
+     * @param ttype type of move data command
+     * @param KVConnections
      * @return 0 in case of success and -1 otherwise
      */
     public boolean moveData(ServerInfo fromNode, ServerInfo toNode,
@@ -134,9 +138,13 @@ public class ECSHelpers {
 
     /**
      * launch Single Server
-     *
+     * @param activeServers list of active servers
      * @param startServer
-     * @return 0 in case of successful launch
+     * @param cacheSize
+     * @param displacementStrategy
+     * @param runLocal local or remote run of the process
+     * @param runProcess
+     * @return
      */
     public boolean launchNode(List<ServerInfo> activeServers, ServerInfo startServer,
                               int cacheSize, String displacementStrategy, boolean runLocal, CallRemoteInterface runProcess) {
@@ -166,6 +174,15 @@ public class ECSHelpers {
             return false;
     }
 
+    /**
+     * perform a give action to the storage service, send respwctive message
+     * @param channel
+     * @param server
+     * @param message
+     * @param KVConnections
+     * @return
+     * @throws CannotConnectException
+     */
     public boolean ECSAction(KVConnection channel, ServerInfo server, KVAdminMessageImpl message, Map<ServerInfo, KVConnection> KVConnections)
             throws CannotConnectException {
         byte[] byteMessage;
@@ -209,6 +226,12 @@ public class ECSHelpers {
         return randomNum;
     }
 
+    /**
+     * remove a server from the ring topology
+     * @param failedServer
+     * @param activeServers
+     * @param KVConnections
+     */
     public void removeFromRing(ServerInfo failedServer, List<ServerInfo> activeServers, Map<ServerInfo, KVConnection> KVConnections) {
 
         boolean found = false;
@@ -227,6 +250,11 @@ public class ECSHelpers {
         }
     }
 
+    /**
+     * remove a server from the connections map
+     * @param failedServer server to be removed
+     * @param KVConnections map of active servers' connections
+     */
     public void removeFromConnections(ServerInfo failedServer, Map<ServerInfo, KVConnection> KVConnections) {
 
 
@@ -244,9 +272,9 @@ public class ECSHelpers {
 
     /**
      * Calculate metaData of our ECSInterface system
-     *
-     * @param servers servers of the current system
-     * @return the new metaData
+     * @param servers
+     * @param hasher
+     * @return
      */
     public List<ServerInfo> generateMetaData(List<ServerInfo> servers, MD5Hash hasher){
 
@@ -284,6 +312,8 @@ public class ECSHelpers {
     /**
      * Create an INIT KVAdminMessage
      * @param startServers
+     * @param cacheSize
+     * @param displacementStrategy
      * @return
      */
     public KVAdminMessageImpl InitMsg(List<ServerInfo> startServers, int cacheSize, String displacementStrategy) {
@@ -308,7 +338,7 @@ public class ECSHelpers {
     }
 
     /**
-     * update metaData to activeServers
+     * update metaData and notify activeServers
      *
      * @return
      */
@@ -334,6 +364,15 @@ public class ECSHelpers {
         return updateSuccess;
     }
 
+    /**
+     * repairs the system after failured node is detected.
+     * handle the different topology cases
+     * Normally add new node in the end.
+     * @param failedServer
+     * @param activeServers
+     * @param KVConnections
+     * @param ecs
+     */
     public void repairSystem(ServerInfo failedServer, List<ServerInfo> activeServers, Map<ServerInfo, KVConnection> KVConnections, ECSCore ecs){
 
         logger.info("Failure handling regarding server: " + failedServer.getAddress() + ":" + failedServer.getServerPort());
@@ -458,8 +497,8 @@ public class ECSHelpers {
 
         }
 
-        //TODO: FIX IT!
-        ecs.addNode(10, "FIFO");
+        //finally add a new node as a replacement for the failed one
+        ecs.addNode(10, "LRU");
         logger.debug("New System state for our system.");
         for (ServerInfo server: activeServers)
             logger.debug(server.getAddress() + ":" + server.getServerPort());
@@ -467,6 +506,12 @@ public class ECSHelpers {
 
     }
 
+    /**
+     * sends the required to all replicas for a given ring
+     * @param activeServers the active store servers on the ring
+     * @param KVConnections Map of ServerInfo:Socket_connection to those servers
+     * @return
+     */
     public boolean replicateData(List<ServerInfo> activeServers, Map<ServerInfo, KVConnection> KVConnections) {
         if (activeServers.size()==1)
             return true;

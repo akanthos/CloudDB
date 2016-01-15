@@ -625,7 +625,6 @@ public class ECSCore implements ECSInterface {
      * @return true if succeeded else false
      */
     public boolean lockWrite(){
-        //KVConnection kvConnection = new KVConnection(fromNode);
         KVAdminMessageImpl lockMsg = new KVAdminMessageImpl();
         lockMsg.setStatus(KVAdminMessage.StatusType.LOCK_WRITE);
         boolean allDone = false;
@@ -650,7 +649,6 @@ public class ECSCore implements ECSInterface {
      * @return true if succeeded else false
      */
     public boolean unlockWrite( ){
-        //KVConnection kvConnection = new KVConnection(fromNode);
         KVAdminMessageImpl lockMsg = new KVAdminMessageImpl();
         lockMsg.setStatus(KVAdminMessage.StatusType.UNLOCK_WRITE);
         boolean allDone = false;

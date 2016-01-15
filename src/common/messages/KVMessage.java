@@ -23,7 +23,11 @@ public interface KVMessage extends AbstractMessage {
 		GENERAL_ERROR, 	/* If an unexpected situation is encountered */
 		SERVER_STOPPED,         /* Server is stopped, no requests are processed */
 		SERVER_WRITE_LOCK,      /* Server locked for out, only get possible */
-		SERVER_NOT_RESPONSIBLE  /* Request not successful, server not responsible for key */
+		SERVER_NOT_RESPONSIBLE,  /* Request not successful, server not responsible for key */
+		SUBSCRIBE_MESSAGE,
+		SUBSCRIBE_SUCCESS,
+		UNSUBSCRIBE_MESSAGE,
+		UNSUBSCRIBE_SUCCESS
 	}
 
 	/**

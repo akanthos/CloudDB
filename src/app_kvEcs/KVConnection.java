@@ -12,7 +12,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 /**
- * Responsible for communicating with the servers
+ * Responsible for socket communicating with the servers
  * (send ECSInterface commands receives acknowledgments)
  *
  */

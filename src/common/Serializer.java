@@ -9,6 +9,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 import javax.activation.UnsupportedDataTypeException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,6 +25,7 @@ public class Serializer {
     private static final String HEAD_DLM = "##";
     public static final String SUB_DLM1 = "&&";
     private static final String SUB_DLM2 = "%%";
+    public static final String SUB_DLM3 = "@@";
 
     private static final char RETURN = 0x0D;
     private static final DateFormat df = new SimpleDateFormat("dd/MM/yyyy kk:mm:ss.SSS z");
@@ -74,6 +76,19 @@ public class Serializer {
             messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
             for (KVPair pair : message.getKVPairs()) {
                 messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
+            }
+            // non empty list of subscribers
+            if (!message.getSubscribers().isEmpty()){
+                messageStr.append(HEAD_DLM);
+                for (Map.Entry<String, ArrayList<String>> entry : message.getSubscribers().entrySet()) {
+                    String key = entry.getKey();
+                    ArrayList<String> subscribers = entry.getValue();
+                    messageStr.append(key).append(SUB_DLM3);
+                    for (String ip : subscribers ){
+                        messageStr.append(ip).append(SUB_DLM1);
+                    }
+                    messageStr.append(SUB_DLM2);
+                }
             }
         } /*else if (message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)
                 || message.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
@@ -231,6 +246,22 @@ public class Serializer {
         }
     }
 
+    public static Map<String, ArrayList<String>> getSubscribers(String subscriberStr) {
+        Map<String, ArrayList<String>> SubMap = new HashMap<String,  ArrayList<String>>();
+        if (!subscriberStr.equals("")){
+            List<String> subscribers = new ArrayList<>();
+            String[] tokens = subscriberStr.split(SUB_DLM2);
+            for (String subPair: tokens) {
+                if (subPair.isEmpty())
+                    continue;
+                String[] keypair = subPair.split(SUB_DLM3);
+                ArrayList<String> IPs = new ArrayList<String>(Arrays.asList(keypair[1].split(SUB_DLM1)) );
+                SubMap.put(keypair[0], IPs);
+            }
+        }
+        return SubMap;
+    }
+
 
     /**
      * Main method for testing purposes
@@ -253,10 +284,6 @@ public class Serializer {
 //        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
 //            m = (KVAdminMessageImpl) abstractMessage;
 //        }
-
-
-
-
         KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("127.0.0.1:50036", new Date(), KVServerMessage.StatusType.HEARTBEAT);
 //        ArrayList<KVPair> pairsTosend = new ArrayList<>();
 //        pairsTosend.add(new KVPair("asdf", "sdf"));

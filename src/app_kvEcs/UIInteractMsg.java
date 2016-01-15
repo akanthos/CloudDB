@@ -2,7 +2,7 @@ package app_kvEcs;
 
 /**
  * Contains all the user
- * interacting handling.
+ * UI interaction handlers.
  */
 public class UIInteractMsg {
 

@@ -10,9 +10,7 @@ import org.apache.log4j.PropertyConfigurator;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.sql.Time;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by akanthos on 11.11.15.
@@ -25,6 +23,7 @@ public class KVAdminMessageImpl implements KVAdminMessage, Serializable {
     KVRange range = new KVRange();
     ServerInfo serverInfo;
     KVAdminMessage.StatusType status;
+
     /**
      * For a server failure message, this will contain the failed server's details
      */

@@ -1,6 +1,5 @@
 package app_kvServer;
 
-import java.net.InetAddress;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,6 +12,11 @@ public class ClientSubscription {
 
 
     public enum Interest { CHANGE, DELETE, CHANGE_DELETE }
+
+    public ClientSubscription(String inetAddress) {
+        this.address = inetAddress;
+        this.interests = new HashSet<>();
+    }
 
     public ClientSubscription(String inetAddress, Interest interest) {
         this.address = inetAddress;
@@ -38,5 +42,16 @@ public class ClientSubscription {
 
     public String getAddress() {
         return address;
+    }
+
+    public Integer getInterestsOrdinal() {
+        if (isInterestedIn(ClientSubscription.Interest.CHANGE) && isInterestedIn(ClientSubscription.Interest.DELETE)) {
+            return ClientSubscription.Interest.CHANGE_DELETE.ordinal();
+        } else if (isInterestedIn(ClientSubscription.Interest.CHANGE)) {
+            return ClientSubscription.Interest.CHANGE.ordinal();
+        } else if (isInterestedIn(ClientSubscription.Interest.DELETE)) {
+            return ClientSubscription.Interest.DELETE.ordinal();
+        }
+        return -1;
     }
 }

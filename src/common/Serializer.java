@@ -10,9 +10,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 import javax.activation.UnsupportedDataTypeException;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -86,7 +84,7 @@ public class Serializer {
                     ArrayList<ClientSubscription> subscribers = entry.getValue();
                     messageStr.append(key).append(SUB_DLM3);
                     for (ClientSubscription sub : subscribers ){
-                        messageStr.append(sub).append(":").append().append(SUB_DLM1);
+                        messageStr.append(sub.getAddress()).append(":").append(sub.getInterestsOrdinal()).append(SUB_DLM1);
                     }
                     messageStr.append(SUB_DLM2);
                 }
@@ -248,7 +246,7 @@ public class Serializer {
     }
 
     public static Map<String, ArrayList<ClientSubscription>> getSubscribers(String subscriberStr) {
-        Map<String, ArrayList<ClientSubscription>> SubMap = new HashMap<String,  ArrayList<ClientSubscription>>();
+        Map<String, ArrayList<ClientSubscription>> SubMap = new HashMap<>();
         if (!subscriberStr.equals("")){
             String[] tokens = subscriberStr.split(SUB_DLM2);
             for (String subPair: tokens) {
@@ -259,7 +257,19 @@ public class Serializer {
                 ArrayList<ClientSubscription> clients = new ArrayList<>();
                 for (String pair : pairIPs){
                     String[] tmpPair = pair.split(":");
-                    clients.add( new ClientSubscription(tmpPair[0], ClientSubscription.Interest.values()[Integer.parseInt(tmpPair[1])]) );
+                    ClientSubscription.Interest interest = ClientSubscription.Interest.values()[Integer.parseInt(tmpPair[1])];
+                    ClientSubscription c = new ClientSubscription(tmpPair[0]);
+                    if (interest == ClientSubscription.Interest.CHANGE_DELETE) {
+                        c.addInterest(ClientSubscription.Interest.CHANGE);
+                        c.addInterest(ClientSubscription.Interest.DELETE);
+                    }
+                    else if (interest == ClientSubscription.Interest.CHANGE) {
+                        c.addInterest(ClientSubscription.Interest.CHANGE);
+                    }
+                    else if (interest == ClientSubscription.Interest.DELETE) {
+                        c.addInterest(ClientSubscription.Interest.DELETE);
+                    }
+                    clients.add( c );
                 }
                 SubMap.put(keypair[0], clients);
             }
@@ -296,11 +306,15 @@ public class Serializer {
         pairsTosend.add(new KVPair("rty", "sdf"));
         KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
 
-        Map<String, ArrayList<String>> subscribers = new HashMap<>();
-        ArrayList<String> subs = new ArrayList<>();
-        subs.add("IP1");
-        subs.add("IP2");
-        subs.add("IP3");
+        Map<String, ArrayList<ClientSubscription>> subscribers = new HashMap<>();
+        ArrayList<ClientSubscription> subs = new ArrayList<>();
+        ClientSubscription c1 = new ClientSubscription("IP1");
+
+        c1.addInterest(ClientSubscription.Interest.CHANGE);c1.addInterest(ClientSubscription.Interest.DELETE);
+        subs.add(c1);
+
+        subs.add(new ClientSubscription("IP2", ClientSubscription.Interest.CHANGE));
+        subs.add(new ClientSubscription("IP3", ClientSubscription.Interest.CHANGE));
         subscribers.put("salami", subs);
         subscribers.put("tiri", subs);
         subscribers.put("psomi", subs);
@@ -309,7 +323,8 @@ public class Serializer {
 
         AbstractMessage abstractMessage = Serializer.toObject(bytes);
         if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
-            kvServerMessage = (KVServerMessageImpl) abstractMessage;
+            KVServerMessageImpl kvServerMessage2 = (KVServerMessageImpl) abstractMessage;
+            System.out.println("asd");
         }
     }
 }

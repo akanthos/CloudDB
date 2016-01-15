@@ -229,25 +229,25 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             }
 
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_CHANGE)) {
-                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress(), ClientSubscription.Interest.CHANGE));
+                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_DELETE)) {
-                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress(), ClientSubscription.Interest.DELETE));
+                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.DELETE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_CHANGE_DELETE)) {
-                ClientSubscription client = new ClientSubscription(clientSocket.getInetAddress(), ClientSubscription.Interest.CHANGE);
+                ClientSubscription client = new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE);
                 client.addInterest(ClientSubscription.Interest.DELETE);
                 return server.subscribeUser(kvMessage.getKey(), client);
             }
 
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_CHANGE)) {
-                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress(), ClientSubscription.Interest.CHANGE));
+                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_DELETE)) {
-                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress(), ClientSubscription.Interest.DELETE));
+                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.DELETE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_CHANGE_DELETE)) {
-                ClientSubscription client = new ClientSubscription(clientSocket.getInetAddress(), ClientSubscription.Interest.CHANGE);
+                ClientSubscription client = new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE);
                 client.addInterest(ClientSubscription.Interest.DELETE);
                 return server.unsubscribeUser(kvMessage.getKey(), client);
             }

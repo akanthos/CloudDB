@@ -12,10 +12,10 @@ public class ClientSubscription {
     private Set<Interest> interests;
 
 
-    public enum Interest { CHANGE, DELETE }
+    public enum Interest { CHANGE, DELETE, CHANGE_DELETE }
 
-    public ClientSubscription(InetAddress inetAddress, Interest interest) {
-        this.address = inetAddress.getHostAddress();
+    public ClientSubscription(String inetAddress, Interest interest) {
+        this.address = inetAddress;
         this.interests = new HashSet<>();
         this.interests.add(interest);
     }

@@ -1,6 +1,7 @@
 package common;
 
 
+import app_kvServer.ClientSubscription;
 import common.messages.*;
 import common.utils.KVRange;
 import helpers.Constants;
@@ -80,12 +81,12 @@ public class Serializer {
             // non empty list of subscribers
             if (!message.getSubscribers().isEmpty()){
                 messageStr.append(HEAD_DLM);
-                for (Map.Entry<String, ArrayList<String>> entry : message.getSubscribers().entrySet()) {
+                for (Map.Entry<String, ArrayList<ClientSubscription>> entry : message.getSubscribers().entrySet()) {
                     String key = entry.getKey();
-                    ArrayList<String> subscribers = entry.getValue();
+                    ArrayList<ClientSubscription> subscribers = entry.getValue();
                     messageStr.append(key).append(SUB_DLM3);
-                    for (String ip : subscribers ){
-                        messageStr.append(ip).append(SUB_DLM1);
+                    for (ClientSubscription sub : subscribers ){
+                        messageStr.append(sub).append(":").append().append(SUB_DLM1);
                     }
                     messageStr.append(SUB_DLM2);
                 }
@@ -246,17 +247,21 @@ public class Serializer {
         }
     }
 
-    public static Map<String, ArrayList<String>> getSubscribers(String subscriberStr) {
-        Map<String, ArrayList<String>> SubMap = new HashMap<String,  ArrayList<String>>();
+    public static Map<String, ArrayList<ClientSubscription>> getSubscribers(String subscriberStr) {
+        Map<String, ArrayList<ClientSubscription>> SubMap = new HashMap<String,  ArrayList<ClientSubscription>>();
         if (!subscriberStr.equals("")){
-            List<String> subscribers = new ArrayList<>();
             String[] tokens = subscriberStr.split(SUB_DLM2);
             for (String subPair: tokens) {
                 if (subPair.isEmpty())
                     continue;
                 String[] keypair = subPair.split(SUB_DLM3);
-                ArrayList<String> IPs = new ArrayList<String>(Arrays.asList(keypair[1].split(SUB_DLM1)) );
-                SubMap.put(keypair[0], IPs);
+                ArrayList<String> pairIPs = new ArrayList<String>(Arrays.asList(keypair[1].split(SUB_DLM1)) );
+                ArrayList<ClientSubscription> clients = new ArrayList<>();
+                for (String pair : pairIPs){
+                    String[] tmpPair = pair.split(":");
+                    clients.add( new ClientSubscription(tmpPair[0], ClientSubscription.Interest.values()[Integer.parseInt(tmpPair[1])]) );
+                }
+                SubMap.put(keypair[0], clients);
             }
         }
         return SubMap;

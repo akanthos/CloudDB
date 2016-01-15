@@ -258,18 +258,7 @@ public class Serializer {
                 for (String pair : pairIPs){
                     String[] tmpPair = pair.split(":");
                     ClientSubscription.Interest interest = ClientSubscription.Interest.values()[Integer.parseInt(tmpPair[1])];
-                    ClientSubscription c = new ClientSubscription(tmpPair[0]);
-                    if (interest == ClientSubscription.Interest.CHANGE_DELETE) {
-                        c.addInterest(ClientSubscription.Interest.CHANGE);
-                        c.addInterest(ClientSubscription.Interest.DELETE);
-                    }
-                    else if (interest == ClientSubscription.Interest.CHANGE) {
-                        c.addInterest(ClientSubscription.Interest.CHANGE);
-                    }
-                    else if (interest == ClientSubscription.Interest.DELETE) {
-                        c.addInterest(ClientSubscription.Interest.DELETE);
-                    }
-                    clients.add( c );
+                    clients.add( new ClientSubscription(tmpPair[0], interest) );
                 }
                 SubMap.put(keypair[0], clients);
             }
@@ -308,13 +297,11 @@ public class Serializer {
 
         Map<String, ArrayList<ClientSubscription>> subscribers = new HashMap<>();
         ArrayList<ClientSubscription> subs = new ArrayList<>();
-        ClientSubscription c1 = new ClientSubscription("IP1");
-
-        c1.addInterest(ClientSubscription.Interest.CHANGE);c1.addInterest(ClientSubscription.Interest.DELETE);
+        ClientSubscription c1 = new ClientSubscription("IP1", ClientSubscription.Interest.CHANGE_DELETE);
         subs.add(c1);
 
         subs.add(new ClientSubscription("IP2", ClientSubscription.Interest.CHANGE));
-        subs.add(new ClientSubscription("IP3", ClientSubscription.Interest.CHANGE));
+        subs.add(new ClientSubscription("IP3", ClientSubscription.Interest.DELETE));
         subscribers.put("salami", subs);
         subscribers.put("tiri", subs);
         subscribers.put("psomi", subs);

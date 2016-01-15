@@ -13,15 +13,16 @@ public class ClientSubscription {
 
     public enum Interest { CHANGE, DELETE, CHANGE_DELETE }
 
-    public ClientSubscription(String inetAddress) {
-        this.address = inetAddress;
-        this.interests = new HashSet<>();
-    }
-
     public ClientSubscription(String inetAddress, Interest interest) {
         this.address = inetAddress;
         this.interests = new HashSet<>();
-        this.interests.add(interest);
+        if (interest == Interest.CHANGE_DELETE) {
+            this.interests.add(Interest.CHANGE);
+            this.interests.add(Interest.DELETE);
+        }
+        else {
+            this.interests.add(interest);
+        }
     }
 
     public boolean isInterestedIn(Interest interest) {

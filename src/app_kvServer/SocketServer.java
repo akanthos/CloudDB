@@ -209,10 +209,17 @@ public class SocketServer {
      */
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
         ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
+        HashMap<String, ArrayList<ClientSubscription>> subscribersToSend = new HashMap<>();
         for (KVPair pair : pairsToSend) {
+            // Delete it from our storage
             kvCache.put(pair.getKey(), "null");
+            // Get the relevant subscribers
+            ArrayList<ClientSubscription> allSubscribersForKey = subscriptions.get(pair.getKey());
+            if (allSubscribersForKey != null) {
+                subscribersToSend.put(pair.getKey(), allSubscribersForKey);
+            }
         }
-        return messenger.sendToServer(pairsToSend, server);
+        return messenger.sendToServer(pairsToSend, subscribersToSend, server);
     }
 
     /**

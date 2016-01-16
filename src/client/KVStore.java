@@ -106,6 +106,7 @@ public class KVStore implements KVCommInterface {
             } else {
                 KVMessageImpl responseMessage = (KVMessageImpl) Serializer.toObject(response);
                 if (responseMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_SUCCESS)) {
+                    memoryCache.put(key, responseMessage.getValue());
                     kvMessage = responseMessage;
                 } else {
                     logger.error(String.format("Subscribe request not successful. Unrecognized message status %s. Key: %s, Coordinator: %s", responseMessage.getStatus(), key, serverConnection.getAddress()));

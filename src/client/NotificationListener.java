@@ -40,12 +40,13 @@ public class NotificationListener implements Runnable {
                 logger.debug(String.format("Received notification from %s", clientSocket.getInetAddress().getHostAddress()));
                 byte[] msgBytes = Utilities.receive(clientSocket.getInputStream());
                 KVMessageImpl kvMessage = (KVMessageImpl) Serializer.toObject(msgBytes);
-                if (kvMessage.getStatus().equals(KVMessage.StatusType.NOTIFICATION)) {
-                    if (memoryCache.containsKey(kvMessage.getKey()) && isEmpty(kvMessage.getValue())) {
-                        memoryCache.remove(kvMessage.getKey());
-                    } else {
-                        memoryCache.put(kvMessage.getKey(), kvMessage.getValue());
-                    }
+                if (kvMessage.getStatus().equals(KVMessage.StatusType.NOTIFICATION_KEY_DELETED)
+                        && (memoryCache.containsKey(kvMessage.getKey())) && isEmpty(kvMessage.getValue())) {
+                    memoryCache.remove(kvMessage.getKey());
+                    logger.debug(String.format("NotificationListener: Updated memory cache. Deleted key: %s", kvMessage.getKey()));
+                } else if (kvMessage.getStatus().equals(KVMessage.StatusType.NOTIFICATION_KEY_CHANGED)
+                        && (memoryCache.containsKey(kvMessage.getKey())) && !isEmpty(kvMessage.getValue())) {
+                    memoryCache.put(kvMessage.getKey(), kvMessage.getValue());
                     logger.debug(String.format("NotificationListener: Updated memory cache. key: %s, value: %s", kvMessage.getKey(), kvMessage.getValue()));
                 } else {
                     logger.error(String.format("NotificationListener: Unexpected message type: %s. Key: %s, Value: %s", kvMessage.getStatus(), kvMessage.getKey(), kvMessage.getValue()));

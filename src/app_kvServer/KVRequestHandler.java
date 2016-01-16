@@ -162,7 +162,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     private KVServerMessageImpl processServerMessage(KVServerMessage kvServerMessage) {
         KVServerMessageImpl response;
         if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
-            return server.insertNewDataToCache(kvServerMessage.getKVPairs());
+            return server.insertNewDataToCache(kvServerMessage.getKVPairs(), kvServerMessage.getSubscriptions());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
             return server.newReplicatedData(kvServerMessage.getKVPairs());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
@@ -226,7 +226,33 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     // TODO: Call enqueuePutEvent to replicationHandler, server.getReplicationHandler()
                     return response;
                 }
-            } else {
+            }
+
+            else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_CHANGE)) {
+                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE));
+            }
+            else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_DELETE)) {
+                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.DELETE));
+            }
+            else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_CHANGE_DELETE)) {
+                ClientSubscription client = new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE);
+                client.addInterest(ClientSubscription.Interest.DELETE);
+                return server.subscribeUser(kvMessage.getKey(), client);
+            }
+
+            else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_CHANGE)) {
+                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE));
+            }
+            else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_DELETE)) {
+                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.DELETE));
+            }
+            else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_CHANGE_DELETE)) {
+                ClientSubscription client = new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE);
+                client.addInterest(ClientSubscription.Interest.DELETE);
+                return server.unsubscribeUser(kvMessage.getKey(), client);
+            }
+
+            else {
                 logger.error(String.format("Client: %d. Invalid message from client: %s", clientNumber, kvMessage.toString()));
                 return new KVMessageImpl(KVMessage.StatusType.GENERAL_ERROR);
             }

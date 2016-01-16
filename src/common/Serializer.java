@@ -1,6 +1,7 @@
 package common;
 
 
+import app_kvServer.ClientSubscription;
 import common.messages.*;
 import common.utils.KVRange;
 import helpers.Constants;
@@ -9,9 +10,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 import javax.activation.UnsupportedDataTypeException;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -80,12 +79,12 @@ public class Serializer {
             // non empty list of subscribers
             if (!message.getSubscribers().isEmpty()){
                 messageStr.append(HEAD_DLM);
-                for (Map.Entry<String, ArrayList<String>> entry : message.getSubscribers().entrySet()) {
+                for (Map.Entry<String, ArrayList<ClientSubscription>> entry : message.getSubscribers().entrySet()) {
                     String key = entry.getKey();
-                    ArrayList<String> subscribers = entry.getValue();
+                    ArrayList<ClientSubscription> subscribers = entry.getValue();
                     messageStr.append(key).append(SUB_DLM3);
-                    for (String ip : subscribers ){
-                        messageStr.append(ip).append(SUB_DLM1);
+                    for (ClientSubscription sub : subscribers ){
+                        messageStr.append(sub.getAddress()).append(":").append(sub.getInterestsOrdinal()).append(SUB_DLM1);
                     }
                     messageStr.append(SUB_DLM2);
                 }
@@ -246,17 +245,22 @@ public class Serializer {
         }
     }
 
-    public static Map<String, ArrayList<String>> getSubscribers(String subscriberStr) {
-        Map<String, ArrayList<String>> SubMap = new HashMap<String,  ArrayList<String>>();
+    public static Map<String, ArrayList<ClientSubscription>> getSubscribers(String subscriberStr) {
+        Map<String, ArrayList<ClientSubscription>> SubMap = new HashMap<>();
         if (!subscriberStr.equals("")){
-            List<String> subscribers = new ArrayList<>();
             String[] tokens = subscriberStr.split(SUB_DLM2);
             for (String subPair: tokens) {
                 if (subPair.isEmpty())
                     continue;
                 String[] keypair = subPair.split(SUB_DLM3);
-                ArrayList<String> IPs = new ArrayList<String>(Arrays.asList(keypair[1].split(SUB_DLM1)) );
-                SubMap.put(keypair[0], IPs);
+                ArrayList<String> pairIPs = new ArrayList<String>(Arrays.asList(keypair[1].split(SUB_DLM1)) );
+                ArrayList<ClientSubscription> clients = new ArrayList<>();
+                for (String pair : pairIPs){
+                    String[] tmpPair = pair.split(":");
+                    ClientSubscription.Interest interest = ClientSubscription.Interest.values()[Integer.parseInt(tmpPair[1])];
+                    clients.add( new ClientSubscription(tmpPair[0], interest) );
+                }
+                SubMap.put(keypair[0], clients);
             }
         }
         return SubMap;
@@ -284,17 +288,30 @@ public class Serializer {
 //        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
 //            m = (KVAdminMessageImpl) abstractMessage;
 //        }
-        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("127.0.0.1:50036", new Date(), KVServerMessage.StatusType.HEARTBEAT);
-//        ArrayList<KVPair> pairsTosend = new ArrayList<>();
-//        pairsTosend.add(new KVPair("asdf", "sdf"));
-//        pairsTosend.add(new KVPair("cbn", "sdf"));
-//        pairsTosend.add(new KVPair("rty", "sdf"));
-//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
+//        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("127.0.0.1:50036", new Date(), KVServerMessage.StatusType.HEARTBEAT);
+        ArrayList<KVPair> pairsTosend = new ArrayList<>();
+        pairsTosend.add(new KVPair("asdf", "sdf"));
+        pairsTosend.add(new KVPair("cbn", "sdf"));
+        pairsTosend.add(new KVPair("rty", "sdf"));
+        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
+
+        Map<String, ArrayList<ClientSubscription>> subscribers = new HashMap<>();
+        ArrayList<ClientSubscription> subs = new ArrayList<>();
+        ClientSubscription c1 = new ClientSubscription("IP1", ClientSubscription.Interest.CHANGE_DELETE);
+        subs.add(c1);
+
+        subs.add(new ClientSubscription("IP2", ClientSubscription.Interest.CHANGE));
+        subs.add(new ClientSubscription("IP3", ClientSubscription.Interest.DELETE));
+        subscribers.put("salami", subs);
+        subscribers.put("tiri", subs);
+        subscribers.put("psomi", subs);
+        kvServerMessage.setSubscribers(subscribers);
         byte[] bytes = toByteArray(kvServerMessage);
 
         AbstractMessage abstractMessage = Serializer.toObject(bytes);
         if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
-            kvServerMessage = (KVServerMessageImpl) abstractMessage;
+            KVServerMessageImpl kvServerMessage2 = (KVServerMessageImpl) abstractMessage;
+            System.out.println("asd");
         }
     }
 }

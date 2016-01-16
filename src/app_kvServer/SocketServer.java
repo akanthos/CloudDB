@@ -11,9 +11,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Class handling all TCP  connections
@@ -35,6 +33,7 @@ public class SocketServer {
 //    private CopyOnWriteArraySet<ServerActionListener> runnableListeners;
     private static Logger logger = Logger.getLogger(SocketServer.class);
     private boolean ECSRegistered;
+    private final Map<String, ArrayList<ClientSubscription>> subscriptions;
 
 
     /**
@@ -53,6 +52,7 @@ public class SocketServer {
                 /*stop*/ true
         );
         messenger = new Messenger(this);
+        subscriptions = new HashMap<>();
 //        this.runnableListeners = new CopyOnWriteArraySet<>();//Collections.synchronizedList(new ArrayList<>());
     }
 
@@ -193,6 +193,7 @@ public class SocketServer {
         state.setIsOpen(false);
         this.closeSocket();
         this.handler.shutDown();
+        this.subscriptions.clear();
 //        logger.info("SHUTTING DOWN: ");
 //        logger.info("My Address is: " + this.info.getAddress());
 //        logger.info("My Port is: " + this.info.getServerPort());
@@ -208,10 +209,18 @@ public class SocketServer {
      */
     public synchronized KVAdminMessageImpl moveData(KVRange range, ServerInfo server) {
         ArrayList<KVPair> pairsToSend = kvCache.getPairsInRange(range);
+        HashMap<String, ArrayList<ClientSubscription>> subscribersToSend = new HashMap<>();
         for (KVPair pair : pairsToSend) {
+            // Delete it from our storage
             kvCache.put(pair.getKey(), "null");
+            // Get the relevant subscribers
+            ArrayList<ClientSubscription> allSubscribersForKey = subscriptions.get(pair.getKey());
+            if (allSubscribersForKey != null) {
+                subscribersToSend.put(pair.getKey(), allSubscribersForKey);
+            }
+            subscriptions.remove(pair.getKey());
         }
-        return messenger.sendToServer(pairsToSend, server);
+        return messenger.sendToServer(pairsToSend, subscribersToSend, server);
     }
 
     /**
@@ -244,12 +253,15 @@ public class SocketServer {
      * @param kvPairs
      * @return
      */
-    public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs) {
+    public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs, Map<String, ArrayList<ClientSubscription>> subscribers) {
         for (KVPair kv : kvPairs) {
             KVMessageImpl response = kvCache.put(kv.getKey(), kv.getValue());
             if (response.getStatus().equals(KVMessage.StatusType.PUT_ERROR)) {
                 return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_FAILURE);
             }
+        }
+        for (String key : subscribers.keySet()) {
+            subscriptions.put(key, subscribers.get(key));
         }
         return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_SUCCESS);
         // If it fails, respond with MOVE_FAILURE ???
@@ -435,7 +447,7 @@ public class SocketServer {
 
     /**
      * Restores data from the replicated to the main (kvcache) data
-     * Usede by the RESTORE_DATA admin command
+     * Used by the RESTORE_DATA admin command
      * @param range
      * @return the server message response
      */
@@ -449,7 +461,7 @@ public class SocketServer {
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
         }
         // Insert the restored data to the cache
-        KVServerMessageImpl response2 = this.insertNewDataToCache(pairsToRestore);
+        KVServerMessageImpl response2 = this.insertNewDataToCache(pairsToRestore, new HashMap<>());
         if (response2.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_FAILURE)) {
             logger.info(getInfo().getID() + " : Insertion error on restoring data");
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
@@ -503,4 +515,60 @@ public class SocketServer {
     }
 
 
+    public KVMessageImpl subscribeUser(String key, ClientSubscription clientSubscription) {
+        synchronized (subscriptions) {
+            if (!subscriptions.containsKey(key)) {
+                subscriptions.put(key, new ArrayList<>());
+            }
+            ArrayList<ClientSubscription> users = subscriptions.get(key);
+            boolean found = false;
+            for (ClientSubscription user : users) {
+                if (user.getAddress().equals(clientSubscription.getAddress())) {
+                    found = true;
+                    user.getInterests().addAll(clientSubscription.getInterests());
+                    break;
+                }
+            }
+            if (!found) {
+                users.add(clientSubscription);
+            }
+
+        }
+        return new KVMessageImpl(KVMessage.StatusType.SUBSCRIBE_SUCCESS);
+
+    }
+
+    public KVMessageImpl unsubscribeUser(String key, ClientSubscription clientSubscription) {
+        synchronized (subscriptions) {
+            if (!subscriptions.containsKey(key)) {
+                return new KVMessageImpl(KVMessage.StatusType.UNSUBSCRIBE_SUCCESS);
+            }
+            ArrayList<ClientSubscription> users = subscriptions.get(key);
+            int client = -1;
+            for (ClientSubscription user : users) {
+                if (user.getAddress().equals(clientSubscription.getAddress())) {
+                    client = users.indexOf(user);
+                    user.getInterests().removeAll(clientSubscription.getInterests());
+                    break;
+                }
+            }
+            if (client != -1 && users.get(client).getInterests().isEmpty()) {
+                users.remove(client);
+            }
+        }
+        return new KVMessageImpl(KVMessage.StatusType.UNSUBSCRIBE_SUCCESS);
+    }
+
+    public ArrayList<String> getSubscribersForKey(String key, ClientSubscription.Interest interest) {
+        ArrayList<String> clients = new ArrayList<>();
+        synchronized (subscriptions) {
+            ArrayList<ClientSubscription> cs = subscriptions.get(key);
+            for (ClientSubscription c : cs) {
+                if (c.getInterests().contains(interest)) {
+                    clients.add(c.getAddress());
+                }
+            }
+        }
+        return clients;
+    }
 }

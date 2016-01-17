@@ -38,8 +38,8 @@ public class KVStore implements KVCommInterface {
         connected = false;
         memoryCache = new ConcurrentHashMap<>();
         try {
-            NotificationListener notificationListener = new NotificationListener(memoryCache);
-            notificationListener.run();
+            Thread notificationListenerThread = new Thread(new NotificationListener(memoryCache));
+            notificationListenerThread.start();
             isNotificationRunning = true;
         } catch (IOException e) {
             logger.error("Unable to start notification listener", e);
@@ -94,7 +94,7 @@ public class KVStore implements KVCommInterface {
 
     @Override
     public KVMessage subscribe(String key) {
-        KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.SUBSCRIBE_MESSAGE);
+        KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.SUBSCRIBE_CHANGE);
         ServerConnection serverConnection = null;
         try {
             serverConnection = getServerConnection(key, false);
@@ -127,7 +127,7 @@ public class KVStore implements KVCommInterface {
             logger.info(String.format("Not subscribed to key %s, but got unsubscribe request. Nothing to do.", key));
             return new KVMessageImpl(key, "", KVMessage.StatusType.UNSUBSCRIBE_SUCCESS);
         }
-        KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.UNSUBSCRIBE_MESSAGE);
+        KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.UNSUBSCRIBE_CHANGE);
         ServerConnection serverConnection = null;
         try {
             serverConnection = getServerConnection(key, false);
@@ -241,7 +241,7 @@ public class KVStore implements KVCommInterface {
         KVMessageImpl kvMessage;
         // TODO: Perform key validation
         if (memoryCache.containsKey(key)) {
-            kvMessage = new KVMessageImpl(key, memoryCache.get(key), KVMessage.StatusType.GET);
+            kvMessage = new KVMessageImpl(key, memoryCache.get(key), KVMessage.StatusType.GET_SUCCESS);
         } else {
             if (!isConnected()) {
                 throw new Exception("Client not Connected to server");

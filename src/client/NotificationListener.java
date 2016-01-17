@@ -22,7 +22,7 @@ public class NotificationListener implements Runnable {
 
     private ConcurrentHashMap<String, String> memoryCache;
     private ServerSocket serverSocket;
-    private static Logger logger = Logger.getLogger(KVMessageImpl.class);
+    private static Logger logger = Logger.getLogger(NotificationListener.class);
 
     public NotificationListener(ConcurrentHashMap<String, String> memoryCache) throws IOException {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);

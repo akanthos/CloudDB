@@ -24,13 +24,11 @@ public interface KVMessage extends AbstractMessage {
 		SERVER_STOPPED,         /* Server is stopped, no requests are processed */
 		SERVER_WRITE_LOCK,      /* Server locked for out, only get possible */
 		SERVER_NOT_RESPONSIBLE,  /* Request not successful, server not responsible for key */
-		SUBSCRIBE_MESSAGE,
 		SUBSCRIBE_CHANGE,
 		SUBSCRIBE_DELETE,
 		SUBSCRIBE_CHANGE_DELETE,
 		SUBSCRIBE_SUCCESS,
 		SUBSCRIBE_ERROR,
-		UNSUBSCRIBE_MESSAGE,
 		UNSUBSCRIBE_ERROR,
 		UNSUBSCRIBE_CHANGE,
 		UNSUBSCRIBE_DELETE,

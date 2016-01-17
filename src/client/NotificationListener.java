@@ -17,6 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by sreenath on 14.01.16.
+ *
+ * Runnable class that implements the notification service.
+ * Its only job is to listen for notifications and update the in memory cache.
  */
 public class NotificationListener implements Runnable {
 

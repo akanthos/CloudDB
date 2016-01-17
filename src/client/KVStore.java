@@ -92,6 +92,12 @@ public class KVStore implements KVCommInterface {
         setIsConnected(false);
     }
 
+    /**
+     * This functions sends a subscribe message to the server.
+     *
+     * @param key
+     * @return
+     */
     @Override
     public KVMessage subscribe(String key) {
         KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.SUBSCRIBE_CHANGE);
@@ -121,6 +127,12 @@ public class KVStore implements KVCommInterface {
         return kvMessage;
     }
 
+    /**
+     * This function sends an unsubscribe message to the server.
+     *
+     * @param key
+     * @return
+     */
     @Override
     public KVMessage unsubscribe(String key) {
         if (!memoryCache.containsKey(key)) {
@@ -413,6 +425,13 @@ public class KVStore implements KVCommInterface {
         return null;
     }
 
+    /**
+     * Try a different server for a key as the earlier one is not responsible.
+     *
+     * @param metadataFromServer
+     * @param m
+     * @return
+     */
     private ServerConnection tryOtherNodes(List<ServerInfo> metadataFromServer, ServerInfo m) {
         List<ServerInfo> newMetadata = new ArrayList<>(metadataFromServer) ;
         newMetadata.remove(m);

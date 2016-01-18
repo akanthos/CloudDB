@@ -289,28 +289,15 @@ public class Serializer {
 //            m = (KVAdminMessageImpl) abstractMessage;
 //        }
 //        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl("127.0.0.1:50036", new Date(), KVServerMessage.StatusType.HEARTBEAT);
-        ArrayList<KVPair> pairsTosend = new ArrayList<>();
-        pairsTosend.add(new KVPair("asdf", "sdf"));
-        pairsTosend.add(new KVPair("cbn", "sdf"));
-        pairsTosend.add(new KVPair("rty", "sdf"));
-        KVServerMessageImpl kvServerMessage = new KVServerMessageImpl(pairsTosend, KVServerMessage.StatusType.MOVE_DATA);
 
-        Map<String, ArrayList<ClientSubscription>> subscribers = new HashMap<>();
-        ArrayList<ClientSubscription> subs = new ArrayList<>();
-        ClientSubscription c1 = new ClientSubscription("IP1", ClientSubscription.Interest.CHANGE_DELETE);
-        subs.add(c1);
+        KVMessageImpl kvMessage = new KVMessageImpl("aeas", "asdf", KVMessage.StatusType.SUBSCRIBE_SUCCESS);
 
-        subs.add(new ClientSubscription("IP2", ClientSubscription.Interest.CHANGE));
-        subs.add(new ClientSubscription("IP3", ClientSubscription.Interest.DELETE));
-        subscribers.put("salami", subs);
-        subscribers.put("tiri", subs);
-        subscribers.put("psomi", subs);
-        kvServerMessage.setSubscribers(subscribers);
-        byte[] bytes = toByteArray(kvServerMessage);
+
+        byte[] bytes = toByteArray(kvMessage);
 
         AbstractMessage abstractMessage = Serializer.toObject(bytes);
-        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.SERVER_MESSAGE)) {
-            KVServerMessageImpl kvServerMessage2 = (KVServerMessageImpl) abstractMessage;
+        if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.CLIENT_MESSAGE)) {
+            KVMessageImpl kvMessage2 = (KVMessageImpl) abstractMessage;
             System.out.println("asd");
         }
     }

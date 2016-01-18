@@ -535,7 +535,8 @@ public class SocketServer {
             }
 
         }
-        return new KVMessageImpl(KVMessage.StatusType.SUBSCRIBE_SUCCESS);
+        KVMessageImpl answer = kvCache.get(key);
+        return new KVMessageImpl(key, answer.getValue(), KVMessage.StatusType.SUBSCRIBE_SUCCESS);
 
     }
 

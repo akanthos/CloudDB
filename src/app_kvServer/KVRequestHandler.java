@@ -42,7 +42,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             logger.error(String.format("Client: %d. Unable to initialize streams.", clientNumber), e);
             throw new IOException("Unable to initialize streams from socket");
         }
-        logger.info(String.format("Client: %d connected", clientNumber));
+//        logger.info(String.format("Client: %d connected", clientNumber));
     }
 
     /**
@@ -68,7 +68,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                         if (byteMessage[0] == -1) {
                             clientConnected = false;
                         } else {
-                            logger.info(server.getInfo().getID() + " : Received message: " + new String(byteMessage).trim());
+//                            logger.info(server.getInfo().getID() + " : Received message: " + new String(byteMessage).trim());
                             AbstractMessage abstractMessage = Serializer.toObject(byteMessage);
                             if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.CLIENT_MESSAGE)) {
 
@@ -96,10 +96,10 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                 } catch (IOException ioe) {
                     /* connection either terminated by the client or lost due to
                      * network problems*/
-                    logger.error("Error! Connection lost!");
+                    logger.error(server.getInfo().getID() + " : Error! Connection lost!");
                     clientConnected = false;
                 } catch (Exception e) {
-                    logger.error("Unable to parse string "+ new String(byteMessage,"UTF-8") +" message from client" +e);
+                    logger.error(server.getInfo().getID() + " : Unable to parse string "+ new String(byteMessage,"UTF-8") +" message from client " +e);
                     clientConnected = false;
                 }
             }
@@ -229,7 +229,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             }
 
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_CHANGE)) {
-                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE));
+                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE_DELETE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_DELETE)) {
                 return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.DELETE));

@@ -214,15 +214,15 @@ public class Messenger {
             Utilities.send(heartbeatMessage, outStream);
 
             clientSocket.setSoTimeout(5000); // 5 seconds timeout
-            logger.info(server.getInfo().getID() + " : Waiting for heartbeat from " + serverInfo.getID());
+//            logger.info(server.getInfo().getID() + " : Waiting for heartbeat from " + serverInfo.getID());
             byte[] answerBytes = Utilities.receive(inStream);
             if (answerBytes[0] == -1) {
-                logger.info("Received HEARTBEAT response -1 !!!!!!!!!!!!!");
+//                logger.info("Received HEARTBEAT response -1 !!!!!!!!!!!!!");
                 throw new SocketTimeoutException();
             }
             KVServerMessageImpl heartbeatAnswer = (KVServerMessageImpl) Serializer.toObject(answerBytes);
             if (!heartbeatAnswer.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT_RESPONSE)) {
-                logger.info("Received HEARTBEAT response =/= HEARTBEAT_RESPONSE !!!!!!!!!!!!!");
+//                logger.info("Received HEARTBEAT response =/= HEARTBEAT_RESPONSE !!!!!!!!!!!!!");
                 throw new SocketTimeoutException();
             }
 

@@ -44,7 +44,7 @@ public class NotificationListener implements Runnable {
                 byte[] msgBytes = Utilities.receive(clientSocket.getInputStream());
                 KVMessageImpl kvMessage = (KVMessageImpl) Serializer.toObject(msgBytes);
                 if (kvMessage.getStatus().equals(KVMessage.StatusType.NOTIFICATION_KEY_DELETED)
-                        && (memoryCache.containsKey(kvMessage.getKey())) && isEmpty(kvMessage.getValue())) {
+                        && (memoryCache.containsKey(kvMessage.getKey())) && kvMessage.getValue().equals("null")) {
                     memoryCache.remove(kvMessage.getKey());
                     logger.debug(String.format("NotificationListener: Updated memory cache. Deleted key: %s", kvMessage.getKey()));
                 } else if (kvMessage.getStatus().equals(KVMessage.StatusType.NOTIFICATION_KEY_CHANGED)

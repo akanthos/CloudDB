@@ -266,9 +266,9 @@ public class ReplicationHandler {
      * @return the server message with the heartbeat response
      */
     public KVServerMessageImpl heartbeatReceived(String replicaID) {
-        logger.info(server.getInfo().getID() + " ---- Received heartbeat request from: " + replicaID);
-        logger.info("Coords: " + coordinators.size());
-        logger.info("Replicas: " + replicas.size());
+//        logger.info(server.getInfo().getID() + " ---- Received heartbeat request from: " + replicaID);
+//        logger.info("Coords: " + coordinators.size());
+//        logger.info("Replicas: " + replicas.size());
         return new KVServerMessageImpl(KVServerMessage.StatusType.HEARTBEAT_RESPONSE);
     }
 

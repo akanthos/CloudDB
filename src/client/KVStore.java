@@ -406,6 +406,9 @@ public class KVStore implements KVCommInterface {
                 if (randomizeReplicas) {
                     m = getRandomReplica(m);
                 }
+                if (m == null) {
+                    return currentConnection;
+                }
                 if (currentServer != null && m.getAddress().equals(currentServer.getAddress()) && m.getServerPort().equals(currentServer.getServerPort())) {
                     return currentConnection;
                 } else {
@@ -456,7 +459,7 @@ public class KVStore implements KVCommInterface {
      */
     private ServerInfo getRandomReplica(ServerInfo m) {
         List<ServerInfo> replicas = Utilities.getReplicas(metadataFromServer, m);
-        return replicas.get(new Random().nextInt(replicas.size()));
+        return (replicas.isEmpty()) ? null : replicas.get(new Random().nextInt(replicas.size()));
     }
 
     /**

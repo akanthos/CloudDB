@@ -121,7 +121,7 @@ public class ECSClient {
      * @param cacheSize
      * @param displacementStrategy
      */
-    private void ECSinit(String numNodes,String cacheSize, String displacementStrategy) {
+    public void ECSinit(String numNodes,String cacheSize, String displacementStrategy) {
         try {
             ECServer = new ECSCore(fileName);
             if (ECServer.initService(Integer.parseInt(numNodes), Integer.parseInt(cacheSize), displacementStrategy)) {

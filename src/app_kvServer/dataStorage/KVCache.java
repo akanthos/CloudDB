@@ -228,9 +228,11 @@ public class KVCache {
         }
         if (response.getStatus() == KVMessage.StatusType.PUT_SUCCESS ||
             response.getStatus() == KVMessage.StatusType.PUT_UPDATE) {
+            logger.debug(server.getInfo().getID() + " : Trying to notify subscribers...");
             new Thread(new SubscribersNotifier(server.getSubscribersForKey(key, ClientSubscription.Interest.CHANGE), key, value)).start();
         } else if (response.getStatus() == KVMessage.StatusType.DELETE_SUCCESS) {
             new Thread(new SubscribersNotifier(server.getSubscribersForKey(key, ClientSubscription.Interest.DELETE), key, value)).start();
+            server.deleteSubscribersForKey(key);
         }
         return response;
     }

@@ -8,6 +8,7 @@ import common.messages.*;
 import common.utils.KVRange;
 import helpers.StorageException;
 import org.apache.log4j.Logger;
+import org.apache.log4j.lf5.util.StreamUtils;
 
 import java.io.IOException;
 import java.net.*;
@@ -461,7 +462,7 @@ public class SocketServer {
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
         }
         // Insert the restored data to the cache
-        KVServerMessageImpl response2 = this.insertNewDataToCache(pairsToRestore, new HashMap<>());
+        KVServerMessageImpl response2 = this.insertNewDataToCache(pairsToRestore, new HashMap<String, ArrayList<ClientSubscription>>());
         if (response2.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA_FAILURE)) {
             logger.info(getInfo().getID() + " : Insertion error on restoring data");
             return new KVAdminMessageImpl(KVAdminMessage.StatusType.OPERATION_FAILED);
@@ -518,7 +519,7 @@ public class SocketServer {
     public KVMessageImpl subscribeUser(String key, ClientSubscription clientSubscription) {
         synchronized (subscriptions) {
             if (!subscriptions.containsKey(key)) {
-                subscriptions.put(key, new ArrayList<>());
+                subscriptions.put(key, new ArrayList<ClientSubscription>());
             }
             ArrayList<ClientSubscription> users = subscriptions.get(key);
             boolean found = false;
@@ -562,13 +563,29 @@ public class SocketServer {
     public ArrayList<String> getSubscribersForKey(String key, ClientSubscription.Interest interest) {
         ArrayList<String> clients = new ArrayList<>();
         synchronized (subscriptions) {
+            logger.debug(info.getID() + " : Getting subscriptions for key: " + key);
             ArrayList<ClientSubscription> cs = subscriptions.get(key);
-            for (ClientSubscription c : cs) {
-                if (c.getInterests().contains(interest)) {
-                    clients.add(c.getAddress());
+            if (cs != null) {
+                logger.debug(info.getID() + " : Size of subscriptions for key: " + cs.size());
+                for (ClientSubscription c : cs) {
+                    logger.debug(info.getID() + " : Iterating cs...");
+                    if (c.getInterests().contains(interest)) {
+                        clients.add(c.getAddress());
+                    }
                 }
+                logger.debug(info.getID() + " : Size of clients with interest for key: " + clients.size());
+            }
+            else {
+                logger.debug(info.getID() + " : No such key in subscriptions map ");
             }
         }
         return clients;
+    }
+
+    public void deleteSubscribersForKey(String key) {
+        synchronized (subscriptions) {
+            subscriptions.remove(key);
+            logger.debug(info.getID() + " : Removing subscriptions for key: " + key);
+        }
     }
 }

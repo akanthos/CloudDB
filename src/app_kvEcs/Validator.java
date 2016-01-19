@@ -14,11 +14,11 @@ public class Validator {
     private static Validator VALIDATION_INSTANCE = null;
 
     /**
-     * A list that contains all the options of log Levels
+     * Available log Levels
      *
      */
-    public static final List< String > LOG_LEVELS = Arrays.asList("ALL",
-            "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF");
+    public static final List< String > LOG_LEVELS = Arrays.asList("ALL", "DEBUG", "INFO", "WARN",
+            "ERROR", "FATAL", "OFF");
 
 
 
@@ -39,9 +39,6 @@ public class Validator {
         return VALIDATION_INSTANCE;
     }
 
-    /**
-     * avoid class instantiation
-     */
     private Validator () {
     }
 

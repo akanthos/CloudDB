@@ -73,7 +73,7 @@ public class KVServerMessageImpl implements KVServerMessage {
                 if (tokens.length >= dataLength + 3) {
                     int i = 0;
                     for (i = 0; i < dataLength; i++) {
-                        String[] kv = tokens[i + 3].split(Serializer.SUB_DLM1);
+                        String[] kv = tokens[i + 3].split(Constants.SUB_DLM1);
                         if (kv.length == 2) {
                             kvPairs.add(new KVPair(kv[0], kv[1]));
                         }

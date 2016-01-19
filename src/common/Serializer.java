@@ -15,20 +15,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Serializer {
-
-    // message type
-    private static final String ECS_MESSAGE = "0";
-    private static final String CLIENT_MESSAGE = "1";
-    private static final String SERVER_MESSAGE = "2";
-    // delimiters
-    private static final String HEAD_DLM = "##";
-    public static final String SUB_DLM1 = "&&";
-    private static final String SUB_DLM2 = "%%";
-    public static final String SUB_DLM3 = "@@";
-
     private static final char RETURN = 0x0D;
     private static final DateFormat df = new SimpleDateFormat("dd/MM/yyyy kk:mm:ss.SSS z");
-
     private static Logger logger = Logger.getLogger(KVMessageImpl.class);
 
     static {
@@ -42,15 +30,15 @@ public class Serializer {
      * @return
      */
     public static byte[] toByteArray(KVMessageImpl message) {
-        StringBuilder messageStr = new StringBuilder(CLIENT_MESSAGE + HEAD_DLM +message.getStatus().ordinal() + HEAD_DLM
-                + message.getKey() + HEAD_DLM + message.getValue());
+        StringBuilder messageStr = new StringBuilder(Constants.CLIENT_MESSAGE + Constants.HEAD_DLM +message.getStatus().ordinal() + Constants.HEAD_DLM
+                + message.getKey() + Constants.HEAD_DLM + message.getValue());
 
         if (message.getStatus() == KVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
             // add metadata
-            messageStr.append(HEAD_DLM);
+            messageStr.append(Constants.HEAD_DLM);
             for (ServerInfo server : message.getMetadata()) {
-                messageStr.append(server.getAddress()).append(SUB_DLM1).append(server.getServerPort()).append(SUB_DLM1).append(server.getFromIndex()).append(SUB_DLM1).append(server.getToIndex());
-                messageStr.append(SUB_DLM2);
+                messageStr.append(server.getAddress()).append(Constants.SUB_DLM1).append(server.getServerPort()).append(Constants.SUB_DLM1).append(server.getFromIndex()).append(Constants.SUB_DLM1).append(server.getToIndex());
+                messageStr.append(Constants.SUB_DLM2);
             }
         }
         byte[] bytes = messageStr.toString().getBytes();
@@ -68,25 +56,25 @@ public class Serializer {
      * @return
      */
     public static byte[] toByteArray(KVServerMessageImpl message) {
-        StringBuilder messageStr = new StringBuilder(SERVER_MESSAGE + HEAD_DLM + message.getStatus().ordinal());
+        StringBuilder messageStr = new StringBuilder(Constants.SERVER_MESSAGE + Constants.HEAD_DLM + message.getStatus().ordinal());
         if (message.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)
                 || message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)
                 || message.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
-            messageStr.append(HEAD_DLM).append(message.getKVPairs().size());
+            messageStr.append(Constants.HEAD_DLM).append(message.getKVPairs().size());
             for (KVPair pair : message.getKVPairs()) {
-                messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
+                messageStr.append(Constants.HEAD_DLM).append(pair.getKey()).append(Constants.SUB_DLM1).append(pair.getValue());
             }
             // non empty list of subscribers
             if (!message.getSubscribers().isEmpty()){
-                messageStr.append(HEAD_DLM);
+                messageStr.append(Constants.HEAD_DLM);
                 for (Map.Entry<String, ArrayList<ClientSubscription>> entry : message.getSubscribers().entrySet()) {
                     String key = entry.getKey();
                     ArrayList<ClientSubscription> subscribers = entry.getValue();
-                    messageStr.append(key).append(SUB_DLM3);
+                    messageStr.append(key).append(Constants.SUB_DLM3);
                     for (ClientSubscription sub : subscribers ){
-                        messageStr.append(sub.getAddress()).append(":").append(sub.getInterestsOrdinal()).append(SUB_DLM1);
+                        messageStr.append(sub.getAddress()).append(":").append(sub.getInterestsOrdinal()).append(Constants.SUB_DLM1);
                     }
-                    messageStr.append(SUB_DLM2);
+                    messageStr.append(Constants.SUB_DLM2);
                 }
             }
         } /*else if (message.getStatus().equals(KVServerMessage.StatusType.GOSSIP)
@@ -96,9 +84,9 @@ public class Serializer {
                 messageStr.append(HEAD_DLM).append(pair.getKey()).append(SUB_DLM1).append(pair.getValue());
             }
         } */else if (message.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
-            messageStr.append(HEAD_DLM);
+            messageStr.append(Constants.HEAD_DLM);
             messageStr.append(message.getReplicaID());
-            messageStr.append(HEAD_DLM);
+            messageStr.append(Constants.HEAD_DLM);
             messageStr.append(df.format(message.getTimeOfSendingMsg()));
         }
         byte[] bytes = messageStr.toString().getBytes();
@@ -118,25 +106,25 @@ public class Serializer {
     public static byte[] toByteArray(KVAdminMessageImpl message) {
         // message : <TypeOfMessage>(int)-- <StatusType>(number)--list of metadata
         // data/fromindex--toindex-- to_serverInfo
-        StringBuilder msg = new StringBuilder(ECS_MESSAGE + HEAD_DLM + message.getStatus()
+        StringBuilder msg = new StringBuilder(Constants.ECS_MESSAGE + Constants.HEAD_DLM + message.getStatus()
                 .ordinal());
         // Extra MetaData information for the cases of INIT && MOVE_DATA.
         if (message.getStatus() == KVAdminMessage.StatusType.INIT
                 || message.getStatus() == KVAdminMessage.StatusType.UPDATE_METADATA) {
             // add metadata (List)
-            msg.append(HEAD_DLM);
+            msg.append(Constants.HEAD_DLM);
             //Message_Data => MetaData(List)
             for (ServerInfo server : message.getMetadata()) {
-                msg.append(server.getAddress()).append(SUB_DLM1).append(server.getServerPort()).append(SUB_DLM1).append(server.getFromIndex()).append(SUB_DLM1).append(server.getToIndex()).append(SUB_DLM1).append(SUB_DLM1);
-                msg.append(SUB_DLM2);
+                msg.append(server.getAddress()).append(Constants.SUB_DLM1).append(server.getServerPort()).append(Constants.SUB_DLM1).append(server.getFromIndex()).append(Constants.SUB_DLM1).append(server.getToIndex()).append(Constants.SUB_DLM1).append(Constants.SUB_DLM1);
+                msg.append(Constants.SUB_DLM2);
             }
 
             if (message.getStatus() == KVAdminMessage.StatusType.INIT) {
-                msg.append(HEAD_DLM);
+                msg.append(Constants.HEAD_DLM);
                 msg.append(message.getCacheSize());
-                msg.append(HEAD_DLM);
+                msg.append(Constants.HEAD_DLM);
                 msg.append(message.getDisplacementStrategy());
-                msg.append(HEAD_DLM);
+                msg.append(Constants.HEAD_DLM);
             }
 
         } else if (message.getStatus() == KVAdminMessage.StatusType.MOVE_DATA
@@ -146,12 +134,12 @@ public class Serializer {
             // add the from and to and the server info
             ServerInfo server = message.getServerInfo();
             //Message_Data = Information for the move server
-            msg.append(HEAD_DLM).append(message.getRange().getLow()).append(HEAD_DLM).append(message.getRange().getHigh()).append(HEAD_DLM).append(server.getAddress()).append(HEAD_DLM).append(server.getServerPort());
+            msg.append(Constants.HEAD_DLM).append(message.getRange().getLow()).append(Constants.HEAD_DLM).append(message.getRange().getHigh()).append(Constants.HEAD_DLM).append(server.getAddress()).append(Constants.HEAD_DLM).append(server.getServerPort());
 
         } else if (message.getStatus() == KVAdminMessage.StatusType.SERVER_FAILURE) {
             // add the failed message server details
             ServerInfo server = message.getFailedServerInfo();
-            msg.append(HEAD_DLM).append(server.getServerRange().getLow()).append(HEAD_DLM).append(server.getServerRange().getHigh()).append(HEAD_DLM).append(server.getAddress()).append(HEAD_DLM).append(server.getServerPort());
+            msg.append(Constants.HEAD_DLM).append(server.getServerRange().getLow()).append(Constants.HEAD_DLM).append(server.getServerRange().getHigh()).append(Constants.HEAD_DLM).append(server.getAddress()).append(Constants.HEAD_DLM).append(server.getServerPort());
         }
         // in the case of start|stop| etc. messages we just have
         // a message : <TypeOfMessage>(int)-- <StatusType>(number)
@@ -174,7 +162,7 @@ public class Serializer {
      */
     public static AbstractMessage toObject(byte[] objectByteStream) throws UnsupportedDataTypeException {
         String message = new String(objectByteStream).trim();
-        String[] tokens = message.split(HEAD_DLM);
+        String[] tokens = message.split(Constants.HEAD_DLM);
         AbstractMessage retrievedMessage = null;
         logger.info("Decrypting message... : " + message);
         // tokens[0] => message_type
@@ -210,11 +198,11 @@ public class Serializer {
      * @throws UnsupportedDataTypeException
      */
     private static AbstractMessage.MessageType toMessageType(String msgType) throws UnsupportedDataTypeException {
-        if (msgType.equals(CLIENT_MESSAGE))
+        if (msgType.equals(Constants.CLIENT_MESSAGE))
             return AbstractMessage.MessageType.CLIENT_MESSAGE;
-        else if (msgType.equals(ECS_MESSAGE))
+        else if (msgType.equals(Constants.ECS_MESSAGE))
             return AbstractMessage.MessageType.ECS_MESSAGE;
-        else if (msgType.equals(SERVER_MESSAGE))
+        else if (msgType.equals(Constants.SERVER_MESSAGE))
             return AbstractMessage.MessageType.SERVER_MESSAGE;
         else
             throw new UnsupportedDataTypeException("Unsupported message type");
@@ -231,9 +219,9 @@ public class Serializer {
     public static List<ServerInfo> getMetaData(String metaDataStr) {
         if (!metaDataStr.equals("")) {
             List<ServerInfo> KVServerList = new ArrayList<>();
-            String[] tokens = metaDataStr.split(SUB_DLM2);
+            String[] tokens = metaDataStr.split(Constants.SUB_DLM2);
             for (String serverInfoStr : tokens) {
-                String[] serverInfoTokens = serverInfoStr.split(SUB_DLM1);
+                String[] serverInfoTokens = serverInfoStr.split(Constants.SUB_DLM1);
                 ServerInfo serverInfo = new ServerInfo(serverInfoTokens[0],
                         Integer.parseInt(serverInfoTokens[1]));
                 serverInfo.setServerRange(new KVRange( serverInfoTokens[2], serverInfoTokens[3]));
@@ -248,12 +236,12 @@ public class Serializer {
     public static Map<String, ArrayList<ClientSubscription>> getSubscribers(String subscriberStr) {
         Map<String, ArrayList<ClientSubscription>> SubMap = new HashMap<>();
         if (!subscriberStr.equals("")){
-            String[] tokens = subscriberStr.split(SUB_DLM2);
+            String[] tokens = subscriberStr.split(Constants.SUB_DLM2);
             for (String subPair: tokens) {
                 if (subPair.isEmpty())
                     continue;
-                String[] keypair = subPair.split(SUB_DLM3);
-                ArrayList<String> pairIPs = new ArrayList<String>(Arrays.asList(keypair[1].split(SUB_DLM1)) );
+                String[] keypair = subPair.split(Constants.SUB_DLM3);
+                ArrayList<String> pairIPs = new ArrayList<String>(Arrays.asList(keypair[1].split(Constants.SUB_DLM1)) );
                 ArrayList<ClientSubscription> clients = new ArrayList<>();
                 for (String pair : pairIPs){
                     String[] tmpPair = pair.split(":");

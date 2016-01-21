@@ -300,7 +300,12 @@ public class Messenger {
         }
     }
 
-
+    /**
+     * Notifies a subscriber for a change in a key
+     * @param address the IP address of the user
+     * @param key the key of the key-value pair
+     * @param value the new value of the key-value pair
+     */
     public static void notifySubscriber(String address, String key, String value) {
         InputStream inStream = null;
         OutputStream outStream = null;

@@ -523,6 +523,7 @@ public class SocketServer {
      * @return the success or failure message for the client
      */
     public KVMessageImpl subscribeUser(String key, ClientSubscription clientSubscription) {
+        logger.info("Want to subscribe key " + key + " " + clientSubscription.getAddress() + ":" +clientSubscription.getPort());
         synchronized (subscriptions) {
             if (!subscriptions.containsKey(key)) {
                 subscriptions.put(key, new ArrayList<ClientSubscription>());
@@ -530,7 +531,7 @@ public class SocketServer {
             ArrayList<ClientSubscription> users = subscriptions.get(key);
             boolean found = false;
             for (ClientSubscription user : users) {
-                if (user.getAddress().equals(clientSubscription.getAddress())) {
+                if (user.getAddress().equals(clientSubscription.getAddress()) && user.getPort()==clientSubscription.getPort()) {
                     found = true;
                     user.getInterests().addAll(clientSubscription.getInterests());
                     break;
@@ -542,6 +543,7 @@ public class SocketServer {
 
         }
         KVMessageImpl answer = kvCache.get(key);
+        logger.info("XAAXAXAXAXAXAXAXAXAXAX");
         return new KVMessageImpl(key, answer.getValue(), KVMessage.StatusType.SUBSCRIBE_SUCCESS);
 
     }
@@ -579,8 +581,8 @@ public class SocketServer {
      * @param interest the type of action we are interested in
      * @return the subscriptions related to the key
      */
-    public ArrayList<String> getSubscribersForKey(String key, ClientSubscription.Interest interest) {
-        ArrayList<String> clients = new ArrayList<>();
+    public ArrayList<ClientSubscription> getSubscribersForKey(String key, ClientSubscription.Interest interest) {
+        ArrayList<ClientSubscription> clients = new ArrayList<>();
         synchronized (subscriptions) {
             logger.debug(info.getID() + " : Getting subscriptions for key: " + key);
             ArrayList<ClientSubscription> cs = subscriptions.get(key);
@@ -589,7 +591,7 @@ public class SocketServer {
                 for (ClientSubscription c : cs) {
                     logger.debug(info.getID() + " : Iterating cs...");
                     if (c.getInterests().contains(interest)) {
-                        clients.add(c.getAddress());
+                        clients.add(c);
                     }
                 }
                 logger.debug(info.getID() + " : Size of clients with interest for key: " + clients.size());

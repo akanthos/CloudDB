@@ -27,11 +27,15 @@ public class NotificationListener implements Runnable {
     private ServerSocket serverSocket;
     private static Logger logger = Logger.getLogger(NotificationListener.class);
 
-    public NotificationListener(ConcurrentHashMap<String, String> memoryCache) throws IOException {
+    public NotificationListener(ConcurrentHashMap<String, String> memoryCache, KVStore store) throws IOException {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
         this.memoryCache = memoryCache;
-        serverSocket = new ServerSocket();
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", Constants.NOTIFICATION_LISTEN_PORT));
+        serverSocket = new ServerSocket(0);
+        int NotPort = serverSocket.getLocalPort();
+    //    serverSocket.bind(new InetSocketAddress("127.0.0.1", NotPort));
+        store.setNotificationPort(NotPort);
+        store.setNotificationAddress(serverSocket.getInetAddress().getHostAddress());
+        logger.info("NOTIFICATIOOOON server : " + NotPort);
     }
 
     @Override

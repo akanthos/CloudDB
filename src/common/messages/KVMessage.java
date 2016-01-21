@@ -67,6 +67,14 @@ public interface KVMessage extends AbstractMessage {
 	 * @return
      */
 	String getHash();
+
+	public String getAddress();
+	public void setAddress(String address);
+
+
+	public Integer getPort();
+
+	public void setPort(Integer port);
 	
 }
 

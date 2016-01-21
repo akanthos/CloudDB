@@ -1,5 +1,6 @@
 package app_kvServer.dataStorage;
 
+import app_kvServer.ClientSubscription;
 import app_kvServer.Messenger;
 import org.apache.log4j.Logger;
 
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 public class SubscribersNotifier implements Runnable {
     private final String key;
     private final String value;
-    private final ArrayList<String> addresses;
+    private final ArrayList<ClientSubscription> addresses;
     private static Logger logger = Logger.getLogger(SubscribersNotifier.class);
 
     /**
@@ -20,7 +21,7 @@ public class SubscribersNotifier implements Runnable {
      * @param key the key associated with these subscriptions
      * @param value the updated value
      */
-    public SubscribersNotifier(ArrayList<String> addresses, String key, String value) {
+    public SubscribersNotifier(ArrayList<ClientSubscription> addresses, String key, String value) {
         this.addresses = addresses;
         this.key = key;
         this.value = value;
@@ -31,7 +32,7 @@ public class SubscribersNotifier implements Runnable {
      */
     @Override
     public void run() {
-        for (String address : addresses) {
+        for (ClientSubscription address : addresses) {
             logger.debug("Notifying address: " + address);
             Messenger.notifySubscriber(address, key, value);
         }

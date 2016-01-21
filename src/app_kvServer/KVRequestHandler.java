@@ -21,9 +21,12 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
     KVConnectionHandler myHandler;
     SocketServer server;
     Socket clientSocket;
+    Socket NotClientSocket;
     int clientNumber;
     InputStream inputStream;
     OutputStream outputStream;
+    InputStream notInputStream;
+    OutputStream notOutputStream;
     volatile boolean stop;
     private static Logger logger = Logger.getLogger(KVRequestHandler.class);
 
@@ -76,7 +79,15 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
 
 
                                 kvResponse = processMessage(kvMessage);
-                                Utilities.send(kvResponse, outputStream);
+                      /*          if (kvResponse.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_SUCCESS) || kvResponse.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_ERROR)
+                                        || kvResponse.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_SUCCESS) || kvResponse.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_ERROR)) {
+                                    NotClientSocket = new Socket(kvMessage.getAddress(), kvMessage.getPort());
+                                    notInputStream = NotClientSocket.getInputStream();
+                                    notOutputStream = NotClientSocket.getOutputStream();
+                                    Utilities.send(kvResponse, notOutputStream);
+                                }*/
+                                // else
+                                    Utilities.send(kvResponse, outputStream);
                             } else if (abstractMessage.getMessageType().equals(AbstractMessage.MessageType.ECS_MESSAGE)) {
                                 server.registerECS(clientSocket.getInetAddress());
                                 kvAdminMessage = (KVAdminMessageImpl) abstractMessage;
@@ -222,6 +233,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                     return new KVMessageImpl(KVMessage.StatusType.SERVER_WRITE_LOCK);
                 } else {
                     // Do the PUT
+                    logger.info("OOOOOPAPPA got message key: " + kvMessage.getKey() + " value: " +kvMessage.getValue());
                     KVMessageImpl response = server.getKvCache().put(kvMessage.getKey(), kvMessage.getValue());
                     // TODO: Call enqueuePutEvent to replicationHandler, server.getReplicationHandler()
                     return response;
@@ -229,25 +241,25 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             }
 
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_CHANGE)) {
-                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE_DELETE));
+                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription( kvMessage.getAddress(), kvMessage.getPort(), ClientSubscription.Interest.CHANGE_DELETE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_DELETE)) {
-                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.DELETE));
+                return server.subscribeUser(kvMessage.getKey(), new ClientSubscription(kvMessage.getAddress(), kvMessage.getPort(), ClientSubscription.Interest.DELETE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_CHANGE_DELETE)) {
-                ClientSubscription client = new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE);
+                ClientSubscription client = new ClientSubscription(kvMessage.getAddress(), kvMessage.getPort(), ClientSubscription.Interest.CHANGE);
                 client.addInterest(ClientSubscription.Interest.DELETE);
                 return server.subscribeUser(kvMessage.getKey(), client);
             }
 
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_CHANGE)) {
-                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE));
+                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(kvMessage.getAddress(), kvMessage.getPort(), ClientSubscription.Interest.CHANGE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_DELETE)) {
-                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.DELETE));
+                return server.unsubscribeUser(kvMessage.getKey(), new ClientSubscription(kvMessage.getAddress(), kvMessage.getPort(), ClientSubscription.Interest.DELETE));
             }
             else if (kvMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_CHANGE_DELETE)) {
-                ClientSubscription client = new ClientSubscription(clientSocket.getInetAddress().getHostAddress(), ClientSubscription.Interest.CHANGE);
+                ClientSubscription client = new ClientSubscription(kvMessage.getAddress(), kvMessage.getPort(), ClientSubscription.Interest.CHANGE);
                 client.addInterest(ClientSubscription.Interest.DELETE);
                 return server.unsubscribeUser(kvMessage.getKey(), client);
             }
@@ -266,7 +278,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
             }
 
             // Server not responsible for key
-            return new KVMessageImpl(server.getMetadata(), KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
+            return new KVMessageImpl("hello", "world", server.getMetadata(), KVMessage.StatusType.SERVER_NOT_RESPONSIBLE);
         }
     }
 }

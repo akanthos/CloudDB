@@ -24,7 +24,26 @@ public class KVMessageImpl implements KVMessage {
     String key;
     String value;
     StatusType status;
+    String address = "localhost";
+    Integer port = 0;
 
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+
+    public Integer getPort() {
+        return port;
+    }
+
+    public void setPort(Integer port) {
+        this.port = port;
+    }
     /* represents meta-data of all nodes in the system */
     private List< ServerInfo > metadata;
 
@@ -46,9 +65,14 @@ public class KVMessageImpl implements KVMessage {
             if (tokens[3] != null) { // value
                 this.setValue(tokens[3].trim());
             }
+            if (tokens[4] != null) { // address
+                this.setAddress(tokens[4].trim());
+            }
+            if (tokens[5] != null) { // port
+                this.setPort(Integer.parseInt(tokens[5].trim()));
+            }
         }
-        if (tokens.length >= 5) {
-            List<ServerInfo> metaData = Serializer.getMetaData(tokens[4].trim());
+        if (tokens.length > 6) {List<ServerInfo> metaData = Serializer.getMetaData(tokens[6].trim());
             this.setMetadata(metaData);
         }
     }
@@ -69,6 +93,14 @@ public class KVMessageImpl implements KVMessage {
         this.status = status;
     }
 
+    public KVMessageImpl(String key, String value, StatusType status, String address, int port) {
+        this.key = key;
+        this.value = value;
+        this.status = status;
+        this.address = address;
+        this.port = port;
+    }
+
     /**
      * Constructor
      * @param metadata Key of the connection KV Message
@@ -76,6 +108,13 @@ public class KVMessageImpl implements KVMessage {
      */
     public KVMessageImpl(List<ServerInfo> metadata, StatusType status) {
         this.status = status;
+        this.setMetadata(metadata);
+    }
+
+    public KVMessageImpl(String key,  String value, List<ServerInfo> metadata, StatusType status) {
+        this.status = status;
+        this.key = key;
+        this.value = value;
         this.setMetadata(metadata);
     }
 

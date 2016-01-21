@@ -10,6 +10,7 @@ import java.util.Set;
 public class ClientSubscription {
 
     private String address;
+    private int port;
     private Set<Interest> interests;
 
 
@@ -21,8 +22,9 @@ public class ClientSubscription {
      * @param interest the subscription type of the user for the specific key
      *                 the object is associated to.
      */
-    public ClientSubscription(String inetAddress, Interest interest) {
+    public ClientSubscription(String inetAddress, int port, Interest interest) {
         this.address = inetAddress;
+        this.port = port;
         this.interests = new HashSet<>();
         if (interest == Interest.CHANGE_DELETE) {
             this.interests.add(Interest.CHANGE);
@@ -90,4 +92,13 @@ public class ClientSubscription {
         }
         return -1;
     }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
 }

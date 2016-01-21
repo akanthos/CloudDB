@@ -306,7 +306,7 @@ public class Messenger {
      * @param key the key of the key-value pair
      * @param value the new value of the key-value pair
      */
-    public static void notifySubscriber(String address, String key, String value) {
+    public static void notifySubscriber(ClientSubscription address, String key, String value) {
         InputStream inStream = null;
         OutputStream outStream = null;
         Socket clientSocket = null;
@@ -315,8 +315,8 @@ public class Messenger {
             /* Connect to other server */
             /***************************/
 
-            InetAddress connectionAddress = InetAddress.getByName(address);
-            clientSocket = new Socket(connectionAddress, Constants.NOTIFICATION_LISTEN_PORT);
+            InetAddress connectionAddress = InetAddress.getByName(address.getAddress());
+            clientSocket = new Socket(connectionAddress, address.getPort());
             inStream = clientSocket.getInputStream();
             outStream = clientSocket.getOutputStream();
 

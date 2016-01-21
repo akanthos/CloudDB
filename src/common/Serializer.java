@@ -31,7 +31,7 @@ public class Serializer {
      */
     public static byte[] toByteArray(KVMessageImpl message) {
         StringBuilder messageStr = new StringBuilder(Constants.CLIENT_MESSAGE + Constants.HEAD_DLM +message.getStatus().ordinal() + Constants.HEAD_DLM
-                + message.getKey() + Constants.HEAD_DLM + message.getValue());
+                + message.getKey() + Constants.HEAD_DLM + message.getValue() +Constants.HEAD_DLM + message.getAddress() + Constants.HEAD_DLM + message.getPort().toString());
 
         if (message.getStatus() == KVMessage.StatusType.SERVER_NOT_RESPONSIBLE){
             // add metadata
@@ -72,7 +72,7 @@ public class Serializer {
                     ArrayList<ClientSubscription> subscribers = entry.getValue();
                     messageStr.append(key).append(Constants.SUB_DLM3);
                     for (ClientSubscription sub : subscribers ){
-                        messageStr.append(sub.getAddress()).append(":").append(sub.getInterestsOrdinal()).append(Constants.SUB_DLM1);
+                        messageStr.append(sub.getAddress()).append(":").append(sub.getPort()).append(":").append(sub.getInterestsOrdinal()).append(Constants.SUB_DLM1);
                     }
                     messageStr.append(Constants.SUB_DLM2);
                 }
@@ -245,8 +245,8 @@ public class Serializer {
                 ArrayList<ClientSubscription> clients = new ArrayList<>();
                 for (String pair : pairIPs){
                     String[] tmpPair = pair.split(":");
-                    ClientSubscription.Interest interest = ClientSubscription.Interest.values()[Integer.parseInt(tmpPair[1])];
-                    clients.add( new ClientSubscription(tmpPair[0], interest) );
+                    ClientSubscription.Interest interest = ClientSubscription.Interest.values()[Integer.parseInt(tmpPair[2])];
+                    clients.add( new ClientSubscription(tmpPair[0], Integer.parseInt(tmpPair[1]), interest) );
                 }
                 SubMap.put(keypair[0], clients);
             }

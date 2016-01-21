@@ -52,7 +52,7 @@ public class CallRemote implements CallRemoteInterface {
         boolean waiting;
         String tmpResponse = "";
         char c;
-        command = "nohup java -jar " + "/home/pi/clouddb" + "/ms3-server.jar ";
+        command = "nohup java -jar " + "/home/pi/clouddb" + "/ms5-server.jar ";
 
         try {
             JSch jsch = new JSch();
@@ -123,7 +123,7 @@ public class CallRemote implements CallRemoteInterface {
             // adding the arguments to the command
             for (String argument : arguments)
                 command += " " + argument;
-            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar", "ms3-server.jar",
+            ProcessBuilder processb = new ProcessBuilder("nohup", "java", "-jar", "ms5-server.jar",
                     arguments[0], arguments[1], arguments[2], "&");
             String path = System.getProperty("user.dir");
 

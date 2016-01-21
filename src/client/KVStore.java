@@ -23,10 +23,28 @@ public class KVStore implements KVCommInterface {
     private MD5Hash hash;
     private ServerInfo currentServer;
     private ServerConnection currentConnection;
+    private Integer NotificationPort = 0;
+    private String NotificationAddress = "";
     private ConcurrentHashMap<String, String> memoryCache;
     boolean connected;
     boolean isNotificationRunning;
 
+
+    public String getNotificationAddress() {
+        return NotificationAddress;
+    }
+
+    public void setNotificationAddress(String notificationAddress) {
+        NotificationAddress = notificationAddress;
+    }
+
+    public Integer getNotificationPort() {
+        return NotificationPort;
+    }
+
+    public void setNotificationPort(Integer notificationPort) {
+        NotificationPort = notificationPort;
+    }
 	/**
 	 * Initialize KVStore
 	 *
@@ -38,7 +56,7 @@ public class KVStore implements KVCommInterface {
         connected = false;
         memoryCache = new ConcurrentHashMap<>();
         try {
-            Thread notificationListenerThread = new Thread(new NotificationListener(memoryCache));
+            Thread notificationListenerThread = new Thread(new NotificationListener(memoryCache, this));
             notificationListenerThread.start();
             isNotificationRunning = true;
         } catch (IOException e) {
@@ -101,6 +119,9 @@ public class KVStore implements KVCommInterface {
     @Override
     public KVMessage subscribe(String key) {
         KVMessageImpl kvMessage = new KVMessageImpl(key, "", KVMessage.StatusType.SUBSCRIBE_CHANGE);
+        kvMessage.setAddress(this.getNotificationAddress());
+        kvMessage.setPort(this.getNotificationPort());
+
         ServerConnection serverConnection = null;
         try {
             serverConnection = getServerConnection(key, false);
@@ -189,7 +210,7 @@ public class KVStore implements KVCommInterface {
                     logger.error(String.format("Put request cannot be performed.Null connection. Key: %s, Value: %s", key, value));
                     throw new Exception("Client is disconnected");
                 }
-                logger.debug(String.format("Sending message: %s", kvMessage.toString()));
+                logger.debug(String.format("Sending message PUT: %s, value %s", kvMessage.getKey(),kvMessage.getValue()));
                 byte[] response;
                 try {
                     response = send(kvMessage.getMsgBytes(), connection);
@@ -202,7 +223,7 @@ public class KVStore implements KVCommInterface {
                     disconnect();
                     continue;
                 }
-                logger.info("Sent PUT message to : " + connection.getAddress() + ":" + connection.getServerPort());
+                logger.info("Sent PUT message to : " + connection.getAddress() + ":" + connection.getServerPort() + " with key: " + kvMessage.getKey() + " value: " + kvMessage.getValue());
                 KVMessageImpl kvMessageFromServer = (KVMessageImpl) Serializer.toObject(response);
                 if (kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_SUCCESS)
                         || kvMessageFromServer.getStatus().equals(KVMessage.StatusType.PUT_UPDATE)

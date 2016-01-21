@@ -27,7 +27,7 @@ public class ConnectionHelper {
      * @param serverPort the server port
      * @param logger the logger for error reporting
      * @param failureMessage the failure message in case of connect failure
-     * @return
+     * @return An object that includes the input/output streams and the client socket
      */
     public static InOutClientPack connectionSetup(String serverAddress, Integer serverPort, Logger logger, KVAdminMessageImpl failureMessage) {
         InputStream inStream;

@@ -43,9 +43,8 @@ public class ReplicationHandler {
     public ReplicationHandler(SocketServer server, List<ServerInfo> metadata, KVRange range, long heartbeatPeriod) throws StorageException {
         this.server = server;
         this.heartbeatPeriod = heartbeatPeriod;
-        this.replicatedData = new KVPersistenceEngine("_replica");
+        this.replicatedData = new KVPersistenceEngine("_replica_"+server.getInfo().getServerPort());
         findCoordinatorsAndReplicas(metadata, range);
-        logger.info("Here");
     }
 
     /**

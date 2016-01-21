@@ -516,6 +516,12 @@ public class SocketServer {
     }
 
 
+    /**
+     * Creates a new subscription
+     * @param key the key of the subscription
+     * @param clientSubscription the client information
+     * @return the success or failure message for the client
+     */
     public KVMessageImpl subscribeUser(String key, ClientSubscription clientSubscription) {
         synchronized (subscriptions) {
             if (!subscriptions.containsKey(key)) {
@@ -540,6 +546,12 @@ public class SocketServer {
 
     }
 
+    /**
+     * Deletes a subscription
+     * @param key the key of the subscription
+     * @param clientSubscription the client information
+     * @return the success or failure message for the client
+     */
     public KVMessageImpl unsubscribeUser(String key, ClientSubscription clientSubscription) {
         synchronized (subscriptions) {
             if (!subscriptions.containsKey(key)) {
@@ -561,6 +573,12 @@ public class SocketServer {
         return new KVMessageImpl(KVMessage.StatusType.UNSUBSCRIBE_SUCCESS);
     }
 
+    /**
+     * Finds all subscriptions relevant to a key
+     * @param key the key to search subscriptions for
+     * @param interest the type of action we are interested in
+     * @return the subscriptions related to the key
+     */
     public ArrayList<String> getSubscribersForKey(String key, ClientSubscription.Interest interest) {
         ArrayList<String> clients = new ArrayList<>();
         synchronized (subscriptions) {
@@ -583,6 +601,10 @@ public class SocketServer {
         return clients;
     }
 
+    /**
+     * Removes subscriptions when a key is deleted from the storage service.
+     * @param key the key that is about to be deleted
+     */
     public void deleteSubscribersForKey(String key) {
         synchronized (subscriptions) {
             subscriptions.remove(key);

@@ -21,7 +21,7 @@ public class InteractionTest extends TestCase {
 	}
 
 	public void tearDown() {
-		kvClient.disconnect();
+		kvClient.disconnect(true);
 	}
 	
 	
@@ -43,7 +43,7 @@ public class InteractionTest extends TestCase {
 
 	@Test
 	public void testPutDisconnected() {
-		kvClient.disconnect();
+		kvClient.disconnect(true);
 		String key = "foo";
 		String value = "bar";
 		Exception ex = null;

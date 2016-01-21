@@ -3,10 +3,13 @@ package app_kvClient;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import client.KVStore;
+import client.NotificationListener;
 import common.messages.KVMessage;
 import helpers.Constants;
 import helpers.ErrorMessages;
@@ -66,7 +69,7 @@ public class KVClient {
 					} else if (tokens[0].equals("disconnect")) {
 						switch (tokens.length) {
 							case 1:
-								engine.disconnect();
+								engine.disconnect(true);
 								System.out.println("Connection to the server has been terminated. Please connect again.");
 								break;
 							default:
@@ -164,6 +167,18 @@ public class KVClient {
 				System.out.println(ErrorMessages.SERVERS_DOWN);
 			}
 		}
+//		try {
+//			ServerSocket ss = NotificationListener.serverSocket;
+//			Socket cs = NotificationListener.clientSocket;
+//			if (ss != null) ss.close();
+//			if (cs != null) cs.close();
+//
+//			logger.debug("Closed both sockets on notification listener!!!");
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+
+		engine.getNotificationListener().stop();
 		System.out.println("KVClient exit!");
 	}
 

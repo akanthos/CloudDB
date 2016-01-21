@@ -24,8 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NotificationListener implements Runnable {
 
     private ConcurrentHashMap<String, String> memoryCache;
-    private ServerSocket serverSocket;
+    public static ServerSocket serverSocket;
     private static Logger logger = Logger.getLogger(NotificationListener.class);
+    public volatile boolean stop;
+    public static Socket clientSocket;
 
     public NotificationListener(ConcurrentHashMap<String, String> memoryCache, KVStore store) throws IOException {
         PropertyConfigurator.configure(Constants.LOG_FILE_CONFIG);
@@ -36,14 +38,16 @@ public class NotificationListener implements Runnable {
         store.setNotificationPort(NotPort);
         store.setNotificationAddress(serverSocket.getInetAddress().getHostAddress());
         logger.info("NOTIFICATIOOOON server : " + NotPort);
+        this.stop = false;
     }
 
     @Override
     public void run() {
         logger.info("NotificationListener running...");
-        while (true) {
+        while (!stop) {
             try {
-                Socket clientSocket = serverSocket.accept();
+                logger.debug("Notification Listener: Waiting for incoming connection");
+                clientSocket = serverSocket.accept();
                 logger.debug(String.format("Received notification from %s", clientSocket.getInetAddress().getHostAddress()));
                 byte[] msgBytes = Utilities.receive(clientSocket.getInputStream());
                 KVMessageImpl kvMessage = (KVMessageImpl) Serializer.toObject(msgBytes);
@@ -66,9 +70,27 @@ public class NotificationListener implements Runnable {
                 logger.error("NotificationListener: Unexpected message from coordinator", e);
             }
         }
+        logger.info("Notification listener exited!");
     }
 
     private boolean isEmpty(String value) {
         return ((value == null) || (value.isEmpty()));
+    }
+
+    public void stop() {
+        this.stop = true;
+        try {
+            if (clientSocket != null) {
+                clientSocket.close();
+                logger.debug("Notification Listener: Closed client socket");
+            }
+            if (serverSocket != null) {
+                serverSocket.close();
+                logger.debug("Notification Listener: Closed server socket");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        logger.info("Asked notification listener to stop...");
     }
 }

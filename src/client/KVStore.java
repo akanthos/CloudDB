@@ -19,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class KVStore implements KVCommInterface {
 
     private static Logger logger = Logger.getLogger(KVStore.class);
+    private NotificationListener notificationListener;
+    private Thread notificationListenerThread;
     private List<ServerInfo> metadataFromServer;
     private MD5Hash hash;
     private ServerInfo currentServer;
@@ -30,6 +32,8 @@ public class KVStore implements KVCommInterface {
     boolean isNotificationRunning;
 
 
+    public NotificationListener getNotificationListener() { return this.notificationListener;}
+    public Thread getNotificationListenerThread() { return this.notificationListenerThread;}
     public String getNotificationAddress() {
         return NotificationAddress;
     }
@@ -56,7 +60,8 @@ public class KVStore implements KVCommInterface {
         connected = false;
         memoryCache = new ConcurrentHashMap<>();
         try {
-            Thread notificationListenerThread = new Thread(new NotificationListener(memoryCache, this));
+            notificationListener = new NotificationListener(memoryCache, this);
+            notificationListenerThread = new Thread(notificationListener);
             notificationListenerThread.start();
             isNotificationRunning = true;
         } catch (IOException e) {
@@ -75,7 +80,7 @@ public class KVStore implements KVCommInterface {
     @Override
     public void connect(String hostAddress, Integer port) throws Exception {
         if (connected) {
-            disconnect();
+            disconnect(false);
         }
         currentServer = new ServerInfo(hostAddress, port, new KVRange("00000000000000000000000000000000", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
         metadataFromServer.add(currentServer);
@@ -92,7 +97,7 @@ public class KVStore implements KVCommInterface {
      */
     public void connect(ServerInfo serverInfo) throws Exception {
         if (connected) {
-            disconnect();
+            disconnect(false);
         }
         currentServer = new ServerInfo(serverInfo.getAddress(), serverInfo.getServerPort(), serverInfo.getServerRange());
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
@@ -101,13 +106,13 @@ public class KVStore implements KVCommInterface {
     }
 
     @Override
-    public void disconnect() {
+    public void disconnect(boolean full) {
         if (currentConnection != null) {
             currentConnection.closeConnections();
         }
         currentConnection = null;
         currentServer = null;
-        setIsConnected(false);
+        if (full) setIsConnected(false);
     }
 
     /**
@@ -129,7 +134,7 @@ public class KVStore implements KVCommInterface {
             response = send(kvMessage.getMsgBytes(), serverConnection);
             if (response[0] == -1) {
                 logger.error(String.format("Subscribe request not successful. Got -1 as response. Key: %s, Coordinator: %s", key, serverConnection.getAddress()));
-                disconnect();
+                disconnect(false);
             } else {
                 KVMessageImpl responseMessage = (KVMessageImpl) Serializer.toObject(response);
                 if (responseMessage.getStatus().equals(KVMessage.StatusType.SUBSCRIBE_SUCCESS)) {
@@ -142,7 +147,7 @@ public class KVStore implements KVCommInterface {
             }
         } catch (Exception e) {
             logger.error(String.format("Error while sending subscribe request. Key: %s, Coordinator: %s", key, serverConnection.getAddress()), e);
-            disconnect();
+            disconnect(false);
             kvMessage.setStatus(KVMessage.StatusType.SUBSCRIBE_ERROR);
         }
         return kvMessage;
@@ -168,7 +173,7 @@ public class KVStore implements KVCommInterface {
             response = send(kvMessage.getMsgBytes(), serverConnection);
             if (response[0] == -1) {
                 logger.error(String.format("Unsubscribe request not successful. Got -1 as response. Key: %s, Coordinator: %s", key, serverConnection.getAddress()));
-                disconnect();
+                disconnect(false);
             } else {
                 KVMessageImpl responseMessage = (KVMessageImpl) Serializer.toObject(response);
                 if (responseMessage.getStatus().equals(KVMessage.StatusType.UNSUBSCRIBE_SUCCESS)) {
@@ -181,7 +186,7 @@ public class KVStore implements KVCommInterface {
             }
         } catch (Exception e) {
             logger.error(String.format("Error while sending unsubscribe request. Key: %s, Coordinator: %s", key, serverConnection.getAddress()), e);
-            disconnect();
+            disconnect(false);
             kvMessage.setStatus(KVMessage.StatusType.UNSUBSCRIBE_ERROR);
         }
         return kvMessage;
@@ -215,12 +220,12 @@ public class KVStore implements KVCommInterface {
                 try {
                     response = send(kvMessage.getMsgBytes(), connection);
                     if (response[0] == -1) {
-                        disconnect();
+                        disconnect(false);
                         continue;
                     }
                 }
                 catch (Exception e) {
-                    disconnect();
+                    disconnect(false);
                     continue;
                 }
                 logger.info("Sent PUT message to : " + connection.getAddress() + ":" + connection.getServerPort() + " with key: " + kvMessage.getKey() + " value: " + kvMessage.getValue());
@@ -293,11 +298,11 @@ public class KVStore implements KVCommInterface {
                     try {
                         response = send(kvMessage.getMsgBytes(), connection);
                         if (response[0] == -1) {
-                            disconnect();
+                            disconnect(false);
                             continue;
                         }
                     } catch (Exception e) {
-                        disconnect();
+                        disconnect(false);
                         continue;
                     }
 
@@ -433,7 +438,7 @@ public class KVStore implements KVCommInterface {
                 if (currentServer != null && m.getAddress().equals(currentServer.getAddress()) && m.getServerPort().equals(currentServer.getServerPort())) {
                     return currentConnection;
                 } else {
-                    disconnect();
+                    disconnect(false);
                     try {
                         logger.info("Trying server: " + m.getAddress()+":"+m.getServerPort()+", range:" + m.getFromIndex() + ":" + m.getToIndex() );
                         connect(m);
@@ -461,7 +466,7 @@ public class KVStore implements KVCommInterface {
         newMetadata.remove(m);
         logger.info("Trying remaining servers");
         for (ServerInfo s : newMetadata) {
-            disconnect();
+            disconnect(false);
             try {
                 logger.info("Trying server: " + s.getAddress()+":"+s.getServerPort()+", range:" + s.getFromIndex() + ":" + s.getToIndex() );
                 connect(s);

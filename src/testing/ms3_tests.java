@@ -93,7 +93,7 @@ public class ms3_tests {
 
     @After
     public void tearDown(){
-        client.disconnect();
+        client.disconnect(true);
         ecs.shutdown();
         ecs = null;
         client = null;

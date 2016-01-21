@@ -34,7 +34,7 @@ public class KVServiceBasicTest extends TestCase {
     }
 
     public void tearDown() {
-        kvClient.disconnect();
+        kvClient.disconnect(true);
         Ecs.shutdown();
     }
 

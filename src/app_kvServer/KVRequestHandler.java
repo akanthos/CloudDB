@@ -63,7 +63,7 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
                 try {
                     // Get a new message
                     byteMessage = Utilities.receive(inputStream);
-                    if (!Thread.currentThread().isInterrupted() || !stop) {
+                    if (!Thread.currentThread().isInterrupted() && !stop) {
 
                         if (byteMessage[0] == -1) {
                             clientConnected = false;

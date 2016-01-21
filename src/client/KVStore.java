@@ -79,9 +79,9 @@ public class KVStore implements KVCommInterface {
      */
     @Override
     public void connect(String hostAddress, Integer port) throws Exception {
-        if (connected) {
-            disconnect(false);
-        }
+//        if (connected) {
+//            disconnect(false);
+//        }
         currentServer = new ServerInfo(hostAddress, port, new KVRange("00000000000000000000000000000000", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));
         metadataFromServer.add(currentServer);
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
@@ -96,9 +96,9 @@ public class KVStore implements KVCommInterface {
      * @throws Exception
      */
     public void connect(ServerInfo serverInfo) throws Exception {
-        if (connected) {
-            disconnect(false);
-        }
+//        if (connected) {
+//            disconnect(false);
+//        }
         currentServer = new ServerInfo(serverInfo.getAddress(), serverInfo.getServerPort(), serverInfo.getServerRange());
         currentConnection = new ServerConnection(currentServer.getAddress(), currentServer.getServerPort());
         setIsConnected(true);

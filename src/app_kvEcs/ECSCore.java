@@ -271,7 +271,7 @@ public class ECSCore implements ECSInterface {
         logger.info("About to ADD server: " + newServer.getID());
         logger.debug("My system before adding is: ");
         for (ServerInfo server: activeServers)
-            logger.debug(server.getID() + server.getFromIndex() + ":" + server.getToIndex());
+            logger.debug(server.getID() + " " + server.getFromIndex() + ":" + server.getToIndex());
         //calculate the new MetaData.
         activeServers = Helper.generateMetaData(activeServers, md5Hasher);
         List<KVConnection> WriteLockNodes = new ArrayList<>();
@@ -464,7 +464,7 @@ public class ECSCore implements ECSInterface {
         logger.info("About to DELETE server: " + deleteNode.getID());
         logger.debug("My system before removing is: ");
         for (ServerInfo server: activeServers)
-            logger.debug(server.getID() + server.getFromIndex() + ":" + server.getToIndex());
+            logger.debug(server.getID() + " " + server.getFromIndex() + ":" + server.getToIndex());
         boolean moveSuccess=true;
         //get the successor
         List<ServerInfo> replicas = Utilities.getReplicas(activeServers, deleteNode);
@@ -596,7 +596,7 @@ public class ECSCore implements ECSInterface {
         logger.info("DELETED server: " + deleteNode.getID());
         logger.debug("My system after removing is: ");
         for (ServerInfo server: activeServers)
-            logger.debug(server.getID() + server.getFromIndex() + ":" + server.getToIndex());
+            logger.debug(server.getID() + " " + server.getFromIndex() + ":" + server.getToIndex());
 
         return true;
     }

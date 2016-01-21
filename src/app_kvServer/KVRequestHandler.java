@@ -175,9 +175,9 @@ public class KVRequestHandler implements Runnable/*, ServerActionListener*/ {
         if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.MOVE_DATA)) {
             return server.insertNewDataToCache(kvServerMessage.getKVPairs(), kvServerMessage.getSubscriptions());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.REPLICATE)) {
-            return server.newReplicatedData(kvServerMessage.getKVPairs());
+            return server.newReplicatedData(kvServerMessage.getKVPairs(), kvServerMessage.getSubscriptions());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.GOSSIP)) {
-            return server.updateReplicatedData(kvServerMessage.getKVPairs());
+            return server.updateReplicatedData(kvServerMessage.getKVPairs(), kvServerMessage.getSubscriptions());
         } else if (kvServerMessage.getStatus().equals(KVServerMessage.StatusType.HEARTBEAT)) {
             return server.heartbeatReceived(kvServerMessage.getReplicaID(), kvServerMessage.getTimeOfSendingMsg());
         } else {

@@ -251,8 +251,10 @@ public class SocketServer {
     /********************************************************************/
     /**
      * Inserts new key-value pairs to cache
-     * @param kvPairs
-     * @return
+     *
+     * @param kvPairs the key-value pairs to be inserted
+     * @param subscribers the subscriptions to be inserted
+     * @return the server message response
      */
     public synchronized KVServerMessageImpl insertNewDataToCache(List<KVPair> kvPairs, Map<String, ArrayList<ClientSubscription>> subscribers) {
         for (KVPair kv : kvPairs) {
@@ -261,12 +263,12 @@ public class SocketServer {
                 return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_FAILURE);
             }
         }
-        for (String key : subscribers.keySet()) {
-            subscriptions.put(key, subscribers.get(key));
-        }
+        importSubscriptions(subscribers);
         return new KVServerMessageImpl(KVServerMessage.StatusType.MOVE_DATA_SUCCESS);
         // If it fails, respond with MOVE_FAILURE ???
     }
+
+
 
 
     /********************************************************************/
@@ -408,9 +410,11 @@ public class SocketServer {
      * Inserts new data into the replicated data file
      * Used by the REPLICATE server command
      * @param kvPairs the key value pairs to be inserted to the replicated data
+     * @param subscriptions the subscriptions to be inserted
      * @return the Server message response
      */
-    public KVServerMessageImpl newReplicatedData(List<KVPair> kvPairs) {
+    public KVServerMessageImpl newReplicatedData(List<KVPair> kvPairs, Map<String, ArrayList<ClientSubscription>> subscriptions) {
+        importSubscriptions(subscriptions);
         boolean status = replicationHandler.insertReplicatedData(kvPairs);
         return status ? new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_SUCCESS)
                 : new KVServerMessageImpl(KVServerMessage.StatusType.REPLICATE_FAILURE) ;
@@ -420,11 +424,13 @@ public class SocketServer {
      * Inserts new data into the replicated data file
      * Used by the GOSSIP server command
      * @param kvPairs the key value pairs to be inserted to the replicated data
+     * @param subscriptions the subscriptions that need to be updated
      * @return the Server message response
      */
-    public KVServerMessageImpl updateReplicatedData(List<KVPair> kvPairs) {
+    public KVServerMessageImpl updateReplicatedData(List<KVPair> kvPairs, Map<String, ArrayList<ClientSubscription>> subscriptions) {
         logger.info(getInfo().getID() + " : Got gossip!! ::: " + kvPairs.get(0).getKey() +
                                         " , " + kvPairs.get(0).getValue());
+        importSubscriptions(subscriptions);
         boolean status = replicationHandler.insertReplicatedData(kvPairs);
         return status ? new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_SUCCESS)
                 : new KVServerMessageImpl(KVServerMessage.StatusType.GOSSIP_FAILURE) ;
@@ -611,6 +617,18 @@ public class SocketServer {
         synchronized (subscriptions) {
             subscriptions.remove(key);
             logger.debug(info.getID() + " : Removing subscriptions for key: " + key);
+        }
+    }
+
+    /**
+     * Imports subscriptions for certain keys to the subscription storage
+     * @param subscribers the subscriptions to be added
+     */
+    private void importSubscriptions(Map<String, ArrayList<ClientSubscription>> subscribers) {
+        synchronized (subscriptions) {
+            for (String key : subscribers.keySet()) {
+                subscriptions.put(key, subscribers.get(key));
+            }
         }
     }
 }
